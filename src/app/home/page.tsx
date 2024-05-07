@@ -9,7 +9,14 @@ import QrReader from '@/components/home/QrReader';
 export default function Home() {
     const [openQR, setOpenQR] = useState(false);
 
-    const handleClick = async (code: string) => await createPrices(code);
+    const handleClick = async (code: string) => {
+        const response = await createPrices(code)
+        if (response.status == 200) {
+            console.log('Dados', response.data);
+        } else {
+            console.log('Erro no processamento', response.data);
+        }
+    };
 
     return (
         <Box
