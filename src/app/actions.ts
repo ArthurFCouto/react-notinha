@@ -2,99 +2,124 @@
 import axios from 'axios';
 import jsdom from 'jsdom';
 
+interface Prices {
+    [index: string]: {
+        nome: string,
+        unidadeMedida: string,
+        valor: string
+    }
+}
+
+interface Market {
+    CEP: string,
+    CNPJ: string,
+    UF: string,
+    bairro: string,
+    cidade: string,
+    endereco: string,
+    nomeFantasia: string,
+    numero: string,
+    razaoSocial: string
+}
+
+interface Invoice {
+    CNPJ: string,
+    chave: string,
+    data: string,
+    url: string,
+    userID: string | null
+};
+
 export async function createPrices(url: string) {
     const { JSDOM } = jsdom;
     try {
         const response = await axios.get(url);
         const { data } = response;
-        //const parse = new DOMParser();
-        // Transforma  uma string com código html em um documento manipulável
-        //const virtualDoc = parse.parseFromString(data, 'text/html');
-        const virtualDoc = new JSDOM(data);
-        // Encontrando a tabela que contém a lista dos produtos
-        const tabela = virtualDoc.window.document.querySelector('.table.table-striped');
-        // Verificar se a tabela foi encontrada
-        if (tabela) {
-            HandleCNPJ(virtualDoc.window.document);
-            HandleNF(virtualDoc.window.document);
-            // Objeto para armazenar os objetos únicos
-            const objetosUnicos: any = {};
-            // Iterar sobre as linhas da tabela
-            const linhas = tabela.querySelectorAll('tbody tr');
-            linhas.forEach((linha) => {
-                // Iterar sobre as colunas da linha
-                const dados: NodeListOf<HTMLTableCellElement> = linha.querySelectorAll('td');
-                // Limpar e converter quantidade para número
-                const quantidade = parseFloat(dados[1].textContent.trim().replace(/[^\d.,]/g, '').replace(',', '.'));
-                // Limpar e converter valorTotal para número
-                const valorTotal = parseFloat(dados[3].textContent.trim().replace(/[^\d.,]/g, '').replace(',', '.'));
-                // Criar chave única para o objeto
-                const chave = dados[0].textContent.trim() + '_' + quantidade + '_' + valorTotal;
-                // Verificar se o objeto já existe no objetoUnicos
-                if (!objetosUnicos[chave]) {
-                    // Criar objeto para a linha e armazenar em objetosUnicos
-                    objetosUnicos[chave] = {
-                        produto: dados[0].querySelector('h7').textContent.trim(),
-                        quantidade: quantidade,
-                        unidade: dados[2].textContent.trim().slice(4),
-                        valorTotal: valorTotal
-                    };
+        const virtualDocument = new JSDOM(data);
+        const table = virtualDocument.window.document.querySelector('.table.table-striped');
+        const prices: Prices = {};
+        const lines = table?.querySelectorAll('tbody tr');
+        lines?.forEach((line) => {
+            const data: string[] = [];
+            const columns = line.querySelectorAll('td');
+            columns.forEach((column, index) => {
+                if (index == 0) {
+                    data[index] = String(column.querySelector('h7')?.textContent?.trim());
+                    return;
                 }
-            });
-            // Converter objetosUnicos de volta para um array
-            const objetos = Object.values(objetosUnicos);
-            // Exibir o array de objetos no console
-            console.log('Objetos:', objetos);
-        } else {
-            console.error('Tabela não encontrada. Favor rever o HTML da página original.');
-        }
-
+                data[index] = String(column.textContent?.trim());
+            })
+            const count = parseFloat(data[1].replace(/[^\d.,]/g, '').replace(',', '.'));
+            const key = data[0] + '_' + data[1] + '_' + data[3];
+            if (!prices[key]) {
+                prices[key] = {
+                    nome: data[0],
+                    unidadeMedida: data[2].slice(4),
+                    valor: (parseFloat(data[3].replace(/[^\d.,]/g, '').replace(',', '.'))/count).toFixed(2)
+                };
+            }
+        });
+        const market = await handleMarket(virtualDocument.window.document);
+        const invoice = HandleInvoice(virtualDocument.window.document, url);
+        const listPrices = Object.values(prices);
+        console.log('Mercado', market);
+        console.log('Nota Fiscal', invoice)
+        console.log('Preços:', listPrices);
     } catch (error) {
-        console.error('Erro na requisição do PortalNF', error);
+        console.error('Erro na requisição/tratamento dos dados da NF', error);
     }
 }
 
-async function getDetailsCNPJ(cnpj: string) {
-    const response = await axios.get(`https://receitaws.com.br/v1/cnpj/${cnpj.replace(/[^\d]/g, '')}`);
-    const { data } = response;
-    const market = {
-        CNPJ: cnpj,
-        CEP: data.cep,
-        endereco: data.logradouro,
-        numero: data.numero,
-        razaoSocial: data.nome,
-        nomeFantasia: data.fantasia,
-        UF: data.uf,
-        cidade: data.municipio,
-        bairro: data.bairro
+async function handleMarket(doc: Document): Promise<Market | null> {
+    const cnpj = getNumberCNPJ(doc);
+    try {
+        const response = await axios.get(`https://receitaws.com.br/v1/cnpj/${cnpj.replace(/[^\d]/g, '')}`);
+        const { data } = response;
+        const market = {
+            CEP: data.cep,
+            CNPJ: cnpj,
+            UF: data.uf,
+            bairro: data.bairro,
+            cidade: data.municipio,
+            endereco: data.logradouro,
+            nomeFantasia: data.fantasia,
+            numero: data.numero,
+            razaoSocial: data.nome
+        }
+        return market;
+    } catch (error) {
+        console.error('Erro na requisição/tratamento dos dados do CNPJ', error);
+        return null;
     }
-    console.log('Market', market);
 };
 
-function HandleCNPJ(doc: Document) {
-    const element = doc.querySelector('tbody tr:first-of-type td') as HTMLElement;
-    const allText = String(element.textContent);
-    const limiter = allText.indexOf(',');
-    const cnpj = allText.slice(0, limiter);
-    getDetailsCNPJ(cnpj);
-}
-
-function HandleNF(doc: Document) {
+function HandleInvoice(doc: Document, url: string): Invoice {
     let element = doc.getElementById('collapseTwo') as HTMLElement;
     const key = element.querySelector('table tbody tr:first-of-type td')?.textContent;
     element = doc.getElementById('collapse4') as HTMLElement;
     const table = element.querySelector('table:nth-child(8)') as Element;
     const line = table.querySelector('tbody tr') as Element;
     const columns = line.querySelectorAll('td');
-    const serie = columns[1].textContent || 'N/A';
-    const numero = columns[2].textContent || 'N/A';
-    const data = columns[3].textContent || 'N/A';
-    console.log('NF', {
-        CNPJ: 'N/A',
-        key,
-        serie,
-        numero,
-        data,
-        url: 'N/A'
-    });
+    const date = columns[3].textContent || formatDate(new Date());
+    return {
+        CNPJ: getNumberCNPJ(doc),
+        chave: String(key).replace(/[^\d]/g, ''),
+        data: date.slice(0, 10),
+        url,
+        userID: null
+    };
+}
+
+const getNumberCNPJ = (doc: Document) => {
+    const element = doc.querySelector('tbody tr:first-of-type td') as HTMLElement;
+    const allText = String(element.textContent);
+    const limiter = allText.indexOf(',');
+    return allText.slice(0, limiter).replace(/[^\d]/g, '');
+}
+
+const formatDate = (date: Date) => {
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
 }
