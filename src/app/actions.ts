@@ -62,11 +62,20 @@ export async function createPrices(url: string) {
         const market = await handleMarket(virtualDocument.window.document);
         const invoice = HandleInvoice(virtualDocument.window.document, url);
         const listPrices = Object.values(prices);
-        console.log('Mercado', market);
-        console.log('Nota Fiscal', invoice)
-        console.log('Preços:', listPrices);
+        return {
+            status: 200,
+            data: {
+                mercado: market,
+                NF: invoice,
+                precos: listPrices
+            }
+        }
     } catch (error) {
         console.error('Erro na requisição/tratamento dos dados da NF', error);
+        return {
+            status: 500,
+            data: error
+        }
     }
 }
 

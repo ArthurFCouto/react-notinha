@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Box, Button, Container, CssBaseline, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Link as MUILink, Typography } from '@mui/material';
+import { Box, Button, Container, CssBaseline, Link as MUILink, Typography } from '@mui/material';
 import { createPrices } from "@/app/actions";
 import QrReader from '@/components/home/QrReader';
 
@@ -35,7 +35,6 @@ export default function Home() {
                     <Button onClick={() => setOpenQR(true)}>Escanear</Button>
                 </Box>
             </Container>
-            <Button onClick={()=> handleClick('https://portalsped.fazenda.mg.gov.br/portalnfce/sistema/qrcode.xhtml?p=31240402274225000161650040003195201165010981|2|1|1|641c767ef4f193bcb2a1e919210842158f832e80')}>Testar</Button>
             <QrReader
                 closeQr={() => setOpenQR(false)}
                 getCode={(code) => handleClick(code)}
