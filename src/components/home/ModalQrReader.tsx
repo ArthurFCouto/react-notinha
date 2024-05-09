@@ -1,9 +1,12 @@
 /* https://medium.com/readytowork-org/implementing-a-qr-code-scanner-in-react-4c8f4e3c6f2e
    https://www.npmjs.com/package/qr-scanner */
 
-import { useEffect, useRef, useState } from 'react';
-import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Typography } from '@mui/material';
-import { Close, QrCode } from '@mui/icons-material';
+import { useEffect, useRef } from 'react';
+import {
+    Box, Button, Dialog, DialogActions,
+    DialogContent, DialogTitle, IconButton
+} from '@mui/material';
+import { Close } from '@mui/icons-material';
 import QrScanner from 'qr-scanner';
 
 interface QrReaderProps {
@@ -12,7 +15,7 @@ interface QrReaderProps {
     getCode: (code: string) => void
 }
 
-export default function QrReader({ closeQr, getCode, openQr }: QrReaderProps) {
+export default function ModalQrReader({ closeQr, getCode, openQr }: QrReaderProps) {
     const handleGetCode = (code: string) => {
         getCode(code);
         closeQr();
@@ -24,7 +27,7 @@ export default function QrReader({ closeQr, getCode, openQr }: QrReaderProps) {
             open={openQr}
         >
             <DialogTitle>
-                Centralizer o QR Code
+                Centralize o QR Code
             </DialogTitle>
             <IconButton
                 onClick={closeQr}
@@ -32,7 +35,7 @@ export default function QrReader({ closeQr, getCode, openQr }: QrReaderProps) {
                     position: 'absolute',
                     right: 8,
                     top: 8,
-                    color: (theme) => theme.palette.grey[500],
+                    //color: (theme) => theme.palette.grey[500],
                 }}
             >
                 <Close />
@@ -41,7 +44,7 @@ export default function QrReader({ closeQr, getCode, openQr }: QrReaderProps) {
                 {openQr && <QrReaderComponent getCode={handleGetCode} />}
             </DialogContent>
             <DialogActions>
-                <Button autoFocus onClick={closeQr}>
+                <Button autoFocus onClick={closeQr} variant='contained'>
                     Cancelar
                 </Button>
             </DialogActions>

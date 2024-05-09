@@ -30,8 +30,15 @@ interface Invoice {
     userID: string | null
 };
 
-export async function createPrices(url: string) {
+interface CreatePricesResponse {
+    status: number,
+    data: any
+}
+
+export async function createPrices(url: string): Promise<CreatePricesResponse> {
     const { JSDOM } = jsdom;
+    if (!checkURL(url))
+        throw new Error('Código QR inválido para nosso sistema.');
     try {
         const response = await axios.get(url);
         const { data } = response;
@@ -55,7 +62,7 @@ export async function createPrices(url: string) {
                 prices[key] = {
                     nome: data[0],
                     unidadeMedida: data[2].slice(4),
-                    valor: (parseFloat(data[3].replace(/[^\d.,]/g, '').replace(',', '.'))/count).toFixed(2)
+                    valor: (parseFloat(data[3].replace(/[^\d.,]/g, '').replace(',', '.')) / count).toFixed(2)
                 };
             }
         });
@@ -77,6 +84,11 @@ export async function createPrices(url: string) {
             data: error
         }
     }
+}
+
+function checkURL(url: string) {
+    var regex = /portalsped\.fazenda\.mg\.gov\.br\/portalnfce\/sistema\/qrcode\.xhtml\?p=/;
+    return regex.test(url);
 }
 
 async function handleMarket(doc: Document): Promise<Market | null> {
