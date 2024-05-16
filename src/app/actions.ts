@@ -1,120 +1,150 @@
 'use server'
+import { Mercado, NotaFiscal, Precos, addObject, getListObject } from '@/service/firebaseService';
 import axios from 'axios';
 import jsdom from 'jsdom';
 
-interface Prices {
-    [index: string]: {
-        nome: string,
-        unidadeMedida: string,
-        valor: string
-    }
+interface PricesWork {
+    [index: string]: Precos
 }
-
-interface Market {
-    CEP: string,
-    CNPJ: string,
-    UF: string,
-    bairro: string,
-    cidade: string,
-    endereco: string,
-    nomeFantasia: string,
-    numero: string,
-    razaoSocial: string
-}
-
-interface Invoice {
-    CNPJ: string,
-    chave: string,
-    data: string,
-    url: string,
-    userID: string | null
-};
 
 interface CreatePricesResponse {
     status: number,
-    data: any
+    data: {
+        mercado: Mercado | null,
+        precos: Array<Precos> | null,
+        NF: NotaFiscal | null
+    }
+    message: string
 }
 
-export async function createPrices(url: string): Promise<CreatePricesResponse> {
+const getNumberCNPJ = (doc: Document) => {
+    const element = doc.querySelector('tbody tr:first-of-type td') as HTMLElement;
+    const allText = String(element.textContent);
+    const limiter = allText.indexOf(',');
+    return allText.slice(0, limiter).replace(/[^\d]/g, '');
+}
+
+const formatDate = (date: Date) => {
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+}
+
+const convertToNumber = (decimalPlaces: number, value: string) => {
+    const num = parseFloat(value.replace(/[^\d.,]/g, '').replace(',', '.')).toFixed(decimalPlaces);
+    return parseFloat(num);
+}
+
+const checkURL = (url: string) => {
+    const regex = /portalsped\.fazenda\.mg\.gov\.br\/portalnfce\/sistema\/qrcode\.xhtml\?p=/;
+    return regex.test(url);
+}
+
+const createVirtualDocument = async (url: string) => {
     const { JSDOM } = jsdom;
-    if (!checkURL(url))
-        throw new Error('Código QR inválido para nosso sistema.');
-    try {
-        const response = await axios.get(url);
-        const { data } = response;
-        const virtualDocument = new JSDOM(data);
-        const table = virtualDocument.window.document.querySelector('.table.table-striped');
-        const prices: Prices = {};
-        const lines = table?.querySelectorAll('tbody tr');
-        lines?.forEach((line) => {
-            const data: string[] = [];
-            const columns = line.querySelectorAll('td');
-            columns.forEach((column, index) => {
-                if (index == 0) {
-                    data[index] = String(column.querySelector('h7')?.textContent?.trim());
-                    return;
-                }
-                data[index] = String(column.textContent?.trim());
-            })
-            const count = parseFloat(data[1].replace(/[^\d.,]/g, '').replace(',', '.'));
-            const key = data[0] + '_' + data[1] + '_' + data[3];
-            if (!prices[key]) {
-                prices[key] = {
-                    nome: data[0],
-                    unidadeMedida: data[2].slice(4),
-                    valor: (parseFloat(data[3].replace(/[^\d.,]/g, '').replace(',', '.')) / count).toFixed(2)
-                };
-            }
+    return await axios.get(url)
+        .then((response) => {
+            const { data } = response;
+            const virtualDocument = new JSDOM(data);
+            return virtualDocument.window.document;
+        })
+        .catch((error) => {
+            console.error('Erro ao tratar o retorno HTML da página da SEFAZ.', error);
+            return null;
         });
-        const market = await handleMarket(virtualDocument.window.document);
-        const invoice = HandleInvoice(virtualDocument.window.document, url);
-        const listPrices = Object.values(prices);
+}
+
+export async function addTaxReceipet(url: string): Promise<CreatePricesResponse> {
+    try {
+        if (!checkURL(url))
+            throw new Error('Código QR inválido para nosso sistema.');
+        const virtualDocument = await createVirtualDocument(url);
+        if (virtualDocument === null)
+            throw new Error('Erro ao tratar o retorno HTML da página da SEFAZ.');
+        const market = await createMarket(virtualDocument);
+        if (market === null)
+            throw new Error('Erro na requisição/tratamento dos dados do CNPJ');
+        const invoice = createInvoice(virtualDocument, url);
+        const checkInvoice = await checkExistInvoice(invoice.chave);
+        if (checkInvoice as NotaFiscal && checkInvoice) 
+            throw new Error('Este cupom fiscal já foi enviado.')
+        const invoiceFirebase = await addObject({
+            path: 'notaFiscal',
+            doc: invoice
+        })
+        if (invoiceFirebase === null)
+            throw new Error('Erro ao adicionar Nota Fiscal.')
+        const checkMarket = await checkExistMarket(market.CNPJ);
+        if (checkMarket as Mercado && checkMarket) {
+            market.id = checkMarket.id
+        } else {
+            const invoiceMarket = await addObject({
+                path: 'mercado',
+                doc: market
+            });
+            if (invoiceMarket === null)
+                throw new Error('Erro ao adicionar Mercado.')
+            market.id = String(invoiceMarket);
+        }
+        const listPrices = createPrices(virtualDocument, market.id || '', invoice?.id || '', market.nomeFantasia, invoice.data);
+        listPrices.forEach(async (price) =>
+            await addObject({
+                path: 'precos',
+                doc: price
+            })
+        )
         return {
             status: 200,
             data: {
                 mercado: market,
                 NF: invoice,
                 precos: listPrices
-            }
+            },
+            message: 'Requisição respondida'
         }
     } catch (error) {
         console.error('Erro na requisição/tratamento dos dados da NF', error);
         return {
             status: 500,
-            data: error
+            data: {
+                mercado: null,
+                precos: null,
+                NF: null
+            },
+            message: 'Erro na requisição/tratamento dos dados da NF: ' + String(error)
         }
     }
 }
 
-function checkURL(url: string) {
-    var regex = /portalsped\.fazenda\.mg\.gov\.br\/portalnfce\/sistema\/qrcode\.xhtml\?p=/;
-    return regex.test(url);
+export async function getPrices() {
+    return await getListObject('precos');
 }
 
-async function handleMarket(doc: Document): Promise<Market | null> {
+async function createMarket(doc: Document): Promise<Mercado | null> {
     const cnpj = getNumberCNPJ(doc);
-    try {
-        const response = await axios.get(`https://receitaws.com.br/v1/cnpj/${cnpj.replace(/[^\d]/g, '')}`);
-        const { data } = response;
-        const market = {
-            CEP: data.cep,
-            CNPJ: cnpj,
-            UF: data.uf,
-            bairro: data.bairro,
-            cidade: data.municipio,
-            endereco: data.logradouro,
-            nomeFantasia: data.fantasia,
-            numero: data.numero,
-            razaoSocial: data.nome
-        }
-        return market;
-    } catch (error) {
-        console.error('Erro na requisição/tratamento dos dados do CNPJ', error);
-        return null;
-    }
+    return await axios.get(`https://receitaws.com.br/v1/cnpj/${cnpj.replace(/[^\d]/g, '')}`)
+        .then((response) => {
+            const { data } = response;
+            return {
+                CEP: data.cep,
+                CNPJ: cnpj,
+                UF: data.uf,
+                bairro: data.bairro,
+                cidade: data.municipio,
+                endereco: data.logradouro,
+                nomeFantasia: data.fantasia,
+                numero: data.numero,
+                razaoSocial: data.nome
+            } as Mercado;
+        })
+        .catch((error) => {
+            console.error('Erro na requisição/tratamento dos dados do CNPJ', error);
+            return null;
+        })
 };
 
-function HandleInvoice(doc: Document, url: string): Invoice {
+function createInvoice(doc: Document, url: string): NotaFiscal {
     let element = doc.getElementById('collapseTwo') as HTMLElement;
     const key = element.querySelector('table tbody tr:first-of-type td')?.textContent;
     element = doc.getElementById('collapse4') as HTMLElement;
@@ -131,16 +161,66 @@ function HandleInvoice(doc: Document, url: string): Invoice {
     };
 }
 
-const getNumberCNPJ = (doc: Document) => {
-    const element = doc.querySelector('tbody tr:first-of-type td') as HTMLElement;
-    const allText = String(element.textContent);
-    const limiter = allText.indexOf(',');
-    return allText.slice(0, limiter).replace(/[^\d]/g, '');
+function createPrices(doc: Document, idMercado: string, idNotaFiscal: string, mercado: string, date: string): Array<Precos> {
+    const table = doc.querySelector('.table.table-striped') as Element;
+    const prices: PricesWork = {};
+    const lines = table.querySelectorAll('tbody tr');
+    lines.forEach((line) => {
+        const data: string[] = [];
+        const columns = line.querySelectorAll('td');
+        columns.forEach((column, index) => {
+            if (index == 0) {
+                data[index] = String(column.querySelector('h7')?.textContent?.trim());
+                return;
+            }
+            data[index] = String(column.textContent?.trim());
+        })
+        const count = convertToNumber(2, data[1]);
+        const totalPrice = convertToNumber(2, data[3]);
+        const key = data[0] + '_' + data[1] + '_' + data[3];
+        if (!prices[key]) {
+            prices[key] = {
+                data: date,
+                idMercado,
+                idNotaFiscal,
+                mercado,
+                produto: data[0],
+                unidadeMedida: data[2].slice(4),
+                valor: convertToNumber(2, String(totalPrice / count)),
+            };
+        }
+    });
+    return Object.values(prices)
 }
 
-const formatDate = (date: Date) => {
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const year = date.getFullYear();
-    return `${day}/${month}/${year}`;
+async function checkExistMarket(cnpj: string) {
+    const listMarket = await getListObject('mercado')
+    if (listMarket !== null) {
+        const mercado = listMarket.map((market) => {
+            if (market.CNPJ === cnpj)
+                return market;
+        })
+        if (mercado.length > 0)
+            return mercado[0]
+        else
+            return false;
+    } else {
+        throw new Error('Erro na verificação do mercado');
+    }
+}
+
+async function checkExistInvoice(chave: string) {
+    const listInvoice = await getListObject('notaFiscal')
+    if (listInvoice !== null) {
+        const invoice = listInvoice.map((invoice) => {
+            if (invoice.chave === chave)
+                return invoice;
+        })
+        if (invoice.length > 0)
+            return invoice[0]
+        else
+            return false;
+    } else {
+        throw new Error('Erro na verificação da Nota Fiscal');
+    }
 }

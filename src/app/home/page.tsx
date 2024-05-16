@@ -2,35 +2,68 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Box, Button, Card, CardActionArea, CardContent, CardMedia, Container, CssBaseline, Link as MUILink, Typography } from '@mui/material';
-import { createPrices } from '@/app/actions';
+import {
+    Accordion,
+    AccordionDetails,
+    AccordionSlots,
+    AccordionSummary,
+    Box, Button, Container, CssBaseline,
+    Fade,
+    LinearProgress,
+    Link as MUILink, Typography
+} from '@mui/material';
+import { addTaxReceipet, getPrices } from '@/app/actions';
 import ModalQrReader from '@/components/home/ModalQrReader';
-import { QrCode } from '@mui/icons-material';
+import { ExpandMore, QrCode } from '@mui/icons-material';
+import { Precos } from '@/service/firebaseService';
 
 export default function Home() {
     const [openQR, setOpenQR] = useState(false);
-    const [market, setMarket] = useState<any>(null);
-    const [prices, setPrices] = useState<any>(null);
-    const [nf, setNF] = useState<any>(null);
+    const [prices, setPrices] = useState<null | Precos[]>(null);
+    const [loading, setLoading] = useState(true);
+    const [pricesExpanded, setPricesExpanded] = useState(false);
+
+    const handleExpansion = () => {
+        setPricesExpanded((prevExpanded) => !prevExpanded);
+    };
 
     const handleClick = async (code: string) => {
-        setMarket(null);
-        setPrices(null);
-        setNF(null);
-        const response = await createPrices(code)
+        if (loading) {
+            alert('Aguarde e tente mais tarde...');
+            return;
+        }
+        setLoading(true);
+        const response = await addTaxReceipet(code)
         if (response.status == 200) {
-            setMarket(response.data?.mercado);
-            setPrices(response.data.precos);
-            setNF(response.data.NF)
-            console.log('Data', {
-                market,
-                prices,
-                nf
-            });
+            alert('Obrigado pelo envio da sua NF. Em breve os preços atualizados aparecerão abaixo.');
         } else {
+            alert('Houve um erro ao enviar a NF: ' + response.message);
             console.log('Erro no processamento', response.data);
         }
+        setLoading(false);
     };
+
+    const updatePrices = async () => {
+        if (loading) return;
+        setLoading(true);
+        const listPrices = await getPrices();
+        if (listPrices === null)
+            alert('Erro ao tentar atualizar dados. Tente mais tarde.');
+        else {
+            listPrices.sort((prev, next) => {
+                if (prev.produto < next.produto) return -1;
+                if (prev.produto > next.produto) return 1;
+                return 0;
+            });
+            listPrices.sort((prev, next) => {
+                const dataA = new Date(prev.data).getTime();
+                const dataB = new Date(next.data).getTime();
+                return dataA - dataB;
+            });
+        }
+        setPrices(listPrices);
+        setLoading(false);
+    }
 
     return (
         <Box
@@ -49,17 +82,20 @@ export default function Home() {
                     Acompanhe o preço dos produtos de mercado com informações reais e atualizadas.
                 </Typography>
                 <Typography variant='h5' gutterBottom>
-                    E se você está com aquela notinha do mercado em mãos, baste ler o QRCode dela para atualizarmos nossos preços.
+                    Se você está com aquela notinha do mercado em mãos, baste ler o QRCode dela para atualizarmos nossos preços.
                 </Typography>
                 <Typography variant='subtitle1'>Em breve melhoraremos nosso layout.</Typography>
                 <Box
                     display='flex'
+                    flexDirection='column'
                     justifyContent='center'
                     alignItems='center'
                     paddingY={5}
+                    gap={3}
                 >
                     <Button endIcon={<QrCode />} onClick={() => setOpenQR(true)} variant='contained'>Escanear</Button>
                     {/*<Button endIcon={<QrCode />} onClick={() => handleClick('https://portalsped.fazenda.mg.gov.br/portalnfce/sistema/qrcode.xhtml?p=31240402274225000161650040003195201165010981|2|1|1|641c767ef4f193bcb2a1e919210842158f832e80')} variant='contained'>Escanear</Button>*/}
+                    <Button endIcon={<QrCode />} onClick={updatePrices} variant='contained'>Atualizar Lista</Button>
                 </Box>
             </Container>
             <ModalQrReader
@@ -67,46 +103,37 @@ export default function Home() {
                 getCode={(code) => handleClick(code)}
                 openQr={openQR}
             />
-            <Box display='flex' flexDirection='column' gap={2}>
-                {
-                    market != null && (
-                        <Card sx={{ marginX: 'auto', maxWidth: 500 }}>
-                            <CardActionArea>
-                                <CardMedia
-                                    component="img"
-                                    height="140"
-                                    image="https://source.unsplash.com/800x600/?mercado"
-                                    alt={`${market.razaoSocial} ${market.CNPJ}`}
-                                />
-                                <CardContent>
-                                    <Typography gutterBottom variant="h5" component="div">
-                                        {market.nomeFantasia}
-                                    </Typography>
-                                    <Typography variant="body2" color="text.secondary">
-                                        {`${market.endereco} ${market.numero}, ${market.bairro} - ${market.cidade}/${market.UF} ${market.CEP}`}
-                                    </Typography>
-                                </CardContent>
-                            </CardActionArea>
-                        </Card>
-                    )
-                }
+            {loading && <LinearProgress color='inherit' />}
+            <Box width='100%'>
                 {
                     (prices != null && Array.isArray(prices)) && (
                         <>
                             {
-                                prices.map((price, index) => (
-                                    <Card key={index} sx={{ marginX: 'auto', maxWidth: 500 }}>
-                                        <CardActionArea>
-                                            <CardContent>
-                                                <Typography gutterBottom variant="h5" component="div">
-                                                    {price.nome}
-                                                </Typography>
-                                                <Typography variant="body2" color="text.secondary">
-                                                    {`Tipo de medida: ${price.unidadeMedida}, preço por ${price.unidadeMedida}: R$ ${price.valor}`}
-                                                </Typography>
-                                            </CardContent>
-                                        </CardActionArea>
-                                    </Card>
+                                prices?.map((price) => (
+                                    <Accordion
+                                        key={price.id}
+                                        expanded={pricesExpanded}
+                                        onChange={handleExpansion}
+                                        slots={{ transition: Fade as AccordionSlots['transition'] }}
+                                        slotProps={{ transition: { timeout: 400 } }}
+                                        sx={{
+                                            '& .MuiAccordion-region': { height: pricesExpanded ? 'auto' : 0 },
+                                            '& .MuiAccordionDetails-root': { display: pricesExpanded ? 'block' : 'none' },
+                                        }}
+                                    >
+                                        <AccordionSummary
+                                            expandIcon={<ExpandMore />}
+                                            aria-controls="panel1-content"
+                                            id="panel1-header"
+                                        >
+                                            <Typography>{price.produto}</Typography>
+                                        </AccordionSummary>
+                                        <AccordionDetails>
+                                            <Typography>
+                                                {`Tipo de medida: ${price.unidadeMedida}, preço por ${price.unidadeMedida}: R$ ${price.valor}. Mercado: ${price.mercado}. Data: ${price.data}`}
+                                            </Typography>
+                                        </AccordionDetails>
+                                    </Accordion>
                                 ))
                             }
                         </>
