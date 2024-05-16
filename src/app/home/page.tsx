@@ -20,7 +20,7 @@ import { Precos } from '@/service/firebaseService';
 export default function Home() {
     const [openQR, setOpenQR] = useState(false);
     const [prices, setPrices] = useState<null | Precos[]>(null);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
     const [pricesExpanded, setPricesExpanded] = useState(false);
 
     const handleExpansion = () => {
