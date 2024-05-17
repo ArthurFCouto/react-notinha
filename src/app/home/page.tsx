@@ -3,29 +3,19 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import {
-    Accordion,
-    AccordionDetails,
-    AccordionSlots,
-    AccordionSummary,
-    Box, Button, Container, CssBaseline,
-    Fade,
-    LinearProgress,
-    Link as MUILink, Typography
+    Avatar, Box, Button, Container, CssBaseline,
+    Divider, LinearProgress, List, ListItem,
+    ListItemAvatar, ListItemText, Link as MUILink, Typography
 } from '@mui/material';
 import { addTaxReceipet, getPrices } from '@/app/actions';
 import ModalQrReader from '@/components/home/ModalQrReader';
-import { ExpandMore, QrCode } from '@mui/icons-material';
+import { Assignment, ExpandMore, QrCode } from '@mui/icons-material';
 import { Precos } from '@/service/firebaseService';
 
 export default function Home() {
     const [openQR, setOpenQR] = useState(false);
     const [prices, setPrices] = useState<null | Precos[]>(null);
     const [loading, setLoading] = useState(false);
-    const [pricesExpanded, setPricesExpanded] = useState(false);
-
-    const handleExpansion = () => {
-        setPricesExpanded((prevExpanded) => !prevExpanded);
-    };
 
     const handleClick = async (code: string) => {
         if (loading) {
@@ -107,36 +97,40 @@ export default function Home() {
             <Box width='100%'>
                 {
                     (prices != null && Array.isArray(prices)) && (
-                        <>
+                        <List sx={{ width: '100%', maxWidth: 500, bgcolor: 'background.paper' }}>
                             {
-                                prices?.map((price) => (
-                                    <Accordion
-                                        key={price.id}
-                                        expanded={pricesExpanded}
-                                        onChange={handleExpansion}
-                                        slots={{ transition: Fade as AccordionSlots['transition'] }}
-                                        slotProps={{ transition: { timeout: 400 } }}
-                                        sx={{
-                                            '& .MuiAccordion-region': { height: pricesExpanded ? 'auto' : 0 },
-                                            '& .MuiAccordionDetails-root': { display: pricesExpanded ? 'block' : 'none' },
-                                        }}
-                                    >
-                                        <AccordionSummary
-                                            expandIcon={<ExpandMore />}
-                                            aria-controls="panel1-content"
-                                            id="panel1-header"
-                                        >
-                                            <Typography>{price.produto}</Typography>
-                                        </AccordionSummary>
-                                        <AccordionDetails>
-                                            <Typography>
-                                                {`Tipo de medida: ${price.unidadeMedida}, preço por ${price.unidadeMedida}: R$ ${price.valor}. Mercado: ${price.mercado}. Data: ${price.data}`}
-                                            </Typography>
-                                        </AccordionDetails>
-                                    </Accordion>
+                                prices?.map((price, index) => (
+                                    <>
+                                        <ListItem alignItems='flex-start' key={price.id}>
+                                            <ListItemAvatar>
+                                                <Avatar>
+                                                    <Assignment />
+                                                </Avatar>
+                                            </ListItemAvatar>
+                                            <ListItemText
+                                                primary={`${price.produto} (${price.unidadeMedida})`}
+                                                secondary={
+                                                    <>
+                                                        <Typography
+                                                            sx={{ display: 'inline' }}
+                                                            component='span'
+                                                            variant='body2'
+                                                            color='text.primary'
+                                                        >
+                                                            {price.data}
+                                                        </Typography>
+                                                        {` — R$ ${price.valor} no ${price.mercado}`}
+                                                    </>
+                                                }
+                                            />
+                                        </ListItem>
+                                        {
+                                            index < prices.length - 1 && <Divider variant='inset' component='li' />
+                                        }
+                                    </>
                                 ))
                             }
-                        </>
+                        </List>
                     )
                 }
             </Box>
