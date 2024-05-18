@@ -1,4 +1,4 @@
-import { addDoc, collection, getDocs, getFirestore } from 'firebase/firestore';
+import { addDoc, collection, getDocs, getFirestore, orderBy, query } from 'firebase/firestore';
 import firebase from '@/config/firebase';
 
 export interface Mercado {
@@ -70,16 +70,22 @@ export async function getListObject(data: 'notaFiscal'): Promise<NotaFiscal[] | 
 export async function getListObject(data: 'precos'): Promise<Precos[] | null>;
 
 export async function getListObject(data: 'mercado' | 'notaFiscal' | 'precos'): Promise<Mercado[] | NotaFiscal[] | Precos[] | null> {
+    const order = {
+        'mercado': 'nomeFantasia',
+        'precos': 'produto',
+        'notaFiscal': 'data'
+    };
     try {
         const db = getFirestore(firebase);
-        const querySnapshot = await getDocs(collection(db, data));
+        const collectionRef = query(collection(db, data), orderBy(order[data]));
+        const querySnapshot = await getDocs(collectionRef);
         return querySnapshot.docs.map((doc) => {
             const object = doc.data();
             return {
                 id: doc.id,
                 ...object
             }
-        }) as any   ;
+        }) as any;
     } catch (error) {
         console.error(`Erro ao buscar ${data}`, error);
         return null;

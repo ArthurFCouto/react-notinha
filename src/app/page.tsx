@@ -1,17 +1,18 @@
 'use client';
+
 import { useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Box, Button, Grid, Typography, useMediaQuery } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { Player } from '@lottiefiles/react-lottie-player';
-import loading from '../util/lottiefiles/loading.json';
+import lottieLoading from '../assets/loading.json';
 
 export default function Home() {
   const router = useRouter()
   const theme = useTheme();
   const smDownScreen = useMediaQuery(theme.breakpoints.down('sm'));
-  const sizeAnimation = smDownScreen ? '750px' : '150px';
+  const sizeAnimation = smDownScreen ? '150px' : '750px';
   useEffect(() => router.push('/home'), []);
 
   return (
@@ -58,7 +59,7 @@ export default function Home() {
             autoplay
             keepLastFrame
             loop
-            src={loading}
+            src={lottieLoading}
             style={{
               height: sizeAnimation,
               width: sizeAnimation

@@ -1,11 +1,9 @@
 'use server'
-import { Mercado, NotaFiscal, Precos, addObject, getListObject } from '@/service/firebaseService';
-import axios from 'axios';
-import jsdom from 'jsdom';
 
-interface PricesWork {
-    [index: string]: Precos
-}
+import { Mercado, NotaFiscal, Precos, addObject, getListObject } from '@/service/firebaseService';
+import axios, { AxiosError } from 'axios';
+import jsdom from 'jsdom';
+import { checkURL, getInvoice, getItems, getNumberCNPJ } from '@/util/sefaz/handleHTML';
 
 interface CreatePricesResponse {
     status: number,
@@ -15,30 +13,6 @@ interface CreatePricesResponse {
         NF: NotaFiscal | null
     }
     message: string
-}
-
-const getNumberCNPJ = (doc: Document) => {
-    const element = doc.querySelector('tbody tr:first-of-type td') as HTMLElement;
-    const allText = String(element.textContent);
-    const limiter = allText.indexOf(',');
-    return allText.slice(0, limiter).replace(/[^\d]/g, '');
-}
-
-const formatDate = (date: Date) => {
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const year = date.getFullYear();
-    return `${day}/${month}/${year}`;
-}
-
-const convertToNumber = (decimalPlaces: number, value: string) => {
-    const num = parseFloat(value.replace(/[^\d.,]/g, '').replace(',', '.')).toFixed(decimalPlaces);
-    return parseFloat(num);
-}
-
-const checkURL = (url: string) => {
-    const regex = /portalsped\.fazenda\.mg\.gov\.br\/portalnfce\/sistema\/qrcode\.xhtml\?p=/;
-    return regex.test(url);
 }
 
 const createVirtualDocument = async (url: string) => {
@@ -61,37 +35,33 @@ export async function addTaxReceipet(url: string): Promise<CreatePricesResponse>
             throw new Error('Código QR inválido para nosso sistema.');
         const virtualDocument = await createVirtualDocument(url);
         if (virtualDocument === null)
-            throw new Error('Erro ao tratar o retorno HTML da página da SEFAZ.');
+            throw new Error('Erro ao buscar dados da página da SEFAZ/MG.');
         const market = await createMarket(virtualDocument);
         if (market === null)
             throw new Error('Erro na requisição/tratamento dos dados do CNPJ');
-        const invoice = createInvoice(virtualDocument, url);
-        const checkInvoice = await checkExistInvoice(invoice.chave);
-        if (checkInvoice as NotaFiscal && checkInvoice) 
+        const invoice = getInvoice(virtualDocument, url);
+        if (await checkExistInvoice(invoice.chave))
             throw new Error('Este cupom fiscal já foi enviado.')
         const invoiceFirebase = await addObject({
             path: 'notaFiscal',
             doc: invoice
         })
         if (invoiceFirebase === null)
-            throw new Error('Erro ao adicionar Nota Fiscal.')
-        const checkMarket = await checkExistMarket(market.CNPJ);
-        if (checkMarket as Mercado && checkMarket) {
-            market.id = checkMarket.id
-        } else {
-            const invoiceMarket = await addObject({
+            throw new Error('Erro ao enviar Nota Fiscal.')
+        if (!market.id) {
+            const marketFirebase = await addObject({
                 path: 'mercado',
                 doc: market
             });
-            if (invoiceMarket === null)
+            if (marketFirebase === null)
                 throw new Error('Erro ao adicionar Mercado.')
-            market.id = String(invoiceMarket);
+            market.id = String(marketFirebase);
         }
-        const listPrices = createPrices(virtualDocument, market.id || '', invoice?.id || '', market.nomeFantasia, invoice.data);
-        listPrices.forEach(async (price) =>
+        const items = getItems(virtualDocument, market, invoice);
+        items.forEach(async (item) =>
             await addObject({
                 path: 'precos',
-                doc: price
+                doc: item
             })
         )
         return {
@@ -99,7 +69,7 @@ export async function addTaxReceipet(url: string): Promise<CreatePricesResponse>
             data: {
                 mercado: market,
                 NF: invoice,
-                precos: listPrices
+                precos: items
             },
             message: 'Requisição respondida'
         }
@@ -123,6 +93,10 @@ export async function getPrices() {
 
 async function createMarket(doc: Document): Promise<Mercado | null> {
     const cnpj = getNumberCNPJ(doc);
+    const market = await checkExistMarket(cnpj);
+    if(market) return market;
+    axios.defaults.timeout = 30000;
+    axios.defaults.timeoutErrorMessage = 'Tempo de espera de resposta do servidor encerrado.';
     return await axios.get(`https://receitaws.com.br/v1/cnpj/${cnpj.replace(/[^\d]/g, '')}`)
         .then((response) => {
             const { data } = response;
@@ -138,89 +112,46 @@ async function createMarket(doc: Document): Promise<Mercado | null> {
                 razaoSocial: data.nome
             } as Mercado;
         })
-        .catch((error) => {
-            console.error('Erro na requisição/tratamento dos dados do CNPJ', error);
+        .catch((error: AxiosError) => {
+            console.error('Erro na requisição/tratamento dos dados do CNPJ', {
+                message: error.message,
+                status: error.status,
+                code: error.code
+            });
             return null;
         })
 };
 
-function createInvoice(doc: Document, url: string): NotaFiscal {
-    let element = doc.getElementById('collapseTwo') as HTMLElement;
-    const key = element.querySelector('table tbody tr:first-of-type td')?.textContent;
-    element = doc.getElementById('collapse4') as HTMLElement;
-    const table = element.querySelector('table:nth-child(8)') as Element;
-    const line = table.querySelector('tbody tr') as Element;
-    const columns = line.querySelectorAll('td');
-    const date = columns[3].textContent || formatDate(new Date());
-    return {
-        CNPJ: getNumberCNPJ(doc),
-        chave: String(key).replace(/[^\d]/g, ''),
-        data: date.slice(0, 10),
-        url,
-        userID: null
-    };
-}
-
-function createPrices(doc: Document, idMercado: string, idNotaFiscal: string, mercado: string, date: string): Array<Precos> {
-    const table = doc.querySelector('.table.table-striped') as Element;
-    const prices: PricesWork = {};
-    const lines = table.querySelectorAll('tbody tr');
-    lines.forEach((line) => {
-        const data: string[] = [];
-        const columns = line.querySelectorAll('td');
-        columns.forEach((column, index) => {
-            if (index == 0) {
-                data[index] = String(column.querySelector('h7')?.textContent?.trim());
-                return;
-            }
-            data[index] = String(column.textContent?.trim());
-        })
-        const count = convertToNumber(2, data[1]);
-        const totalPrice = convertToNumber(2, data[3]);
-        const key = data[0] + '_' + data[1] + '_' + data[3];
-        if (!prices[key]) {
-            prices[key] = {
-                data: date,
-                idMercado,
-                idNotaFiscal,
-                mercado,
-                produto: data[0],
-                unidadeMedida: data[2].slice(4),
-                valor: convertToNumber(2, String(totalPrice / count)),
-            };
-        }
-    });
-    return Object.values(prices)
-}
-
-async function checkExistMarket(cnpj: string) {
-    const listMarket = await getListObject('mercado')
-    if (listMarket !== null) {
-        const mercado = listMarket.map((market) => {
-            if (market.CNPJ === cnpj)
+async function checkExistMarket(cnpj: string): Promise<undefined | Mercado> {
+    return await getListObject('mercado')
+        .then((list: Mercado[] | null) => {
+            if (list === null)
+                throw new Error('Erro na validação do mercado. Tente mais tarde.');
+            else {
+                let market = undefined;
+                list.forEach((item) => {
+                    if (item.CNPJ == cnpj)
+                        market = item;
+                })
                 return market;
+            }
         })
-        if (mercado.length > 0)
-            return mercado[0]
-        else
-            return false;
-    } else {
-        throw new Error('Erro na verificação do mercado');
-    }
+        .catch(() => { throw new Error('Erro na validação do mercado. Tente mais tarde.') });
 }
 
-async function checkExistInvoice(chave: string) {
-    const listInvoice = await getListObject('notaFiscal')
-    if (listInvoice !== null) {
-        const invoice = listInvoice.map((invoice) => {
-            if (invoice.chave === chave)
-                return invoice;
+async function checkExistInvoice(chave: string): Promise<boolean> {
+    return await getListObject('notaFiscal')
+        .then((list: NotaFiscal[] | null) => {
+            if (list === null)
+                throw new Error('Erro na validação da Nota Fiscal. Tente mais tarde.');
+            else {
+                let exist = false;
+                list.forEach((invoice) => {
+                    if (invoice.chave == chave)
+                        exist = true;
+                })
+                return exist;
+            }
         })
-        if (invoice.length > 0)
-            return invoice[0]
-        else
-            return false;
-    } else {
-        throw new Error('Erro na verificação da Nota Fiscal');
-    }
+        .catch(() => { throw new Error('Erro na validação da Nota Fiscal. Tente mais tarde.') });
 }
