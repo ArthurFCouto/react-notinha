@@ -10,6 +10,12 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_MEASUREMENTID
 };
 
+export interface FirebaseUser {
+  name: string;
+  email: string;
+  password: string;
+};
+
 export const messageError = (message: string) => {
   let response = 'Houve um erro inesperado, tente mais tarde.';
   const errors = {
@@ -26,11 +32,5 @@ export const messageError = (message: string) => {
   }
   return response;
 }
-
-export interface FirebaseUser {
-  name: string;
-  email: string;
-  password: string;
-};
 
 export default initializeApp(firebaseConfig);

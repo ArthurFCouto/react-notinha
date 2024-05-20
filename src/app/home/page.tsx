@@ -1,19 +1,19 @@
 'use client';
 
-import { useState } from 'react';
-import Link from 'next/link';
+import { useEffect, useRef, useState } from 'react';
 import {
     Avatar, Box, Button, Container, CssBaseline,
-    Divider, List, ListItem,
-    ListItemAvatar, ListItemText, Link as MUILink, TextField, Typography,
+    Divider, IconButton, List, ListItem,
+    ListItemAvatar, ListItemText, Link as MUILink, Stack, TextField, Typography,
 } from '@mui/material';
-import { Assignment, QrCode } from '@mui/icons-material';
+import { Assignment, Clear, Fingerprint, QrCode } from '@mui/icons-material';
 import { Player } from '@lottiefiles/react-lottie-player';
-import { addTaxReceipet, getPrices } from '@/app/actions';
-import { Precos } from '@/service/firebaseService';
-import ModalQrReader from '@/components/home/ModalQrReader';
-import lottieLoading from '../../assets/loading-2.json';
-import { BRCurrencyFormat } from '@/util';
+import { addTaxReceipet, getPrices } from '@/shared/Server/Actions/actions';
+import { Precos } from '@/shared/service/firebaseService';
+import ModalQrReader from '@/shared/components/home/ModalQrReader';
+import lottieLoading from '@/shared/assets/loading-2.json';
+import { BRCurrencyFormat } from '@/shared/util';
+import Footer from '@/shared/components/footer';
 
 const URLs = [
     {
@@ -84,8 +84,8 @@ const URLs = [
 export default function Home() {
     const [openQR, setOpenQR] = useState(false);
     const [prices, setPrices] = useState<null | Precos[]>(null);
+    const [pricesConst, setPricesConst] = useState<null | Precos[]>(null);
     const [loading, setLoading] = useState(false);
-    const sizeAnimation = '200px';
 
     const handleClick = async (code: string) => {
         if (loading) {
@@ -93,6 +93,7 @@ export default function Home() {
             return;
         }
         setPrices(null);
+        setPricesConst(null);
         setLoading(true);
         const response = await addTaxReceipet(code)
         if (response.status == 200) {
@@ -110,19 +111,21 @@ export default function Home() {
         if (listPrices === null)
             alert('Erro ao tentar atualizar dados. Tente mais tarde.');
         setPrices(listPrices);
+        setPricesConst(listPrices);
         setLoading(false);
     }
 
     const handleFilter = (value: string) => {
-        if (prices == null || loading) return
-        setLoading(true);
-        const newList = prices.map((price) => {
-            if (price.produto.includes(value) || price.mercado.includes(value))
-                return price;
-        }) as Precos[]
-        setPrices(newList);
+        if (pricesConst === null || loading) return
+        setPrices(pricesConst?.filter((price) => (price.mercado.toLowerCase().includes(value.toLowerCase()) || price.produto.toLowerCase().includes(value.toLowerCase()))) as Precos[]);
         setLoading(false);
     }
+
+    const clearFilter = () => {
+        setPrices(pricesConst);
+    }
+
+    useEffect(() => console.log('Renderizou'), []);
 
     return (
         <Box
@@ -153,9 +156,15 @@ export default function Home() {
                     gap={3}
                 >
                     <Button endIcon={<QrCode />} onClick={() => setOpenQR(true)} variant='contained'>Escanear</Button>
-                    {/*<Button endIcon={<QrCode />} onClick={() => handleClick('https://portalsped.fazenda.mg.gov.br/portalnfce/sistema/qrcode.xhtml?p=31240402274225000161650040003195201165010981|2|1|1|641c767ef4f193bcb2a1e919210842158f832e80')} variant='contained'>Escanear</Button>*/}
+                    {/*<Button endIcon={<QrCode />} onClick={() => handleClick('https://portalsped.fazenda.mg.gov.br/portalnfce/sistema/qrcode.xhtml?p=31240402274225000161650040003195201165010981|2|1|1|641c767ef4f193bcb2a1e919210842158f832e80')} variant='contained'>Escanear</Button>
+                    <Button endIcon={<QrCode />} onClick={() => handleClick(URLs[0].url)} variant='contained'>Escanear</Button>*/}
                     <Button endIcon={<QrCode />} onClick={updatePrices} variant='contained'>Atualizar Lista</Button>
-                    <TextField fullWidth label='Filtrar esta lista' id='fullWidth'  />
+                    <Stack width='100%' direction='row'>
+                        <TextField fullWidth label='Filtrar esta lista...' id='fullWidth' onChange={(e) => handleFilter(e.target.value)} />
+                        <IconButton aria-label='Clear' color='secondary' onClick={clearFilter} sx={{marginX: 1}}>
+                            <Clear />
+                        </IconButton>
+                    </Stack>
                 </Box>
             </Container>
             <ModalQrReader
@@ -171,20 +180,20 @@ export default function Home() {
                         loop
                         src={lottieLoading}
                         style={{
-                            height: sizeAnimation,
-                            width: sizeAnimation
+                            height: 200,
+                            width: 200
                         }}
                     />
                 )}
             <Box width='100%'>
                 {
-                    (prices != null && Array.isArray(prices)) && (
+                    (prices !== null && Array.isArray(prices) && prices.length > 0) && (
                         <List sx={{ width: '100%', maxWidth: 500, bgcolor: 'background.paper' }}>
                             {
                                 prices?.map((price, index) => (
                                     <>
                                         <ListItem alignItems='flex-start' key={price.id}>
-                                            <ListItemAvatar>
+                                            <ListItemAvatar color='primary'>
                                                 <Avatar>
                                                     <Assignment />
                                                 </Avatar>
@@ -216,36 +225,7 @@ export default function Home() {
                     )
                 }
             </Box>
-            <Box
-                component='footer'
-                sx={{
-                    py: 3,
-                    px: 2,
-                    mt: 'auto',
-                    backgroundColor: (theme) =>
-                        theme.palette.mode === 'light'
-                            ? theme.palette.grey[200]
-                            : theme.palette.grey[800],
-                }}
-            >
-                <Container maxWidth='xl'>
-                    <Copyright />
-                </Container>
-            </Box>
+            <Footer />
         </Box>
     )
 }
-
-function Copyright() {
-    return (
-        <Typography variant='body2' color='text.secondary'>
-            {'Copyright © '}
-            <MUILink component={Link} color='inherit' href='https://instagram.com/arthurfcouto'>
-                ArthurFCouto
-            </MUILink>{' '}
-            {new Date().getFullYear()}
-            {'.'}
-        </Typography>
-    );
-}
-

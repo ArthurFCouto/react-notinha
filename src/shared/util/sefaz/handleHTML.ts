@@ -1,4 +1,4 @@
-import { Mercado, NotaFiscal, Precos } from '@/service/firebaseService';
+import { Mercado, NotaFiscal, Precos } from '@/shared/service/firebaseService';
 import { ConvertStringToNumber, FormatDate } from '..';
 
 export function checkURL(url: string) {
