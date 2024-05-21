@@ -3,10 +3,10 @@
 import { useEffect, useRef, useState } from 'react';
 import {
     Avatar, Box, Button, Container, CssBaseline,
-    Divider, IconButton, List, ListItem,
-    ListItemAvatar, ListItemText, Link as MUILink, Stack, TextField, Typography,
+    Divider, Fab, IconButton, InputBase, List, ListItem,
+    ListItemAvatar, ListItemText, Paper, Stack, Typography,
 } from '@mui/material';
-import { Assignment, Clear, Fingerprint, QrCode } from '@mui/icons-material';
+import { Assignment, Clear, FilterList, North, QrCode, Refresh } from '@mui/icons-material';
 import { Player } from '@lottiefiles/react-lottie-player';
 import { addTaxReceipet, getPrices } from '@/shared/Server/Actions/actions';
 import { Precos } from '@/shared/service/firebaseService';
@@ -86,6 +86,8 @@ export default function Home() {
     const [prices, setPrices] = useState<null | Precos[]>(null);
     const [pricesConst, setPricesConst] = useState<null | Precos[]>(null);
     const [loading, setLoading] = useState(false);
+    const [showToTopButton, setShowToTopButton] = useState(false);
+    const filterRef = useRef<HTMLInputElement>(null);
 
     const handleClick = async (code: string) => {
         if (loading) {
@@ -110,9 +112,31 @@ export default function Home() {
         const listPrices = await getPrices();
         if (listPrices === null)
             alert('Erro ao tentar atualizar dados. Tente mais tarde.');
-        setPrices(listPrices);
-        setPricesConst(listPrices);
+
+        setPrices(listPrices !== null ? removeRepeated(listPrices) : listPrices);
+        setPricesConst(listPrices !== null ? removeRepeated(listPrices) : listPrices);
         setLoading(false);
+    }
+
+    const removeRepeated = (originalList: Precos[]): Precos[] => {
+        if (originalList.length === 0)
+            return originalList;
+        const map: {
+            [key: string]: Precos
+        } = {};
+
+        originalList.forEach(preco => {
+            const { produto, data, mercado } = preco;
+            const key = produto + '_' + mercado;
+            if (map[key]) {
+                if (new Date(data) > new Date(map[produto].data)) {
+                    map[key] = preco;
+                }
+            } else {
+                map[key] = preco;
+            }
+        });
+        return Object.values(map);
     }
 
     const handleFilter = (value: string) => {
@@ -123,9 +147,24 @@ export default function Home() {
 
     const clearFilter = () => {
         setPrices(pricesConst);
+        if (filterRef.current !== null)
+            filterRef.current.value = '';
     }
 
-    useEffect(() => console.log('Renderizou'), []);
+    const goToTop = () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    useEffect(() => {
+        const handleShowToTopButton = () => {
+            window.scrollY > window.innerHeight / 2 ? setShowToTopButton(true) : setShowToTopButton(false);
+        }
+        window.addEventListener('scroll', handleShowToTopButton);
+
+        return () => {
+            window.addEventListener('scroll', handleShowToTopButton);
+        }
+    }, []);
 
     return (
         <Box
@@ -155,16 +194,12 @@ export default function Home() {
                     paddingY={5}
                     gap={3}
                 >
-                    <Button endIcon={<QrCode />} onClick={() => setOpenQR(true)} variant='contained'>Escanear</Button>
+                    <Stack direction='row' gap={2}>
+                        <Button endIcon={<QrCode />} onClick={() => setOpenQR(true)} variant='outlined'>Escanear</Button>
+                        <Button endIcon={<Refresh />} onClick={updatePrices} variant='contained'>Atualizar</Button>
+                    </Stack>
                     {/*<Button endIcon={<QrCode />} onClick={() => handleClick('https://portalsped.fazenda.mg.gov.br/portalnfce/sistema/qrcode.xhtml?p=31240402274225000161650040003195201165010981|2|1|1|641c767ef4f193bcb2a1e919210842158f832e80')} variant='contained'>Escanear</Button>
                     <Button endIcon={<QrCode />} onClick={() => handleClick(URLs[0].url)} variant='contained'>Escanear</Button>*/}
-                    <Button endIcon={<QrCode />} onClick={updatePrices} variant='contained'>Atualizar Lista</Button>
-                    <Stack width='100%' direction='row'>
-                        <TextField fullWidth label='Filtrar esta lista...' id='fullWidth' onChange={(e) => handleFilter(e.target.value)} />
-                        <IconButton aria-label='Clear' color='secondary' onClick={clearFilter} sx={{marginX: 1}}>
-                            <Clear />
-                        </IconButton>
-                    </Stack>
                 </Box>
             </Container>
             <ModalQrReader
@@ -180,51 +215,93 @@ export default function Home() {
                         loop
                         src={lottieLoading}
                         style={{
-                            height: 200,
-                            width: 200
+                            height: 100
                         }}
                     />
                 )}
             <Box width='100%'>
                 {
-                    (prices !== null && Array.isArray(prices) && prices.length > 0) && (
-                        <List sx={{ width: '100%', maxWidth: 500, bgcolor: 'background.paper' }}>
-                            {
-                                prices?.map((price, index) => (
-                                    <>
-                                        <ListItem alignItems='flex-start' key={price.id}>
-                                            <ListItemAvatar color='primary'>
-                                                <Avatar>
-                                                    <Assignment />
-                                                </Avatar>
-                                            </ListItemAvatar>
-                                            <ListItemText
-                                                primary={`${price.produto} (${price.unidadeMedida})`}
-                                                secondary={
-                                                    <>
-                                                        <Typography
-                                                            sx={{ display: 'inline' }}
-                                                            component='span'
-                                                            variant='body2'
-                                                            color='text.primary'
-                                                        >
-                                                            {price.data}
-                                                        </Typography>
-                                                        {` — ${BRCurrencyFormat(price.valor)} no ${price.mercado}`}
-                                                    </>
-                                                }
-                                            />
-                                        </ListItem>
-                                        {
-                                            index < prices.length - 1 && <Divider variant='inset' component='li' />
-                                        }
-                                    </>
-                                ))
-                            }
-                        </List>
+                    (prices !== null && Array.isArray(prices) && prices.length > 0 && !loading) && (
+                        <>
+                            <Paper
+                                alignItems='center'
+                                component={Box}
+                                display='flex'
+                                marginBottom={0.5}
+                                paddingX={0.5}
+                                paddingY={1}
+                                width='100%'
+                            >
+                                <IconButton>
+                                    <FilterList />
+                                </IconButton>
+                                <InputBase
+                                    inputRef={filterRef}
+                                    onChange={(e) => handleFilter(e.target.value)}
+                                    placeholder='Filtrar esta lista'
+                                    sx={{ flex: 1 }}
+                                />
+                                <Divider sx={{ height: '30px' }} orientation='vertical' />
+                                <IconButton
+                                    color='primary'
+                                    onClick={clearFilter}
+                                >
+                                    <Clear />
+                                </IconButton>
+                            </Paper>
+                            <List sx={{ width: '100%', maxWidth: 500, bgcolor: 'background.paper' }}>
+                                {
+                                    prices?.map((price, index) => (
+                                        <>
+                                            <ListItem alignItems='flex-start' key={price.id}>
+                                                <ListItemAvatar color='primary'>
+                                                    <Avatar>
+                                                        <Assignment />
+                                                    </Avatar>
+                                                </ListItemAvatar>
+                                                <ListItemText
+                                                    primary={`${price.produto} (${price.unidadeMedida})`}
+                                                    secondary={
+                                                        <>
+                                                            <Typography
+                                                                sx={{ display: 'inline' }}
+                                                                component='span'
+                                                                variant='body2'
+                                                                color='text.primary'
+                                                            >
+                                                                {price.data}
+                                                            </Typography>
+                                                            {` — ${BRCurrencyFormat(price.valor)} no ${price.mercado}`}
+                                                        </>
+                                                    }
+                                                />
+                                            </ListItem>
+                                            {
+                                                index < prices.length - 1 && <Divider variant='inset' component='li' />
+                                            }
+                                        </>
+                                    ))
+                                }
+                            </List>
+                        </>
                     )
                 }
             </Box>
+            {
+                showToTopButton && (
+                    <Fab
+                        color='primary'
+                        sx={{
+                            position: 'fixed',
+                            bottom: 15,
+                            right: 15
+                        }}
+                        onClick={goToTop}
+                    >
+                        <North />
+                    </Fab>
+                )
+            }
             <Footer />
         </Box>
     )

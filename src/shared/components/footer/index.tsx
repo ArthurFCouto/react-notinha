@@ -6,7 +6,7 @@ export default function Footer() {
         <Typography variant='body2' color='text.secondary'>
             {'Copyright © '}
             <MUILink component={Link} color='inherit' href='https://instagram.com/arthur_fcouto'>
-                ArthurFCouto
+                Arthur_FCouto
             </MUILink>{' '}
             {new Date().getFullYear()}
             {'.'}

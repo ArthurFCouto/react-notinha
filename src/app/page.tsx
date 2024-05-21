@@ -10,9 +10,7 @@ import lottieLoading from '@/shared/assets/loading.json';
 export default function Home() {
 
   const router = useRouter();
-  const redirect = () => {
-    router.push('/home');
-  }
+  const redirect = () => router.push('/home');
   useEffect(() => redirect(), []);
 
   return (
