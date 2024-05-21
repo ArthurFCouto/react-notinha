@@ -129,7 +129,7 @@ export default function Home() {
             const { produto, data, mercado } = preco;
             const key = produto + '_' + mercado;
             if (map[key]) {
-                if (new Date(data) > new Date(map[produto].data)) {
+                if (new Date(data) > new Date(map[key].data)) {
                     map[key] = preco;
                 }
             } else {
@@ -168,13 +168,10 @@ export default function Home() {
 
     return (
         <Box
-            sx={{
-                display: 'flex',
-                flexDirection: 'column',
-                minHeight: '100vh',
-            }}
+            display='flex'
+            flexDirection='column'
+            height='100%'
         >
-            <CssBaseline />
             <Container component='main' sx={{ mt: 8, mb: 2 }} maxWidth='lg'>
                 <Typography variant='h4' gutterBottom>
                     Bem vindo(a) ao nosso sistema ainda sem nome!
@@ -182,10 +179,10 @@ export default function Home() {
                 <Typography variant='h5' gutterBottom>
                     Acompanhe o preço dos produtos de mercado com informações reais e atualizadas.
                 </Typography>
-                <Typography variant='h5' gutterBottom>
+                <Typography variant='body1' gutterBottom>
                     Se você está com aquela notinha do mercado em mãos, baste ler o QRCode dela para atualizarmos nossos preços.
                 </Typography>
-                <Typography variant='subtitle1'>Em breve melhoraremos nosso layout.</Typography>
+                <Typography variant='body2'>Em breve melhoraremos nosso layout.</Typography>
                 <Box
                     display='flex'
                     flexDirection='column'
@@ -252,8 +249,8 @@ export default function Home() {
                             <List sx={{ width: '100%', maxWidth: 500, bgcolor: 'background.paper' }}>
                                 {
                                     prices?.map((price, index) => (
-                                        <>
-                                            <ListItem alignItems='flex-start' key={price.id}>
+                                        <div key={price.id}>
+                                            <ListItem alignItems='flex-start' >
                                                 <ListItemAvatar color='primary'>
                                                     <Avatar>
                                                         <Assignment />
@@ -279,7 +276,7 @@ export default function Home() {
                                             {
                                                 index < prices.length - 1 && <Divider variant='inset' component='li' />
                                             }
-                                        </>
+                                        </div>
                                     ))
                                 }
                             </List>
