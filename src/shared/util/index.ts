@@ -13,6 +13,6 @@ export function BRCurrencyFormat(value: number) {
 }
 
 export function ConvertStringToNumber(value: string) {
-    const num = parseFloat(value.replace(/[^\d.,]/g, '').replace(',', '.')).toFixed(2);
+    const num = value.replace(/[^\d.,]/g, '').replace(',', '.');
     return parseFloat(num);
 }

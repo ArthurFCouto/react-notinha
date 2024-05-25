@@ -1,6 +1,12 @@
-import { addDoc, collection, getDocs, getFirestore, orderBy, query, where } from 'firebase/firestore';
+import { addDoc, collection, doc, getDocs, getFirestore, orderBy, query, where, writeBatch } from 'firebase/firestore';
 import firebase from '@/shared/config/firebase';
 import { FirebaseError } from 'firebase/app';
+
+export interface LogError {
+    message: string,
+    status: string,
+    code: string
+}
 
 export interface Mercado {
     id?: string,
@@ -42,7 +48,7 @@ export interface Precos {
     mercado: string,
     produto: string,
     unidadeMedida: string,
-    valor: number,
+    valor: string,
 }
 
 interface PrecosFirebase {
@@ -56,21 +62,50 @@ export async function addObject(data: MercadoFirebase | NotaFiscalFirebase | Pre
     const database = getFirestore(firebase);
     return await addDoc(collection(database, data.path), doc)
         .then((response) => {
-            return response.id;
+            return response.id as string;
         })
         .catch((error: FirebaseError) => {
-            console.error(`Erro ao cadastrar ${data.path}`, error);
-            return null;
+            throw (`Erro ao cadastrar ${data.path}. ${error.message}`);
         });
 }
 
-export async function getListObject(data: 'mercado'): Promise<Mercado[] | null>;
+export async function addListObject(path: 'mercado' | 'notaFiscal' | 'precos', data: Mercado[] | NotaFiscal[] | Precos[]) {
+    const database = getFirestore(firebase);
+    const batch = writeBatch(database);
+    data.forEach((item) => {
+        delete item.id;
+        const ref = doc(collection(database, path));
+        batch.set(ref, item);
+    })
+    return await batch.commit()
+        .catch((error: FirebaseError) => {
+            console.error(`Erro ao cadastrar ${path}`, error);
+            throw (error.message);
+        });
+}
 
-export async function getListObject(data: 'notaFiscal'): Promise<NotaFiscal[] | null>;
+export async function createLogError(log: LogError) {
+    const data = {
+        ...log,
+        date: new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString()
+    }
+    const database = getFirestore(firebase);
+    return await addDoc(collection(database, 'logs'), data)
+        .then((response) => {
+            return response.id as string;
+        })
+        .catch((error: FirebaseError) => {
+            console.log('Erro ao armazenar log de erro.', { error });
+        });
+}
 
-export async function getListObject(data: 'precos'): Promise<Precos[] | null>;
+export async function getListObject(data: 'mercado'): Promise<Mercado[]>;
 
-export async function getListObject(data: 'mercado' | 'notaFiscal' | 'precos'): Promise<Mercado[] | NotaFiscal[] | Precos[] | null> {
+export async function getListObject(data: 'notaFiscal'): Promise<NotaFiscal[]>;
+
+export async function getListObject(data: 'precos'): Promise<Precos[]>;
+
+export async function getListObject(data: 'mercado' | 'notaFiscal' | 'precos'): Promise<Mercado[] | NotaFiscal[] | Precos[]> {
     const order = {
         'mercado': 'nomeFantasia',
         'precos': 'produto',
@@ -89,21 +124,25 @@ export async function getListObject(data: 'mercado' | 'notaFiscal' | 'precos'): 
             }) as Mercado[] | NotaFiscal[] | Precos[];
         })
         .catch((error: FirebaseError) => {
-            console.error(`Erro ao buscar ${data}`, error.message);
-            return null;
+            createLogError({
+                code: String(error.code),
+                status: String(error.code),
+                message: error.message
+            });
+            throw (`Erro ao buscar a lista de objetos. ${error.message}`);
         });
 }
 
-export async function checkExistObject(data: 'mercado', path: string): Promise<Mercado | false | null>;
+export async function checkExistObject(data: 'mercado', path: string): Promise<Mercado | false>;
 
-export async function checkExistObject(data: 'notaFiscal', path: string): Promise<NotaFiscal | false | null>;
+export async function checkExistObject(data: 'notaFiscal', path: string): Promise<NotaFiscal | false>;
 /**
  * Retorna se um mercado ou nota fiscal está cadastrado
  * @param data Deve ser 'mercado' ou 'notaFiscal'
  * @param path Deve ser o CNPJ ou a CHAVE da nota fiscal
- * @returns Um objeto Mercado ou Nota Fiscal, podendo ser null se houver algum erro
+ * @returns Um objeto Mercado ou Nota Fiscal, ou false quando não existir
  */
-export async function checkExistObject(data: 'mercado' | 'notaFiscal', path: string): Promise<Mercado | NotaFiscal | false | null> {
+export async function checkExistObject(data: 'mercado' | 'notaFiscal', path: string): Promise<Mercado | NotaFiscal | false> {
     const order = {
         'mercado': 'CNPJ',
         'notaFiscal': 'chave'
@@ -124,7 +163,6 @@ export async function checkExistObject(data: 'mercado' | 'notaFiscal', path: str
             return false
         })
         .catch((error: FirebaseError) => {
-            console.error(`Erro ao verificar se ${data} está cadastrado(a)`, error.message);
-            return null;
+            throw (`Erro interno - Erro ao verificar se ${data} já está cadastrado(a). ${error.message}`)
         });
 }
