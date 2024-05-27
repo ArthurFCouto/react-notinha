@@ -30,7 +30,3 @@ export async function addTaxReceipet(url: string): Promise<void> {
 export async function getPrices() {
     return await getListObject('precos');
 }
-
-export async function getUrlInvoice() {
-    return (await getListObject('notaFiscal')).map((precos) => { return { url: precos.url } });
-}

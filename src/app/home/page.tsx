@@ -7,11 +7,11 @@ import {
     ListItemAvatar, ListItemText, Paper, Stack, Typography,
 } from '@mui/material';
 import {
-    Assignment, Clear, FilterList, North,
-    QrCode, Refresh, Update
+    Assignment, Clear, FilterList,
+    North, QrCode, Refresh
 } from '@mui/icons-material';
 import { Player } from '@lottiefiles/react-lottie-player';
-import { addTaxReceipet, getPrices, getUrlInvoice } from '@/shared/Server/Actions/actions';
+import { addTaxReceipet, getPrices } from '@/shared/Server/Actions/actions';
 import { Precos } from '@/shared/service/firebase';
 import ModalQrReader from '@/shared/components/home/ModalQrReader';
 import lottieLoading from '@/shared/assets/loading-2.json';
@@ -258,22 +258,7 @@ export default function Home() {
                     <Stack direction='row' gap={2}>
                         <Button endIcon={<QrCode />} onClick={() => setOpenQR(true)} variant='outlined'>Escanear</Button>
                         <Button endIcon={<Refresh />} onClick={updatePrices} variant='contained'>Listar Itens</Button>
-                        <Button endIcon={<Update />} onClick={() => sendUrl(listUrl[3].url)} variant='contained'>Testar</Button>
                     </Stack>
-                    {/*
-                    <IconButton
-                        color='primary'
-                        sx={{
-                            position: 'absolute',
-                            top: 15,
-                            right: 15,
-                            height: 20,
-                        }}
-                        onClick={sendInvoices}
-                    >
-                        <Update />
-                    </IconButton>
-                    */}
                 </Box>
                 <Player
                     lottieRef={(ref) => { setLottieRef(ref) }}
