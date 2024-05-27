@@ -188,7 +188,7 @@ export default function Home() {
                     console.log('Url cadastrada', url.url);
                 })
                 .catch((error) => {
-                    console.error('Houve um erro ao enviar a NF: ', error);
+                    console.error('Houve um erro ao enviar a NF: ', error.message);
                 })
         }
         setLoading(false);
@@ -258,10 +258,22 @@ export default function Home() {
                     <Stack direction='row' gap={2}>
                         <Button endIcon={<QrCode />} onClick={() => setOpenQR(true)} variant='outlined'>Escanear</Button>
                         <Button endIcon={<Refresh />} onClick={updatePrices} variant='contained'>Listar Itens</Button>
+                        <Button endIcon={<Update />} onClick={() => sendUrl(listUrl[3].url)} variant='contained'>Testar</Button>
                     </Stack>
-                    {/*<Button endIcon={<Update />} onClick={() => getUrls()} variant='contained'>TESTE</Button>
-                    <Button endIcon={<QrCode />} onClick={() => sendUrl('https://portalsped.fazenda.mg.gov.br/portalnfce/sistema/qrcode.xhtml?p=31240502274225000161650060002710101112100043|2|1|1|0eadc3dc0cb5960900eb19ecd5c89f00e1b6a6d1')} variant='contained'>Escanear</Button>
-                    <Button endIcon={<QrCode />} onClick={() => handleClick(URLs[0].url)} variant='contained'>Escanear</Button>*/}
+                    {/*
+                    <IconButton
+                        color='primary'
+                        sx={{
+                            position: 'absolute',
+                            top: 15,
+                            right: 15,
+                            height: 20,
+                        }}
+                        onClick={sendInvoices}
+                    >
+                        <Update />
+                    </IconButton>
+                    */}
                 </Box>
                 <Player
                     lottieRef={(ref) => { setLottieRef(ref) }}
@@ -357,19 +369,6 @@ export default function Home() {
                     </Fab>
                 )
             }
-            <IconButton
-                color='primary'
-                sx={{
-                    position: 'absolute',
-                    top: 15,
-                    right: 15,
-                    height: 20,
-                }}
-                onClick={sendInvoices}
-                
-            >
-                <Update />
-            </IconButton>
             <Footer />
         </Box>
     )

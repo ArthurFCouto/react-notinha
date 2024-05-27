@@ -3,9 +3,10 @@ import firebase from '@/shared/config/firebase';
 import { FirebaseError } from 'firebase/app';
 
 export interface LogError {
+    code: string,
     message: string,
+    stack: string,
     status: string,
-    code: string
 }
 
 export interface Mercado {
@@ -79,8 +80,7 @@ export async function addListObject(path: 'mercado' | 'notaFiscal' | 'precos', d
     })
     return await batch.commit()
         .catch((error: FirebaseError) => {
-            console.error(`Erro ao cadastrar ${path}`, error);
-            throw (error.message);
+            throw (`Erro ao cadastrar lista de ${path}. ${error.message}`);
         });
 }
 
@@ -90,10 +90,7 @@ export async function createLogError(log: LogError) {
         date: new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString()
     }
     const database = getFirestore(firebase);
-    return await addDoc(collection(database, 'logs'), data)
-        .then((response) => {
-            return response.id as string;
-        })
+    await addDoc(collection(database, 'logs'), data)
         .catch((error: FirebaseError) => {
             console.log('Erro ao armazenar log de erro.', { error });
         });
@@ -126,8 +123,9 @@ export async function getListObject(data: 'mercado' | 'notaFiscal' | 'precos'): 
         .catch((error: FirebaseError) => {
             createLogError({
                 code: String(error.code),
-                status: String(error.code),
-                message: error.message
+                message: error.message,
+                stack: String(error.stack),
+                status: String(error.name)
             });
             throw (`Erro ao buscar a lista de objetos. ${error.message}`);
         });
@@ -163,6 +161,6 @@ export async function checkExistObject(data: 'mercado' | 'notaFiscal', path: str
             return false
         })
         .catch((error: FirebaseError) => {
-            throw (`Erro interno - Erro ao verificar se ${data} já está cadastrado(a). ${error.message}`)
+            throw (`Erro ao verificar se ${data} já está cadastrado(a). ${error.message}`)
         });
 }

@@ -8,16 +8,45 @@ interface PricesWork {
 }
 
 /**
-* Verifica se a URL é válida
-*/
+  * Verifica se a URL é válida
+  */
 function checkURL(url: string) {
     const regex = /portalsped\.fazenda\.mg\.gov\.br\/portalnfce\/sistema\/qrcode\.xhtml\?p=/;
     return regex.test(url);
 }
 
 /**
- * Cria um document virtual para tratar os dados da página da SEFAZ
- */
+  * Retorna a chave da Nota Fiscal (somente numeros)
+  */
+function getKeyInvoice(doc: Document) {
+    try {
+        const element = doc.getElementById('collapseTwo') as HTMLElement;
+        const key = element.querySelector('table tbody tr:first-of-type td')?.textContent;
+        return String(key).replace(/[^\d]/g, '');
+    } catch (error: any) {
+        handleError(error);
+        throw (`Erro interno - ${error.message}`);
+    }
+}
+
+/**
+  * Retorna os CNPJ do mercado emissor da Nota Fiscal (somente numeros)
+  */
+function getNumberCNPJ(doc: Document) {
+    try {
+        const element = doc.querySelector('tbody tr:first-of-type td') as Element;
+        const allText = String(element.textContent);
+        const limiter = allText.indexOf(',');
+        return allText.slice(0, limiter).replace(/[^\d]/g, '');
+    } catch (error: any) {
+        handleError(error);
+        throw (`Erro interno - ${error.message}`);
+    }
+}
+
+/**
+  * Cria um document virtual para tratar os dados da página da SEFAZ
+  */
 export async function createVirtualDocument(url: string): Promise<Document> {
     'use server'
     if (!checkURL(url))
@@ -36,8 +65,8 @@ export async function createVirtualDocument(url: string): Promise<Document> {
 }
 
 /**
- * Retorna os dados do Mercado
-*/
+  * Retorna um objeto do tipo Mercado
+  */
 export async function createMarket(doc: Document): Promise<Mercado> {
     'use server'
     const cnpj = getNumberCNPJ(doc);
@@ -70,32 +99,16 @@ export async function createMarket(doc: Document): Promise<Mercado> {
 };
 
 /**
-* Retorna os CNPJ do mercado emissor da Nota Fiscal
-*/
-function getNumberCNPJ(doc: Document) {
-    try {
-        const element = doc.querySelector('tbody tr:first-of-type td') as Element;
-        const allText = String(element.textContent);
-        const limiter = allText.indexOf(',');
-        return allText.slice(0, limiter).replace(/[^\d]/g, '');
-    } catch (error: any) {
-        handleError(error);
-        throw ('Erro ao obter CNPJ no document da SEFAZ.');
-    }
-}
-
-/**
-* Retorna os dados da Nota Fiscal
-*/
-export async function getInvoice(doc: Document, url: string): Promise<NotaFiscal> {
+  * Retorna um objeto do tipo Nota Fiscal
+  */
+export async function createInvoice(doc: Document, url: string): Promise<NotaFiscal> {
     'use server'
+    const key = getKeyInvoice(doc);
+    const invoice = await checkExistObject('notaFiscal', key);
+    if (invoice)
+        throw ('Este cupom já está cadastrado.');
     try {
-        let element = doc.getElementById('collapseTwo') as HTMLElement;
-        const key = element.querySelector('table tbody tr:first-of-type td')?.textContent;
-        const invoice = await checkExistObject('notaFiscal', String(key).replace(/[^\d]/g, ''));
-        if (invoice)
-            throw ('Este cupom já está cadastrado.')
-        element = doc.getElementById('collapse4') as HTMLElement;
+        const element = doc.getElementById('collapse4') as HTMLElement;
         const table = element.querySelector('table:nth-child(8)') as Element;
         const line = table.querySelector('tbody tr') as Element;
         const columns = line.querySelectorAll('td');
@@ -109,14 +122,14 @@ export async function getInvoice(doc: Document, url: string): Promise<NotaFiscal
         };
     } catch (error: any) {
         handleError(error);
-        throw (error);
+        throw (`Erro interno - ${error.message}`);
     }
 }
 
 /**
-* Retorna os itens da Nota Fiscal (sem repetição)
-*/
-export function getItems(doc: Document, market: Mercado, invoice: NotaFiscal): Array<Precos> {
+  * Retorna uma lista dos itens da Nota Fiscal (sem repetição)
+  */
+export function createListItems(doc: Document, market: Mercado, invoice: NotaFiscal): Array<Precos> {
     try {
         const element = doc.querySelector('.table.table-striped') as Element;
         const items: PricesWork = {};
@@ -147,17 +160,18 @@ export function getItems(doc: Document, market: Mercado, invoice: NotaFiscal): A
                 };
             }
         });
-        return Object.values(items)
+        return Object.values(items);
     } catch (error: any) {
         handleError(error);
-        throw ('Erro ao obter os itens no document da SEFAZ.');
+        throw (`Erro interno - ${error.message}`);
     }
 }
 
 async function handleError(error: AxiosError) {
     createLogError({
+        code: String(error.code),
         message: error.message,
-        status: String(error.status),
-        code: String(error.code)
+        stack: String(error.stack),
+        status: String(error.status)
     });
 }

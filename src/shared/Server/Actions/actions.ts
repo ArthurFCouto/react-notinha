@@ -1,19 +1,9 @@
 'use server'
 
-import { Mercado, NotaFiscal, Precos, addListObject, addObject, getListObject } from '@/shared/service/firebase';
-import { createVirtualDocument, getInvoice, createMarket, getItems } from '@/shared/util/sefaz';
+import { addListObject, addObject, getListObject } from '@/shared/service/firebase';
+import { createInvoice, createListItems, createMarket, createVirtualDocument } from '@/shared/util/sefaz';
 
-interface CreatePricesResponse {
-    status: number,
-    data: {
-        mercado: Mercado | null,
-        precos: Array<Precos> | null,
-        NF: NotaFiscal | null
-    }
-    message: string
-}
-
-export async function addTaxReceipet(url: string): Promise<CreatePricesResponse> {
+export async function addTaxReceipet(url: string): Promise<void> {
     try {
         const virtualDocument = await createVirtualDocument(url);
         const market = await createMarket(virtualDocument);
@@ -24,23 +14,14 @@ export async function addTaxReceipet(url: string): Promise<CreatePricesResponse>
             });
             market.id = idMarket;
         }
-        const invoice = await getInvoice(virtualDocument, url)
+        const invoice = await createInvoice(virtualDocument, url)
         const idInvoice = await addObject({
             path: 'notaFiscal',
             doc: invoice
         });
         invoice.id = idInvoice;
-        const items = getItems(virtualDocument, market, invoice);
+        const items = createListItems(virtualDocument, market, invoice);
         await addListObject('precos', items);
-        return {
-            status: 200,
-            data: {
-                mercado: market,
-                NF: invoice,
-                precos: items
-            },
-            message: 'Requisição respondida'
-        };
     } catch (error: any) {
         throw new Error(error);
     }
