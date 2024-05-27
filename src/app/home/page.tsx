@@ -3,9 +3,9 @@
 import { useEffect, useReducer, useRef, useState } from 'react';
 import {
     Alert,
-    Avatar, Box, Button, Container,
+    Avatar, Box, Button, CircularProgress, Container,
     Divider, Fab, IconButton, InputBase, List, ListItem,
-    ListItemAvatar, ListItemText, Paper, Snackbar, Stack, Typography,
+    ListItemAvatar, ListItemText, Paper, Skeleton, Snackbar, Stack, Typography,
 } from '@mui/material';
 import {
     Assignment, Clear, FilterList,
@@ -72,6 +72,18 @@ export default function Home() {
                 {stateAlert.message}
             </Alert>
         </Snackbar>
+    )
+
+    const LoadingSkeleton = () => (
+        <ListItem alignItems='flex-start'>
+            <ListItemAvatar color='primary'>
+                <Skeleton variant='circular' width={40} height={40} animation='wave' />
+            </ListItemAvatar>
+            <ListItemText
+                primary={<Skeleton variant='text' sx={{ fontSize: '1rem' }} animation='wave' />}
+                secondary={<Skeleton variant='rectangular' animation='wave' />}
+            />
+        </ListItem>
     )
 
     const sendUrl = async (url: string) => {
@@ -194,18 +206,22 @@ export default function Home() {
                 >
                     <Stack direction='row' gap={2}>
                         <Button endIcon={<QrCode />} onClick={() => setOpenQR(true)} variant='outlined'>Escanear</Button>
-                        <Button endIcon={<Refresh />} onClick={updatePrices} variant='contained'>Listar Itens</Button>
+                        <Button endIcon={loading ? <CircularProgress color='inherit' size={20} /> : <Refresh />} onClick={updatePrices} variant='contained'>Listar Itens</Button>
                     </Stack>
                 </Box>
-                <Player
-                    lottieRef={(ref) => { setLottieRef(ref) }}
-                    keepLastFrame
-                    loop
-                    src={lottieLoading}
-                    style={{
-                        height: 100
-                    }}
-                />
+                {
+                    /*
+                    <Player
+                        lottieRef={(ref) => { setLottieRef(ref) }}
+                        keepLastFrame
+                        loop
+                        src={lottieLoading}
+                        style={{
+                            height: 100
+                        }}
+                    />
+                    */
+                }
                 <Paper
                     alignItems='center'
                     component={Box}
@@ -232,6 +248,13 @@ export default function Home() {
                         <Clear />
                     </IconButton>
                 </Paper>
+                {
+                    loading && (
+                        <List sx={{ width: '100%', maxWidth: 500, bgcolor: 'background.paper' }}>
+                            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((item) => <LoadingSkeleton key={item} />)}
+                        </List>
+                    )
+                }
                 {
                     (prices.length > 0 && !loading) && (
                         <List sx={{ width: '100%', maxWidth: 500, bgcolor: 'background.paper' }}>
