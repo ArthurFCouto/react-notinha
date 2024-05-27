@@ -28,5 +28,8 @@ export async function addTaxReceipet(url: string): Promise<void> {
 }
 
 export async function getPrices() {
-    return await getListObject('precos');
+    return await getListObject('precos')
+        .catch((error) => {
+            throw new Error(error);
+        });
 }
