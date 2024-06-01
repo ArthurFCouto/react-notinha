@@ -164,3 +164,27 @@ export async function checkExistObject(data: 'mercado' | 'notaFiscal', path: str
             throw (`Erro ao verificar se ${data} já está cadastrado(a). ${error.message}`)
         });
 }
+
+export async function getPricesByName(data: string): Promise<Precos[]> {
+    const database = getFirestore(firebase);
+    const collectionRef = query(collection(database, 'precos'), where('produto', '==', data));
+    return await getDocs(collectionRef)
+        .then((response) => {
+            return response.docs.map((doc) => {
+                const object = doc.data();
+                return {
+                    id: doc.id,
+                    ...object
+                }
+            }) as Precos[];
+        })
+        .catch((error: FirebaseError) => {
+            createLogError({
+                code: String(error.code),
+                message: error.message,
+                stack: String(error.stack),
+                status: String(error.name)
+            });
+            throw (`Erro ao buscar a preços pelo nome. ${error.message}`);
+        });
+}

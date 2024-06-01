@@ -16,6 +16,7 @@ import ModalQrReader from '@/shared/components/home/ModalQrReader';
 import { BRCurrencyFormat } from '@/shared/util';
 import Footer from '@/shared/components/footer';
 import { FilterListPrices, HandleStateAlert, SendUrl, UpdateListPrices } from './functions';
+import ModalPriceHistory from '@/shared/components/home/ModalPriceHistory';
 
 export default function Home() {
     const [loading, setLoading] = useState(false);
@@ -24,6 +25,8 @@ export default function Home() {
     const [prices, setPrices] = useState<Precos[]>([]);
     const [originalPrices, setOriginalPrices] = useState<Precos[]>([]);
     const [showButtonToTop, setShowButtonToTop] = useState(false);
+    const [showPriceHistory, setShowPriceHistory] = useState(false);
+    const [queryPriceHistory, setQueryPriceHistory] = useState('');
     const filterRef = useRef<HTMLInputElement>(null);
     const [stateAlert, dispatchAlert] = useReducer(HandleStateAlert, {
         message: '',
@@ -81,6 +84,8 @@ export default function Home() {
         }
         window.addEventListener('scroll', handleShowToTopButton);
 
+        UpdateListPrices(loading, setLoading, setPrices, setOriginalPrices, dispatchAlert);
+
         return () => {
             window.addEventListener('scroll', handleShowToTopButton);
         }
@@ -113,6 +118,7 @@ export default function Home() {
                     <Stack direction='row' gap={2}>
                         <Button endIcon={sendingUrl ? <CircularProgress color='inherit' size={20} /> : <QrCode />} onClick={() => setOpenQR(true)} variant='outlined'>Escanear</Button>
                         <Button endIcon={loading ? <CircularProgress color='inherit' size={20} /> : <Refresh />} onClick={() => UpdateListPrices(loading, setLoading, setPrices, setOriginalPrices, dispatchAlert)} variant='contained'>Listar Itens</Button>
+                        <Button endIcon={sendingUrl ? <CircularProgress color='inherit' size={20} /> : <Refresh />} onClick={() => SendUrl('https://portalsped.fazenda.mg.gov.br/portalnfce/sistema/qrcode.xhtml?p=31240503111258000153650160000955431663696391|2|1|1|00353286E1AEE9BB65C84DE432092258BF70C731', sendingUrl, setSendingUrl, dispatchAlert)} variant='contained'>Teste</Button>
                     </Stack>
                 </Box>
                 <Paper
@@ -156,7 +162,12 @@ export default function Home() {
                                     <div key={price.id}>
                                         <ListItem alignItems='flex-start'>
                                             <ListItemAvatar color='primary'>
-                                                <Avatar>
+                                                <Avatar
+                                                    onClick={() => {
+                                                        setQueryPriceHistory(price.produto);
+                                                        setShowPriceHistory(true);
+                                                    }}
+                                                >
                                                     <Assignment />
                                                 </Avatar>
                                             </ListItemAvatar>
@@ -207,6 +218,12 @@ export default function Home() {
                     </Fab>
                 )
             }
+            <ModalPriceHistory
+                open={showPriceHistory}
+                close={() => setShowPriceHistory(false)}
+                onError={(message) => { dispatchAlert({ type: 'open', message: message, severity: 'error' }) }}
+                query={queryPriceHistory}
+            />
             <CustomAlert />
             <Footer />
         </Box>

@@ -169,9 +169,9 @@ export function createListItems(doc: Document, market: Mercado, invoice: NotaFis
 
 async function handleError(error: AxiosError) {
     createLogError({
-        code: String(error.code),
+        code: error.code || 'Not specified',
         message: error.message,
-        stack: String(error.stack),
-        status: String(error.status)
+        stack: error.stack || 'Not specified',
+        status: String(error.status) || 'Not specified'
     });
 }

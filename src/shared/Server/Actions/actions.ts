@@ -1,6 +1,6 @@
 'use server'
 
-import { addListObject, addObject, getListObject } from '@/shared/service/firebase';
+import { addListObject, addObject, getListObject, getPricesByName } from '@/shared/service/firebase';
 import { createInvoice, createListItems, createMarket, createVirtualDocument } from '@/shared/util/sefaz';
 
 export async function addTaxReceipet(url: string): Promise<void> {
@@ -29,6 +29,13 @@ export async function addTaxReceipet(url: string): Promise<void> {
 
 export async function getPrices() {
     return await getListObject('precos')
+        .catch((error) => {
+            throw new Error(error);
+        });
+}
+
+export async function getListPricesByName(query: string) {
+    return await getPricesByName(query)
         .catch((error) => {
             throw new Error(error);
         });

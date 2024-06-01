@@ -1,6 +1,6 @@
-import { addTaxReceipet, getPrices } from "@/shared/Server/Actions/actions";
-import { Precos } from "@/shared/service/firebase";
-import { Dispatch, SetStateAction } from "react";
+import { Dispatch, SetStateAction } from 'react';
+import { addTaxReceipet, getPrices } from '@/shared/Server/Actions/actions';
+import { Precos } from '@/shared/service/firebase';
 
 type AlertClose = {
     type: 'close'
@@ -75,22 +75,45 @@ export async function UpdateListPrices(loading: boolean, setLoading: Dispatch<Se
     setLoading(false);
 }
 
+function CustomGetTime(date: string) {
+    const currentDate = date.split('/');
+    return new Date(`${currentDate[1]}/${currentDate[0]}/${currentDate[2]}`).getTime();
+}
+
+interface PrecosMap extends Precos {
+    quantidade: number,
+}
+
 function RemoveDuplicateProduct(originalList: Precos[]): Precos[] {
     if (originalList.length === 0)
         return originalList;
     const map: {
-        [key: string]: Precos
+        [key: string]: PrecosMap
     } = {};
 
-    originalList.forEach(preco => {
+    originalList.forEach((preco) => {
         const { produto, data, mercado } = preco;
         const key = produto + '_' + mercado;
+        const newPreco = {
+            ...preco,
+            quantidade: 1
+        }
         if (map[key]) {
-            if (new Date(data) > new Date(map[key].data)) {
-                map[key] = preco;
+            // The date has the format dd/mm/yyyy
+            const currentDate = CustomGetTime(data);
+            const listItemDate = CustomGetTime(map[key].data);
+            if (currentDate > listItemDate) {
+                const amount = map[key].quantidade;
+                newPreco.quantidade = amount + 1;
+                map[key] = newPreco;
+            } else {
+                map[key].quantidade = map[key].quantidade + 1;
             }
         } else {
-            map[key] = preco;
+            map[key] = {
+                ...preco,
+                quantidade: 1
+            };
         }
     });
     return Object.values(map);
