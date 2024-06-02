@@ -39,21 +39,21 @@ export async function SendUrl(url: string, sendingUrl: boolean, setSendingUrl: D
     }
     setSendingUrl(true);
     await addTaxReceipet(url)
-        .then(() => {
-            dispatchAlert({
-                type: 'open',
-                message: 'Obrigado pelo seu envio. Atualize a lista de preços.',
-                severity: 'success'
-            });
+        .then((response) => {
+            if (response.status === 200)
+                dispatchAlert({
+                    type: 'open',
+                    message: 'Obrigado pelo seu envio. Atualize a lista de preços.',
+                    severity: 'success'
+                });
+            else
+                dispatchAlert({
+                    type: 'open',
+                    message: response.data,
+                    severity: 'error'
+                });
+            setSendingUrl(false);
         })
-        .catch((error) => {
-            dispatchAlert({
-                type: 'open',
-                message: error.message,
-                severity: 'error'
-            });
-        })
-    setSendingUrl(false);
 };
 
 export async function UpdateListPrices(loading: boolean, setLoading: Dispatch<SetStateAction<boolean>>, setPrices: Dispatch<SetStateAction<Precos[]>>, setOriginalPrices: Dispatch<SetStateAction<Precos[]>>, dispatchAlert: Dispatch<AlertActions>) {
@@ -62,16 +62,18 @@ export async function UpdateListPrices(loading: boolean, setLoading: Dispatch<Se
     setPrices([]);
     setOriginalPrices([]);
     await getPrices()
-        .then((precos) => {
-            if (precos.length === 0)
-                dispatchAlert({ type: 'open', message: 'Não há preços cadastrados no momento.', severity: 'error' });
-            else {
-                setPrices(RemoveDuplicateProduct(precos));
-                setOriginalPrices(RemoveDuplicateProduct(precos));
+        .then((response) => {
+            if (response.status === 200) {
+                const { data } = response;
+                if (data.length === 0)
+                    dispatchAlert({ type: 'open', message: 'Não há preços cadastrados no momento.', severity: 'error' });
+                else {
+                    setPrices(RemoveDuplicateProduct(data));
+                    setOriginalPrices(RemoveDuplicateProduct(data));
+                }
+            } else {
+                dispatchAlert({ type: 'open', message: response.data, severity: 'error' });
             }
-        })
-        .catch((error) => {
-            dispatchAlert({ type: 'open', message: error.message, severity: 'error' });
         });
     setLoading(false);
 }

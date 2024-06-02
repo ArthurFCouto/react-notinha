@@ -5,10 +5,13 @@ import { CustomGetTime } from '@/shared/util';
 
 export async function UpdateChart(query: string, setPrices: Dispatch<SetStateAction<Precos[]>>, setLoading: Dispatch<SetStateAction<boolean>>, onError: Function) {
     await getListPricesByName(query)
-        .then((precos) => setPrices(OrderByDate(precos)))
-        .catch((error) => {
-            onError(error.message);
-            close();
+        .then((response) => {
+            if (response.status === 200) {
+                setPrices(OrderByDate(response.data))
+            } else {
+                onError(response.data);
+                close();
+            }
         });
     setLoading(false);
 }
