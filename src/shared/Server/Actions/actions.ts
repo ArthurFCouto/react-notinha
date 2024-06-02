@@ -23,7 +23,8 @@ export async function addTaxReceipet(url: string): Promise<void> {
         const items = createListItems(virtualDocument, market, invoice);
         await addListObject('precos', items);
     } catch (error: any) {
-        throw new Error(error);
+        return Promise.reject(new Error(error)) as any;
+        //throw new Error(error);
     }
 }
 

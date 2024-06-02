@@ -9,7 +9,7 @@ import {
 } from '@mui/material';
 import {
     Assignment, Clear, FilterList,
-    North, QrCode, Refresh
+    North, QrCode, Refresh, Timeline
 } from '@mui/icons-material';
 import { Precos } from '@/shared/service/firebase';
 import ModalQrReader from '@/shared/components/home/ModalQrReader';
@@ -130,9 +130,7 @@ export default function Home() {
                     paddingY={1}
                     width='100%'
                 >
-                    <IconButton>
-                        <FilterList />
-                    </IconButton>
+                    <FilterList sx={{ margin: 1 }} />
                     <InputBase
                         inputRef={filterRef}
                         onChange={(e) => FilterListPrices(loading, originalPrices, setPrices, e.target.value)}
@@ -162,13 +160,18 @@ export default function Home() {
                                     <div key={price.id}>
                                         <ListItem alignItems='flex-start'>
                                             <ListItemAvatar color='primary'>
+                                                <Avatar>
+                                                    <Assignment />
+                                                </Avatar>
+                                            </ListItemAvatar>
+                                            <ListItemAvatar color='success'>
                                                 <Avatar
                                                     onClick={() => {
                                                         setQueryPriceHistory(price.produto);
                                                         setShowPriceHistory(true);
                                                     }}
                                                 >
-                                                    <Assignment />
+                                                    <Timeline />
                                                 </Avatar>
                                             </ListItemAvatar>
                                             <ListItemText

@@ -1,6 +1,5 @@
 'use client';
 
-import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Box, Fab, Typography } from '@mui/material';
 import { Navigation } from '@mui/icons-material';

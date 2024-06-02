@@ -4,12 +4,15 @@ import { useEffect, useState } from 'react';
 import {
     Box, Button, Dialog, DialogActions,
     DialogContent, DialogContentText, DialogTitle,
-    Typography } from '@mui/material'
+    Stack,
+    Typography
+} from '@mui/material'
 import { Precos } from '@/shared/service/firebase';
 import lottieLoading from '@/shared/assets/loading-2.json';
 import { Player } from '@lottiefiles/react-lottie-player';
 import PriceHistoryChart from '../PriceHistoryChart';
 import { UpdateChart } from './functions';
+import { Timeline } from '@mui/icons-material';
 
 interface ModalPriceHistoryProps {
     close: () => void,
@@ -35,7 +38,9 @@ export default function ModalPriceHistory({ close, open, onError, query }: Modal
             fullWidth
         >
             <DialogTitle>
-                Histórico de Preços
+                <Stack direction='row' gap={1} alignItems='center'>
+                    Histórico de Preços <Timeline />
+                </Stack>
             </DialogTitle>
             <DialogContent dividers>
                 <Typography>

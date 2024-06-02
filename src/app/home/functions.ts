@@ -1,6 +1,7 @@
 import { Dispatch, SetStateAction } from 'react';
 import { addTaxReceipet, getPrices } from '@/shared/Server/Actions/actions';
 import { Precos } from '@/shared/service/firebase';
+import { CustomGetTime } from '@/shared/util';
 
 type AlertClose = {
     type: 'close'
@@ -73,11 +74,6 @@ export async function UpdateListPrices(loading: boolean, setLoading: Dispatch<Se
             dispatchAlert({ type: 'open', message: error.message, severity: 'error' });
         });
     setLoading(false);
-}
-
-function CustomGetTime(date: string) {
-    const currentDate = date.split('/');
-    return new Date(`${currentDate[1]}/${currentDate[0]}/${currentDate[2]}`).getTime();
 }
 
 interface PrecosMap extends Precos {
