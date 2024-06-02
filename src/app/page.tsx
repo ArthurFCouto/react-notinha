@@ -11,7 +11,7 @@ export default function Home() {
 
   const router = useRouter();
   const redirect = () => router.push('/home');
-  useEffect(() => redirect(), []);
+  //useEffect(() => redirect(), []);
 
   return (
     <Box
@@ -21,12 +21,7 @@ export default function Home() {
       height='100%'
       justifyContent='center'
       width='100%'
-      sx={{
-        backgroundImage: 'url(https://source.unsplash.com/800x600/?mercado)',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat',
-        backgroundSize: 'cover',
-      }}
+      sx={sx.mainBox}
     >
       <Typography
         color='white'
@@ -52,4 +47,14 @@ export default function Home() {
       </Fab>
     </Box>
   );
+}
+
+const sx = {
+  mainBox: {
+    backgroundImage: 'url(https://source.unsplash.com/800x600/?mercado)',
+    backgroundPosition: 'center',
+    backgroundRepeat: 'no-repeat',
+    backgroundSize: 'cover',
+    backgroundAttachment: 'fixed'
+  }
 }

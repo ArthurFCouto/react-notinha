@@ -1,8 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton } from '@mui/material'
-import { Close } from '@mui/icons-material'
+import {
+    Box, Button, Dialog, DialogActions,
+    DialogContent, DialogContentText, DialogTitle,
+    Typography } from '@mui/material'
 import { Precos } from '@/shared/service/firebase';
 import lottieLoading from '@/shared/assets/loading-2.json';
 import { Player } from '@lottiefiles/react-lottie-player';
@@ -19,45 +21,50 @@ interface ModalPriceHistoryProps {
 export default function ModalPriceHistory({ close, open, onError, query }: ModalPriceHistoryProps) {
     const [prices, setPrices] = useState<Precos[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
+
     useEffect(() => {
+        setLoading(true);
         UpdateChart(query, setPrices, setLoading, onError);
-    }, []);
+    }, [query]);
 
     return (
         <Dialog
             onClose={close}
             open={open}
+            scroll='paper'
+            fullWidth
         >
             <DialogTitle>
-                {`HISTÓRICO DE ${query}`}
+                Histórico de Preços
             </DialogTitle>
-            <IconButton
-                onClick={close}
-                sx={{
-                    position: 'absolute',
-                    right: 8,
-                    top: 8,
-                    //color: (theme) => theme.palette.grey[500],
-                }}
-            >
-                <Close />
-            </IconButton>
             <DialogContent dividers>
-                {
-                    loading ? (
-                        <Player
-                            autoplay
-                            keepLastFrame
-                            loop
-                            src={lottieLoading}
-                            style={{
-                                height: 300
-                            }}
-                        />
-                    ) : (
-                        <PriceHistoryChart prices={prices} />
-                    )
-                }
+                <Typography>
+                    Preços registrados para <strong>{query}</strong>.
+                </Typography>
+                <DialogContentText>
+                    Variação de x.xx% desde o primeiro registro.
+                </DialogContentText>
+                <Box
+                    display='flex'
+                    justifyContent='center'
+                    paddingY={2}
+                >
+                    {
+                        loading ?
+                            <Player
+                                autoplay
+                                keepLastFrame
+                                loop
+                                src={lottieLoading}
+                                style={{
+                                    height: 150,
+                                    width: 150
+                                }}
+                            />
+                            :
+                            <PriceHistoryChart height={300} prices={prices} />
+                    }
+                </Box>
             </DialogContent>
             <DialogActions>
                 <Button onClick={close} variant='contained'>
