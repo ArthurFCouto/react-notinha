@@ -118,7 +118,7 @@ export default function Home() {
                     <Stack direction='row' gap={2}>
                         <Button endIcon={sendingUrl ? <CircularProgress color='inherit' size={20} /> : <QrCode />} onClick={() => setOpenQR(true)} variant='outlined'>Escanear</Button>
                         <Button endIcon={loading ? <CircularProgress color='inherit' size={20} /> : <Refresh />} onClick={() => UpdateListPrices(loading, setLoading, setPrices, setOriginalPrices, dispatchAlert)} variant='contained'>Listar Itens</Button>
-                        <Button endIcon={sendingUrl ? <CircularProgress color='inherit' size={20} /> : <Refresh />} onClick={() => SendUrl('https://portalsped.fazenda.mg.gov.br/portalnfce/sistema/qrcode.xhtml?p=31240503111258000153650160000955431663696391|2|1|1|00353286E1AEE9BB65C84DE432092258BF70C731', sendingUrl, setSendingUrl, dispatchAlert)} variant='contained'>Teste</Button>
+                        {/*<Button endIcon={sendingUrl ? <CircularProgress color='inherit' size={20} /> : <Refresh />} onClick={() => SendUrl('https://portalsped.fazenda.mg.gov.br/portalnfce/sistema/qrcode.xhtml?p=31240503111258000153650160000955431663696391|2|1|1|00353286E1AEE9BB65C84DE432092258BF70C731', sendingUrl, setSendingUrl, dispatchAlert)} variant='contained'>Teste</Button>*/}
                     </Stack>
                 </Box>
                 <Paper
