@@ -2,21 +2,20 @@
 
 import { useEffect, useReducer, useRef, useState } from 'react';
 import {
-    Alert, Avatar, Box, Button, CircularProgress,
-    Container, Divider, Fab, IconButton, InputBase,
-    List, ListItem, ListItemAvatar, ListItemText, Paper,
-    Skeleton, Snackbar, Stack, Typography
+    Alert, Box, Button, CircularProgress,
+    Divider, Fab, IconButton, InputBase,
+    Paper, Snackbar, Stack, Typography
 } from '@mui/material';
 import {
-    Assignment, Clear, FilterList,
-    North, QrCode, Refresh, Timeline
+    Clear, FilterList,
+    HistoryEdu, North, QrCode, Refresh
 } from '@mui/icons-material';
 import { Precos } from '@/shared/service/firebase';
-import { BRCurrencyFormat } from '@/shared/util';
 import Footer from '@/shared/components/footer';
 import { FilterListPrices, HandleStateAlert, SendUrl, UpdateListPrices } from './functions';
 import ModalQrReader from '@/shared/components/home/ModalQrReader';
 import ModalPriceHistory from '@/shared/components/home/ModalPriceHistory';
+import CardItems, { CardItemsLoading } from '@/shared/components/home/CardItems';
 
 export default function Home() {
     const [loading, setLoading] = useState(false);
@@ -51,23 +50,6 @@ export default function Home() {
         </Snackbar>
     )
 
-    const LoadingSkeleton = () => (
-        <ListItem alignItems='flex-start'>
-            <ListItemAvatar color='primary'>
-                <Skeleton
-                    variant='circular'
-                    width={40}
-                    height={40}
-                    animation='wave'
-                />
-            </ListItemAvatar>
-            <ListItemText
-                primary={<Skeleton variant='text' sx={{ fontSize: '1rem' }} animation='wave' />}
-                secondary={<Skeleton variant='rectangular' animation='wave' />}
-            />
-        </ListItem>
-    )
-
     const clearFilter = () => {
         setPrices(originalPrices);
         if (filterRef.current !== null)
@@ -76,6 +58,11 @@ export default function Home() {
 
     const goToTop = () => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    const handleHistory = (query: string) => {
+        setQueryPriceHistory(query);
+        setShowPriceHistory(true);
     }
 
     useEffect(() => {
@@ -97,15 +84,25 @@ export default function Home() {
             flexDirection='column'
             height='100%'
         >
-            <Container component='main' sx={{ mt: 8, mb: 2 }} maxWidth='lg'>
-                <Typography variant='h4' gutterBottom>
-                    Bem vindo(a) ao nosso sistema ainda sem nome!
+            <Box
+                component='main'
+                padding={1}
+                maxWidth='lg'
+            >
+                <Typography
+                    variant='h4'
+                    gutterBottom
+                    sx={{
+                        alignItems: 'center',
+                        display: 'flex',
+                        justifyContent: 'start'
+                    }}
+                >
+                    Notinha
+                    <HistoryEdu fontSize='inherit' />
                 </Typography>
                 <Typography variant='h5' gutterBottom>
                     Acompanhe o preço dos produtos de mercado com informações reais e atualizadas.
-                </Typography>
-                <Typography variant='body1' gutterBottom>
-                    Se tem em mãos um cupom fiscal de mercado, baste ler o QRCode dela para atualizarmos nossos preços.
                 </Typography>
                 <Box
                     display='flex'
@@ -118,7 +115,6 @@ export default function Home() {
                     <Stack direction='row' gap={2}>
                         <Button endIcon={sendingUrl ? <CircularProgress color='inherit' size={20} /> : <QrCode />} onClick={() => setOpenQR(true)} variant='outlined'>Escanear</Button>
                         <Button endIcon={loading ? <CircularProgress color='inherit' size={20} /> : <Refresh />} onClick={() => UpdateListPrices(loading, setLoading, setPrices, setOriginalPrices, dispatchAlert)} variant='contained'>Listar Itens</Button>
-                        {/*<Button endIcon={sendingUrl ? <CircularProgress color='inherit' size={20} /> : <Refresh />} onClick={() => SendUrl('https://portalsped.fazenda.mg.gov.br/portalnfce/sistema/qrcode.xhtml?p=31240503111258000153650160000955431663696391|2|1|1|00353286E1AEE9BB65C84DE432092258BF70C731', sendingUrl, setSendingUrl, dispatchAlert)} variant='contained'>Teste</Button>*/}
                     </Stack>
                 </Box>
                 <Paper
@@ -147,61 +143,15 @@ export default function Home() {
                 </Paper>
                 {
                     loading && (
-                        <List sx={{ width: '100%', maxWidth: 500, bgcolor: 'background.paper' }}>
-                            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((item) => <LoadingSkeleton key={item} />)}
-                        </List>
+                        <CardItemsLoading amount={10} />
                     )
                 }
                 {
                     (prices.length > 0 && !loading) && (
-                        <List sx={{ width: '100%', maxWidth: 500, bgcolor: 'background.paper' }}>
-                            {
-                                prices.map((price, index) => (
-                                    <div key={price.id}>
-                                        <ListItem alignItems='flex-start'>
-                                            <ListItemAvatar color='primary'>
-                                                <Avatar>
-                                                    <Assignment />
-                                                </Avatar>
-                                            </ListItemAvatar>
-                                            <ListItemAvatar color='success'>
-                                                <Avatar
-                                                    onClick={() => {
-                                                        setQueryPriceHistory(price.produto);
-                                                        setShowPriceHistory(true);
-                                                    }}
-                                                >
-                                                    <Timeline />
-                                                </Avatar>
-                                            </ListItemAvatar>
-                                            <ListItemText
-                                                primary={`${price.produto} (${price.unidadeMedida})`}
-                                                secondary={
-                                                    <>
-                                                        <Typography
-                                                            sx={{ display: 'inline' }}
-                                                            component='span'
-                                                            variant='body2'
-                                                            color='text.primary'
-                                                        >
-                                                            {price.data}
-                                                        </Typography>
-                                                        {` — ${BRCurrencyFormat(parseFloat(price.valor))} no ${price.mercado}`}
-                                                    </>
-                                                }
-                                            />
-                                        </ListItem>
-                                        {
-                                            index < prices.length - 1 && <Divider variant='inset' component='li' />
-                                        }
-                                    </div>
-                                ))
-                            }
-                        </List>
+                        <CardItems items={prices} clickOnHistory={handleHistory} />
                     )
                 }
-            </Container>
-            
+            </Box>
             {
                 showButtonToTop && (
                     <Fab

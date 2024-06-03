@@ -46,9 +46,6 @@ export default function ModalPriceHistory({ close, open, onError, query }: Modal
                 <Typography>
                     Preços registrados para <strong>{query}</strong>.
                 </Typography>
-                <DialogContentText>
-                    Variação de x.xx% desde o primeiro registro.
-                </DialogContentText>
                 <Box
                     display='flex'
                     justifyContent='center'
@@ -70,6 +67,9 @@ export default function ModalPriceHistory({ close, open, onError, query }: Modal
                             <PriceHistoryChart height={300} prices={prices} />
                     }
                 </Box>
+                <DialogContentText>
+                    Variação de x.xx% desde o primeiro registro.
+                </DialogContentText>
             </DialogContent>
             <DialogActions>
                 <Button onClick={close} variant='contained'>
