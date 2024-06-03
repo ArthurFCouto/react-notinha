@@ -1,5 +1,5 @@
 import { Dispatch, SetStateAction } from 'react';
-import { addTaxReceipet, getPrices } from '@/shared/Server/Actions/actions';
+import { addTaxReceipet, getPrices } from '@/shared/server/Actions/actions';
 import { Precos } from '@/shared/service/firebase';
 import { CustomGetTime } from '@/shared/util';
 

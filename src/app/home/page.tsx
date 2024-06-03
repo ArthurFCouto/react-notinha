@@ -12,10 +12,10 @@ import {
     North, QrCode, Refresh, Timeline
 } from '@mui/icons-material';
 import { Precos } from '@/shared/service/firebase';
-import ModalQrReader from '@/shared/components/home/ModalQrReader';
 import { BRCurrencyFormat } from '@/shared/util';
 import Footer from '@/shared/components/footer';
 import { FilterListPrices, HandleStateAlert, SendUrl, UpdateListPrices } from './functions';
+import ModalQrReader from '@/shared/components/home/ModalQrReader';
 import ModalPriceHistory from '@/shared/components/home/ModalPriceHistory';
 
 export default function Home() {
@@ -201,11 +201,7 @@ export default function Home() {
                     )
                 }
             </Container>
-            <ModalQrReader
-                closeQr={() => setOpenQR(false)}
-                getCode={(code) => SendUrl(code, sendingUrl, setSendingUrl, dispatchAlert)}
-                openQr={openQR}
-            />
+            
             {
                 showButtonToTop && (
                     <Fab
@@ -221,10 +217,16 @@ export default function Home() {
                     </Fab>
                 )
             }
+            <ModalQrReader
+                close={() => setOpenQR(false)}
+                getCode={(code) => SendUrl(code, sendingUrl, setSendingUrl, dispatchAlert)}
+                onError={(message) => { dispatchAlert({ type: 'open', message: message, severity: 'error' }) }}
+                open={openQR}
+            />
             <ModalPriceHistory
-                open={showPriceHistory}
                 close={() => setShowPriceHistory(false)}
                 onError={(message) => { dispatchAlert({ type: 'open', message: message, severity: 'error' }) }}
+                open={showPriceHistory}
                 query={queryPriceHistory}
             />
             <CustomAlert />

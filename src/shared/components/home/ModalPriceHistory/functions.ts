@@ -1,5 +1,5 @@
 import { Dispatch, SetStateAction } from 'react';
-import { getListPricesByName } from '@/shared/Server/Actions/actions';
+import { getListPricesByName } from '@/shared/server/Actions/actions';
 import { Precos } from '@/shared/service/firebase';
 import { CustomGetTime } from '@/shared/util';
 

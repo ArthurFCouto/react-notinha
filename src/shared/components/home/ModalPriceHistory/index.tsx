@@ -32,13 +32,13 @@ export default function ModalPriceHistory({ close, open, onError, query }: Modal
 
     return (
         <Dialog
+            fullWidth
             onClose={close}
             open={open}
             scroll='paper'
-            fullWidth
         >
             <DialogTitle>
-                <Stack direction='row' gap={1} alignItems='center'>
+                <Stack alignItems='center' direction='row' gap={1}>
                     Histórico de Preços <Timeline />
                 </Stack>
             </DialogTitle>

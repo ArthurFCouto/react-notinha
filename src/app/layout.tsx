@@ -5,6 +5,7 @@ import '@fontsource/roboto/700.css';
 import { Inter } from 'next/font/google';
 import type { Metadata } from 'next';
 import { CssBaseline } from '@mui/material';
+import { AppThemeProvider } from '@/shared/context/themeContext';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -18,7 +19,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html lang='pt-BR'>
       <body className={inter.className} style={{ height: '100vh' }}>
         <CssBaseline />
-        {children}
+        <AppThemeProvider>
+          {children}
+        </AppThemeProvider>
       </body>
     </html>
   );
