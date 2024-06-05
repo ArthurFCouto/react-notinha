@@ -10,7 +10,7 @@ import {
     Clear, FilterList,
     HistoryEdu, North, QrCode, Refresh
 } from '@mui/icons-material';
-import { Precos } from '@/shared/service/firebase';
+import { Price } from '@/shared/service/firebase';
 import Footer from '@/shared/components/footer';
 import { FilterListPrices, HandleStateAlert, SendUrl, UpdateListPrices } from './functions';
 import ModalQrReader from '@/shared/components/home/ModalQrReader';
@@ -21,8 +21,8 @@ export default function Home() {
     const [loading, setLoading] = useState(false);
     const [sendingUrl, setSendingUrl] = useState(false);
     const [openQR, setOpenQR] = useState(false);
-    const [prices, setPrices] = useState<Precos[]>([]);
-    const [originalPrices, setOriginalPrices] = useState<Precos[]>([]);
+    const [prices, setPrices] = useState<Price[]>([]);
+    const [originalPrices, setOriginalPrices] = useState<Price[]>([]);
     const [showButtonToTop, setShowButtonToTop] = useState(false);
     const [showPriceHistory, setShowPriceHistory] = useState(false);
     const [queryPriceHistory, setQueryPriceHistory] = useState('');

@@ -4,11 +4,11 @@ import {
     ListItem, ListItemAvatar, ListItemIcon,
     ListItemText, Skeleton, Typography
 } from '@mui/material';
-import { Precos } from '@/shared/service/firebase';
+import { Price } from '@/shared/service/firebase';
 import { BRCurrencyFormat } from '@/shared/util';
 
 interface CardItemsProps {
-    items: Precos[],
+    items: Price[],
     clickOnHistory: (query: string) => void,
 }
 
@@ -56,7 +56,7 @@ export default function CardItems({ items, clickOnHistory }: CardItemsProps) {
     )
 }
 
-const createArrayNumbers = (amount: number) => {
+const createNumbersArray = (amount: number) => {
     const array = [];
     for (let i = 0; i < amount; i++)
         array.push(i);
@@ -95,7 +95,7 @@ export function CardItemsLoading({ amount }: Readonly<{ amount: number }>) {
     return (
         <List sx={{ width: '100%' }}>
             {
-                createArrayNumbers(amount).map((index) => <LoadingSkeleton key={index} />)
+                createNumbersArray(amount).map((index) => <LoadingSkeleton key={index} />)
             }
         </List>
     )

@@ -1,6 +1,6 @@
 import { Dispatch, SetStateAction } from 'react';
-import { addTaxReceipet, getPrices } from '@/shared/server/actions/actions';
-import { Precos } from '@/shared/service/firebase';
+import { addTaxCoupon, getPrices } from '@/shared/server/actions/actions';
+import { Price } from '@/shared/service/firebase';
 import { CustomGetTime } from '@/shared/util';
 
 type AlertClose = {
@@ -38,7 +38,7 @@ export async function SendUrl(url: string, sendingUrl: boolean, setSendingUrl: D
         return;
     }
     setSendingUrl(true);
-    await addTaxReceipet(url)
+    await addTaxCoupon(url)
         .then((response) => {
             if (response.status === 200)
                 dispatchAlert({
@@ -56,7 +56,7 @@ export async function SendUrl(url: string, sendingUrl: boolean, setSendingUrl: D
         })
 };
 
-export async function UpdateListPrices(loading: boolean, setLoading: Dispatch<SetStateAction<boolean>>, setPrices: Dispatch<SetStateAction<Precos[]>>, setOriginalPrices: Dispatch<SetStateAction<Precos[]>>, dispatchAlert: Dispatch<AlertActions>) {
+export async function UpdateListPrices(loading: boolean, setLoading: Dispatch<SetStateAction<boolean>>, setPrices: Dispatch<SetStateAction<Price[]>>, setOriginalPrices: Dispatch<SetStateAction<Price[]>>, dispatchAlert: Dispatch<AlertActions>) {
     if (loading) return;
     setLoading(true);
     setPrices([]);
@@ -78,46 +78,30 @@ export async function UpdateListPrices(loading: boolean, setLoading: Dispatch<Se
     setLoading(false);
 }
 
-interface PrecosMap extends Precos {
-    quantidade: number,
-}
-
-function RemoveDuplicateProduct(originalList: Precos[]): Precos[] {
+function RemoveDuplicateProduct(originalList: Price[]): Price[] {
     if (originalList.length === 0)
         return originalList;
     const map: {
-        [key: string]: PrecosMap
+        [key: string]: Price
     } = {};
 
     originalList.forEach((preco) => {
         const { produto, data, mercado } = preco;
         const key = produto + '_' + mercado;
-        const newPreco = {
-            ...preco,
-            quantidade: 1
-        }
         if (map[key]) {
             // The date has the format dd/mm/yyyy
             const currentDate = CustomGetTime(data);
             const listItemDate = CustomGetTime(map[key].data);
-            if (currentDate > listItemDate) {
-                const amount = map[key].quantidade;
-                newPreco.quantidade = amount + 1;
-                map[key] = newPreco;
-            } else {
-                map[key].quantidade = map[key].quantidade + 1;
-            }
+            if (currentDate > listItemDate) 
+                map[key] = preco;
         } else {
-            map[key] = {
-                ...preco,
-                quantidade: 1
-            };
+            map[key] = preco;
         }
     });
     return Object.values(map);
 }
 
-export function FilterListPrices(loading: boolean, originalPrices: Precos[], setPrices: Dispatch<SetStateAction<Precos[]>>, value: string) {
+export function FilterListPrices(loading: boolean, originalPrices: Price[], setPrices: Dispatch<SetStateAction<Price[]>>, value: string) {
     if (originalPrices.length === 0 || loading) return
     setPrices(originalPrices.filter((price) => (price.mercado.toLowerCase().includes(value.toLowerCase()) || price.produto.toLowerCase().includes(value.toLowerCase()) || price.data.toLowerCase().includes(value.toLowerCase()))));
 }
