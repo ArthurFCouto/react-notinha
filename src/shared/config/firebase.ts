@@ -10,12 +10,6 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_MEASUREMENTID
 };
 
-export interface FirebaseUser {
-  name: string;
-  email: string;
-  password: string;
-};
-
 export const messageError = (message: string) => {
   let response = 'Houve um erro inesperado, tente mais tarde.';
   const errors = {
@@ -23,13 +17,13 @@ export const messageError = (message: string) => {
     'auth/invalid-email': 'Favor informar um email válido.',
     'auth/email-already-in-use': 'Este e-mail já está sendo utilizado.',
     'auth/weak-password': 'A senha deve ter no mínimo 6 caracteres.'
-  }
+  };
   for (const [key, value] of Object.entries(errors)) {
     if (key === message) {
       response = value;
-      break
+      break;
     }
-  }
+  };
   return response;
 }
 

@@ -8,7 +8,8 @@ export function ConvertStringToNumber(value: string) {
 }
 
 /**
- *Retorna a data no formato DD/MM/AAAA
+ * @param date Do tipo Date
+ * @returns string no formato de data BR dd/mm/aaaa
  */
 export function FormatDate(date: Date) {
     const day = String(date.getDate()).padStart(2, '0');
@@ -18,8 +19,7 @@ export function FormatDate(date: Date) {
 }
 
 /**
- * 
- * @param date No formato 'dd/mm/aaaa'
+ * @param date Do tipo string no formato BR dd/mm/aaaa
  * @returns Timestamp
  */
 export function CustomGetTime(date: string) {

@@ -1,16 +1,16 @@
 import axios, { AxiosError } from 'axios';
 import jsdom from 'jsdom';
-import { Mercado, NotaFiscal, Precos, checkExistObject, createLogError } from '@/shared/service/firebase';
+import { checkExistObject, createLogError, Invoice, Market, Price } from '@/shared/service/firebase';
 import { ConvertStringToNumber, FormatDate } from '..';
 
 interface PricesWork {
-    [index: string]: Precos
+    [index: string]: Price
 }
 
 /**
-  * Verifica se a URL é válida
-  */
-function checkURL(url: string) {
+ * Verifica se a URL enviada é válida
+ */
+function CheckUrl(url: string) {
     const regex = /portalsped\.fazenda\.mg\.gov\.br\/portalnfce\/sistema\/qrcode\.xhtml\?p=/;
     return regex.test(url);
 }
@@ -48,8 +48,7 @@ function getNumberCNPJ(doc: Document) {
   * Cria um document virtual para tratar os dados da página da SEFAZ
   */
 export async function createVirtualDocument(url: string): Promise<Document> {
-    'use server'
-    if (!checkURL(url))
+    if (!CheckUrl(url))
         throw (`Este QR Code não é válido para nosso sistema.`);
     const { JSDOM } = jsdom;
     return await axios.get(url)
@@ -65,10 +64,9 @@ export async function createVirtualDocument(url: string): Promise<Document> {
 }
 
 /**
-  * Retorna um objeto do tipo Mercado
+  * Retorna um objeto do tipo Market
   */
-export async function createMarket(doc: Document): Promise<Mercado> {
-    'use server'
+export async function createMarket(doc: Document): Promise<Market> {
     const cnpj = getNumberCNPJ(doc);
     const market = await checkExistObject('mercado', cnpj);
     if (market)
@@ -90,7 +88,7 @@ export async function createMarket(doc: Document): Promise<Mercado> {
                 nomeFantasia: data.fantasia,
                 numero: data.numero,
                 razaoSocial: data.nome
-            } as Mercado;
+            } as Market;
         })
         .catch((error: AxiosError) => {
             handleError(error);
@@ -101,8 +99,7 @@ export async function createMarket(doc: Document): Promise<Mercado> {
 /**
   * Retorna um objeto do tipo Nota Fiscal
   */
-export async function createInvoice(doc: Document, url: string): Promise<NotaFiscal> {
-    'use server'
+export async function createInvoice(doc: Document, url: string): Promise<Invoice> {
     const key = getKeyInvoice(doc);
     const invoice = await checkExistObject('notaFiscal', key);
     if (invoice)
@@ -129,7 +126,7 @@ export async function createInvoice(doc: Document, url: string): Promise<NotaFis
 /**
   * Retorna uma lista dos itens da Nota Fiscal (sem repetição)
   */
-export function createListItems(doc: Document, market: Mercado, invoice: NotaFiscal): Array<Precos> {
+export function createListItems(doc: Document, market: Market, invoice: Invoice): Array<Price> {
     try {
         const element = doc.querySelector('.table.table-striped') as Element;
         const items: PricesWork = {};

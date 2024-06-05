@@ -1,15 +1,18 @@
-import { addDoc, collection, doc, getDocs, getFirestore, orderBy, query, where, writeBatch } from 'firebase/firestore';
-import firebase from '@/shared/config/firebase';
+import {
+    addDoc, collection, doc, getDocs,
+    getFirestore, orderBy, query, where, writeBatch
+} from 'firebase/firestore';
 import { FirebaseError } from 'firebase/app';
+import firebase from '@/shared/config/firebase';
 
-export interface LogError {
+export interface ErrorLog {
     code: string,
     message: string,
     stack: string,
     status: string,
 }
 
-export interface Mercado {
+export interface Market {
     id?: string,
     CEP: string,
     CNPJ: string,
@@ -22,12 +25,12 @@ export interface Mercado {
     razaoSocial: string
 }
 
-interface MercadoFirebase {
-    path: 'mercado',
-    doc: Mercado
+interface MarketFirebase {
+    name: 'mercado',
+    data: Market[]
 }
 
-export interface NotaFiscal {
+export interface Invoice {
     id?: string,
     CNPJ: string,
     chave: string,
@@ -36,12 +39,12 @@ export interface NotaFiscal {
     userID: string | null
 }
 
-interface NotaFiscalFirebase {
-    path: 'notaFiscal',
-    doc: NotaFiscal
+interface InvoiceFirebase {
+    name: 'notaFiscal',
+    data: Invoice[]
 }
 
-export interface Precos {
+export interface Price {
     id?: string,
     data: string,
     idMercado: string,
@@ -52,39 +55,47 @@ export interface Precos {
     valor: string,
 }
 
-interface PrecosFirebase {
-    path: 'precos',
-    doc: Precos
+interface PriceFirebase {
+    name: 'precos',
+    data: Price[]
 }
 
-export async function addObject(data: MercadoFirebase | NotaFiscalFirebase | PrecosFirebase) {
-    const { doc } = data;
-    delete doc.id;
+export async function addObject(name: 'mercado', data: Market): Promise<string>;
+
+export async function addObject(name: 'notaFiscal', data: Invoice): Promise<string>;
+
+export async function addObject(name: 'precos', data: Price): Promise<string>;
+
+export async function addObject(name: 'mercado' | 'notaFiscal' | 'precos', data: Market | Invoice | Price) {
+    delete data.id;
     const database = getFirestore(firebase);
-    return await addDoc(collection(database, data.path), doc)
+    return await addDoc(collection(database, name), data)
         .then((response) => {
             return response.id as string;
         })
         .catch((error: FirebaseError) => {
-            throw (`Erro ao cadastrar ${data.path}. ${error.message}`);
+            throw (`Erro ao cadastrar ${name}. ${error.message}`);
         });
 }
 
-export async function addListObject(path: 'mercado' | 'notaFiscal' | 'precos', data: Mercado[] | NotaFiscal[] | Precos[]) {
+export async function addListObject(object: MarketFirebase | InvoiceFirebase | PriceFirebase) {
+    const { data, name } = object;
     const database = getFirestore(firebase);
     const batch = writeBatch(database);
-    data.forEach((item) => {
+    data.forEach(async (item) => {
+        if(name == 'precos' && await checkIfPriceExist(item as Price)) 
+            return;
         delete item.id;
-        const ref = doc(collection(database, path));
+        const ref = doc(collection(database, name));
         batch.set(ref, item);
     })
     return await batch.commit()
         .catch((error: FirebaseError) => {
-            throw (`Erro ao cadastrar lista de ${path}. ${error.message}`);
+            throw (`Erro ao cadastrar lista de ${name}. ${error.message}`);
         });
 }
 
-export async function createLogError(log: LogError) {
+export async function createErrorLog(log: ErrorLog) {
     const data = {
         ...log,
         date: new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString()
@@ -92,25 +103,25 @@ export async function createLogError(log: LogError) {
     const database = getFirestore(firebase);
     await addDoc(collection(database, 'logs'), data)
         .catch((error: FirebaseError) => {
-            console.log('Erro ao armazenar log de erro.', { error });
+            console.log('Erro ao armazenar log de erro.', error);
         });
 }
 
-export async function getListObject(data: 'mercado'): Promise<Mercado[]>;
+export async function getObjectList(name: 'mercado'): Promise<Market[]>;
 
-export async function getListObject(data: 'notaFiscal'): Promise<NotaFiscal[]>;
+export async function getObjectList(name: 'notaFiscal'): Promise<Invoice[]>;
 
-export async function getListObject(data: 'precos'): Promise<Precos[]>;
+export async function getObjectList(name: 'precos'): Promise<Price[]>;
 
-export async function getListObject(data: 'mercado' | 'notaFiscal' | 'precos'): Promise<Mercado[] | NotaFiscal[] | Precos[]> {
+export async function getObjectList(name: 'mercado' | 'notaFiscal' | 'precos'): Promise<Market[] | Invoice[] | Price[]> {
     const order = {
         'mercado': 'nomeFantasia',
         'precos': 'produto',
         'notaFiscal': 'data'
     };
     const database = getFirestore(firebase);
-    const collectionRef = query(collection(database, data), orderBy(order[data]));
-    return await getDocs(collectionRef)
+    const ref = query(collection(database, name), orderBy(order[name]));
+    return await getDocs(ref)
         .then((response) => {
             return response.docs.map((doc) => {
                 const object = doc.data();
@@ -118,10 +129,10 @@ export async function getListObject(data: 'mercado' | 'notaFiscal' | 'precos'): 
                     id: doc.id,
                     ...object
                 }
-            }) as Mercado[] | NotaFiscal[] | Precos[];
+            }) as Market[] | Invoice[] | Price[];
         })
         .catch((error: FirebaseError) => {
-            createLogError({
+            createErrorLog({
                 code: String(error.code),
                 message: error.message,
                 stack: String(error.stack),
@@ -131,23 +142,24 @@ export async function getListObject(data: 'mercado' | 'notaFiscal' | 'precos'): 
         });
 }
 
-export async function checkExistObject(data: 'mercado', path: string): Promise<Mercado | false>;
+export async function checkIfObjectExist(name: 'mercado', data: string): Promise<Market | false>;
 
-export async function checkExistObject(data: 'notaFiscal', path: string): Promise<NotaFiscal | false>;
+export async function checkIfObjectExist(name: 'notaFiscal', data: string): Promise<Invoice | false>;
+
 /**
  * Retorna se um mercado ou nota fiscal está cadastrado
- * @param data Deve ser 'mercado' ou 'notaFiscal'
- * @param path Deve ser o CNPJ ou a CHAVE da nota fiscal
+ * @param name Deve ser 'mercado' ou 'notaFiscal'
+ * @param data Deve ser o CNPJ ou a CHAVE da nota fiscal
  * @returns Um objeto Mercado ou Nota Fiscal, ou false quando não existir
  */
-export async function checkExistObject(data: 'mercado' | 'notaFiscal', path: string): Promise<Mercado | NotaFiscal | false> {
-    const order = {
+export async function checkIfObjectExist(name: 'mercado' | 'notaFiscal', data: string): Promise<Market | Invoice | false> {
+    const field = {
         'mercado': 'CNPJ',
         'notaFiscal': 'chave'
     };
     const database = getFirestore(firebase);
-    const collectionRef = query(collection(database, data), where(order[data], '==', path));
-    return await getDocs(collectionRef)
+    const ref = query(collection(database, data), where(field[name], '==', data));
+    return await getDocs(ref)
         .then((response) => {
             const list = response.docs.map((doc) => {
                 const object = doc.data();
@@ -157,18 +169,18 @@ export async function checkExistObject(data: 'mercado' | 'notaFiscal', path: str
                 }
             });
             if (list.length > 0)
-                return list[0] as Mercado | NotaFiscal;
+                return list[0] as Market | Invoice;
             return false
         })
         .catch((error: FirebaseError) => {
-            throw (`Erro ao verificar se ${data} já está cadastrado(a). ${error.message}`)
+            throw (`Erro ao verificar se ${name} já está cadastrado(a). ${error.message}`)
         });
 }
 
-export async function getPricesByName(data: string): Promise<Precos[]> {
+export async function getPriceListByName(data: string): Promise<Price[]> {
     const database = getFirestore(firebase);
-    const collectionRef = query(collection(database, 'precos'), where('produto', '==', data));
-    return await getDocs(collectionRef)
+    const ref = query(collection(database, 'precos'), where('produto', '==', data));
+    return await getDocs(ref)
         .then((response) => {
             return response.docs.map((doc) => {
                 const object = doc.data();
@@ -176,15 +188,29 @@ export async function getPricesByName(data: string): Promise<Precos[]> {
                     id: doc.id,
                     ...object
                 }
-            }) as Precos[];
+            }) as Price[];
         })
         .catch((error: FirebaseError) => {
-            createLogError({
+            createErrorLog({
                 code: String(error.code),
                 message: error.message,
                 stack: String(error.stack),
                 status: String(error.name)
             });
             throw (`Erro ao buscar a preços pelo nome. ${error.message}`);
+        });
+}
+
+async function checkIfPriceExist(object: Price): Promise<boolean> {
+    const {data, idMercado, produto, valor} = object;
+    const database = getFirestore(firebase);
+    const ref = query(collection(database, 'precos'), where('data', '==', data), where('idMercado', '==', idMercado), where('produto', '==', produto), where('valor', '==', valor));
+    return await getDocs(ref)
+        .then((response) => {
+            const list = response.docs.map((doc) => doc.data());
+            return list.length > 0;
+        })
+        .catch((error: FirebaseError) => {
+            throw (`Erro ao verificar se ${name} já está cadastrado(a). ${error.message}`)
         });
 }
