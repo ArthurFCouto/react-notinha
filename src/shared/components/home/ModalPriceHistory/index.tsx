@@ -4,15 +4,14 @@ import { useEffect, useState } from 'react';
 import {
     Box, Button, Dialog, DialogActions,
     DialogContent, DialogContentText, DialogTitle,
-    Stack,
-    Typography
+    Stack, Typography
 } from '@mui/material'
-import { Precos } from '@/shared/service/firebase';
-import lottieLoading from '@/shared/assets/loading-2.json';
 import { Player } from '@lottiefiles/react-lottie-player';
+import { Timeline } from '@mui/icons-material';
+import { Price } from '@/shared/service/firebase';
+import lottieLoading from '@/shared/assets/loading-2.json';
 import PriceHistoryChart from '../PriceHistoryChart';
 import { UpdateChart } from './functions';
-import { Timeline } from '@mui/icons-material';
 
 interface ModalPriceHistoryProps {
     close: () => void,
@@ -22,12 +21,13 @@ interface ModalPriceHistoryProps {
 }
 
 export default function ModalPriceHistory({ close, open, onError, query }: ModalPriceHistoryProps) {
-    const [prices, setPrices] = useState<Precos[]>([]);
+    const [prices, setPrices] = useState<Price[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
+    const [variation, setVariation] = useState(0);
 
     useEffect(() => {
         setLoading(true);
-        UpdateChart(query, setPrices, setLoading, onError);
+        UpdateChart(onError, query, setLoading, setPrices, setVariation);
     }, [query]);
 
     return (
@@ -68,7 +68,7 @@ export default function ModalPriceHistory({ close, open, onError, query }: Modal
                     }
                 </Box>
                 <DialogContentText>
-                    Variação de x.xx% desde o primeiro registro.
+                    Variação de {variation}% desde o primeiro registro.
                 </DialogContentText>
             </DialogContent>
             <DialogActions>

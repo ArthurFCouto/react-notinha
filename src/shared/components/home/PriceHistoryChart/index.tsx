@@ -1,5 +1,5 @@
 import { Stack } from '@mui/material';
-import { Precos } from '@/shared/service/firebase';
+import { Price } from '@/shared/service/firebase';
 import {
     Area, AreaChart, CartesianGrid,
     ResponsiveContainer, Tooltip, YAxis, XAxis
@@ -7,7 +7,7 @@ import {
 
 interface PriceHistoryChartProps {
     height: number,
-    prices: Precos[]
+    prices: Price[]
 }
 
 interface CustomizedProps {
@@ -48,5 +48,4 @@ export default function PriceHistoryChart({ height, prices }: PriceHistoryChartP
             </ResponsiveContainer>
         </Stack>
     )
-
 }

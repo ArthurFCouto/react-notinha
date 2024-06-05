@@ -7,7 +7,6 @@ import {
 import { QrCodeScanner } from '@mui/icons-material';
 import QrReader from '../QrReader';
 
-
 interface ModalQrReaderProps {
     close: () => void,
     getCode: (url: string) => void,
