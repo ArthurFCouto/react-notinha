@@ -1,6 +1,6 @@
 import { Dispatch, SetStateAction } from 'react';
 import { Price } from '@/shared/service/firebase';
-import { getPricesByName } from '@/shared/server/actions/actions';
+import { getPricesByName } from '@/shared/server/actions';
 import { ConvertStringToNumber, CustomGetTime } from '@/shared/util';
 
 export async function UpdateChart(onError: Function, query: string, setLoading: Dispatch<SetStateAction<boolean>>, setPrices: Dispatch<SetStateAction<Price[]>>, setVariation: Dispatch<SetStateAction<number>>) {
