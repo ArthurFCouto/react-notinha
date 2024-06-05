@@ -1,6 +1,6 @@
 'use server'
 
-import { addListObject, addObject, getListObject, getPricesByName } from '@/shared/service/firebase';
+import { addListObject, addObject, getObjectList, getPriceListByName } from '@/shared/service/firebase';
 import { createInvoice, createListItems, createMarket, createVirtualDocument } from '@/shared/util/sefaz';
 
 interface Response {
@@ -8,25 +8,22 @@ interface Response {
     data: any
 }
 
-export async function addTaxReceipet(url: string): Promise<Response> {
+export async function addTaxCoupon(url: string): Promise<Response> {
     try {
         const virtualDocument = await createVirtualDocument(url);
         const market = await createMarket(virtualDocument);
         if (!market.id) {
-            const idMarket = await addObject({
-                path: 'mercado',
-                doc: market
-            });
+            const idMarket = await addObject('mercado', market);
             market.id = idMarket;
         }
         const invoice = await createInvoice(virtualDocument, url)
-        const idInvoice = await addObject({
-            path: 'notaFiscal',
-            doc: invoice
-        });
+        const idInvoice = await addObject('notaFiscal', invoice);
         invoice.id = idInvoice;
         const items = createListItems(virtualDocument, market, invoice);
-        await addListObject('precos', items);
+        await addListObject({
+            name: 'precos',
+            data: items
+        });
         return {
             status: 200,
             data: ''
@@ -43,7 +40,7 @@ export async function addTaxReceipet(url: string): Promise<Response> {
 
 export async function getPrices() {
     try {
-        const list = await getListObject('precos');
+        const list = await getObjectList('precos');
         return {
             status: 200,
             data: list
@@ -56,9 +53,9 @@ export async function getPrices() {
     }
 }
 
-export async function getListPricesByName(query: string) {
+export async function getPricesByName(query: string) {
     try {
-        const list = await getPricesByName(query);
+        const list = await getPriceListByName(query);
         return {
             status: 200,
             data: list
