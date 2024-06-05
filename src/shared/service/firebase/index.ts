@@ -36,7 +36,8 @@ export interface Invoice {
     chave: string,
     data: string,
     url: string,
-    userID: string | null
+    userID: string | null,
+    valorTotal: string
 }
 
 interface InvoiceFirebase {
@@ -99,7 +100,7 @@ export async function createErrorLog(log: ErrorLog) {
     const data = {
         ...log,
         date: new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString()
-    }
+    };
     const database = getFirestore(firebase);
     await addDoc(collection(database, 'logs'), data)
         .catch((error: FirebaseError) => {
@@ -173,7 +174,7 @@ export async function checkIfObjectExist(name: 'mercado' | 'notaFiscal', data: s
             return false
         })
         .catch((error: FirebaseError) => {
-            throw (`Erro ao verificar se ${name} já está cadastrado(a). ${error.message}`)
+            throw (`Erro ao verificar se ${name} já está cadastrado(a). ${error.message}`);
         });
 }
 
@@ -211,6 +212,6 @@ async function checkIfPriceExist(object: Price): Promise<boolean> {
             return list.length > 0;
         })
         .catch((error: FirebaseError) => {
-            throw (`Erro ao verificar se ${name} já está cadastrado(a). ${error.message}`)
+            throw (`Erro ao verificar se ${produto} já está cadastrado(a). ${error.message}`);
         });
 }

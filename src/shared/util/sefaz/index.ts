@@ -1,24 +1,22 @@
 import axios, { AxiosError } from 'axios';
 import jsdom from 'jsdom';
-import { checkExistObject, createLogError, Invoice, Market, Price } from '@/shared/service/firebase';
+import { checkIfObjectExist, createErrorLog, Invoice, Market, Price } from '@/shared/service/firebase';
 import { ConvertStringToNumber, FormatDate } from '..';
 
 interface PricesWork {
     [index: string]: Price
 }
 
-/**
- * Verifica se a URL enviada é válida
- */
+
 function CheckUrl(url: string) {
     const regex = /portalsped\.fazenda\.mg\.gov\.br\/portalnfce\/sistema\/qrcode\.xhtml\?p=/;
     return regex.test(url);
 }
 
 /**
-  * Retorna a chave da Nota Fiscal (somente numeros)
+  * Retorna a chave de acesso da Nota Fiscal (somente numeros)
   */
-function getKeyInvoice(doc: Document) {
+function getInvoiceKey(doc: Document) {
     try {
         const element = doc.getElementById('collapseTwo') as HTMLElement;
         const key = element.querySelector('table tbody tr:first-of-type td')?.textContent;
@@ -63,12 +61,9 @@ export async function createVirtualDocument(url: string): Promise<Document> {
         });
 }
 
-/**
-  * Retorna um objeto do tipo Market
-  */
 export async function createMarket(doc: Document): Promise<Market> {
     const cnpj = getNumberCNPJ(doc);
-    const market = await checkExistObject('mercado', cnpj);
+    const market = await checkIfObjectExist('mercado', cnpj);
     if (market)
         return market;
 
@@ -96,12 +91,9 @@ export async function createMarket(doc: Document): Promise<Market> {
         });
 };
 
-/**
-  * Retorna um objeto do tipo Nota Fiscal
-  */
 export async function createInvoice(doc: Document, url: string): Promise<Invoice> {
-    const key = getKeyInvoice(doc);
-    const invoice = await checkExistObject('notaFiscal', key);
+    const key = getInvoiceKey(doc);
+    const invoice = await checkIfObjectExist('notaFiscal', key);
     if (invoice)
         throw ('Este cupom já está cadastrado.');
     try {
@@ -110,12 +102,17 @@ export async function createInvoice(doc: Document, url: string): Promise<Invoice
         const line = table.querySelector('tbody tr') as Element;
         const columns = line.querySelectorAll('td');
         const date = columns[3].textContent || FormatDate(new Date());
+        const tableTwo = element.querySelector('table:nth-child(10)') as Element;
+        const lineTwo = tableTwo.querySelector('tbody tr') as Element;
+        const column = lineTwo.querySelector('td');
+        const totalPrice = ConvertStringToNumber(String(column?.textContent)).toFixed(2);
         return {
             CNPJ: getNumberCNPJ(doc),
-            chave: String(key).replace(/[^\d]/g, ''),
+            chave: key,
             data: date.slice(0, 10),
             url,
-            userID: null
+            userID: null,
+            valorTotal: totalPrice
         };
     } catch (error: any) {
         handleError(error);
@@ -165,7 +162,7 @@ export function createListItems(doc: Document, market: Market, invoice: Invoice)
 }
 
 async function handleError(error: AxiosError) {
-    createLogError({
+    createErrorLog({
         code: error.code || 'Not specified',
         message: error.message,
         stack: error.stack || 'Not specified',
