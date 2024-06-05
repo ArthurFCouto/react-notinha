@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import {
-    Box, Button, Dialog, DialogActions,
+    Box, Button, CircularProgress, Dialog, DialogActions,
     DialogContent, DialogContentText, DialogTitle,
     Stack, Typography
 } from '@mui/material'
@@ -68,7 +68,9 @@ export default function ModalPriceHistory({ close, open, onError, query }: Modal
                     }
                 </Box>
                 <DialogContentText>
-                    Variação de {variation}% desde o primeiro registro.
+                    <Stack alignItems='center' direction='row' gap={1}>
+                        Desde o primeiro registro, variação de <strong style={{ color: variation < 0 ? 'green' : 'red' }}>{loading ? <CircularProgress color='inherit' size={17} /> : `${variation}%.`}</strong>
+                    </Stack>
                 </DialogContentText>
             </DialogContent>
             <DialogActions>

@@ -27,8 +27,10 @@ function OrderByDate(list: Price[]) {
 }
 
 function CalculateVariance(list: Price[]) {
+    if(list.length === 0 || list.length === 1)
+        return 0;
     const length = list.length;
     const prev = ConvertStringToNumber(list[0].valor);
     const last = ConvertStringToNumber(list[length-1].valor);
-    return ConvertStringToNumber(((prev-last)/prev*100).toFixed(2));
+    return parseFloat(((last-prev)/prev*100).toFixed(2));
 }

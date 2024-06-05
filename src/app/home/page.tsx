@@ -80,6 +80,7 @@ export default function Home() {
 
     return (
         <Box
+            alignItems='center'
             display='flex'
             flexDirection='column'
             height='100%'

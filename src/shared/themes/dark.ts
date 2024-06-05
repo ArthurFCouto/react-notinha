@@ -2,9 +2,6 @@ import { createTheme } from '@mui/material';
 
 const DarkTheme = createTheme({
     typography: {
-        allVariants: {
-            color: 'black',
-        },
         fontFamily: [
             '"lato"',
             '"Montserrat"',
