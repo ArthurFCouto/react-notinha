@@ -1,6 +1,6 @@
 import { createTheme } from '@mui/material';
 
-export const DarkTheme = createTheme({
+const DarkTheme = createTheme({
     typography: {
         allVariants: {
             color: 'black',
@@ -14,3 +14,5 @@ export const DarkTheme = createTheme({
         ].join(','),
     }
 });
+
+export default DarkTheme;
