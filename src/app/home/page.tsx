@@ -71,7 +71,9 @@ export default function Home() {
         }
         window.addEventListener('scroll', handleShowToTopButton);
 
-        UpdateListPrices(loading, setLoading, setPrices, setOriginalPrices, dispatchAlert);
+        //UpdateListPrices(loading, setLoading, setPrices, setOriginalPrices, dispatchAlert);
+
+        clearFilter();
 
         return () => {
             window.addEventListener('scroll', handleShowToTopButton);
@@ -115,6 +117,7 @@ export default function Home() {
                 >
                     <Stack direction='row' gap={2}>
                         <Button endIcon={sendingUrl ? <CircularProgress color='inherit' size={20} /> : <QrCode />} onClick={() => setOpenQR(true)} variant='outlined'>Escanear</Button>
+                        {/*<Button endIcon={sendingUrl ? <CircularProgress color='inherit' size={20} /> : <QrCode />} onClick={() => SendUrl('https://portalsped.fazenda.mg.gov.br/portalnfce/sistema/qrcode.xhtml?p=31240602274225000161650040003274431807746699|2|1|1|b8c056a83232d3b5eae81417e191275d3473f9a1', sendingUrl, setSendingUrl, dispatchAlert)} variant='outlined'>Teste</Button> */}
                         <Button endIcon={loading ? <CircularProgress color='inherit' size={20} /> : <Refresh />} onClick={() => UpdateListPrices(loading, setLoading, setPrices, setOriginalPrices, dispatchAlert)} variant='contained'>Listar Itens</Button>
                     </Stack>
                 </Box>
@@ -133,6 +136,7 @@ export default function Home() {
                         onChange={(e) => FilterListPrices(loading, originalPrices, setPrices, e.target.value)}
                         placeholder='Filtrar esta lista'
                         sx={{ flex: 1 }}
+                        disabled={originalPrices.length === 0 ? true : false}
                     />
                     <Divider sx={{ height: '30px' }} orientation='vertical' />
                     <IconButton

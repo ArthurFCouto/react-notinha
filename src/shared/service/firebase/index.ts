@@ -75,23 +75,60 @@ export async function addObject(name: 'mercado' | 'notaFiscal' | 'precos', data:
             return response.id as string;
         })
         .catch((error: FirebaseError) => {
+            createErrorLog({
+                code: String(error.code),
+                message: error.message,
+                stack: String(error.stack),
+                status: String(error.name)
+            });
             throw (`Erro ao cadastrar ${name}. ${error.message}`);
         });
 }
 
 export async function addListObject(object: MarketFirebase | InvoiceFirebase | PriceFirebase) {
     const { data, name } = object;
+    if (name === 'precos')
+        return addListPrice(data);
     const database = getFirestore(firebase);
     const batch = writeBatch(database);
     data.forEach(async (item) => {
-        if(name == 'precos' && await checkIfPriceExist(item as Price)) 
-            return;
         delete item.id;
         const ref = doc(collection(database, name));
         batch.set(ref, item);
     })
     return await batch.commit()
         .catch((error: FirebaseError) => {
+            createErrorLog({
+                code: String(error.code),
+                message: error.message,
+                stack: String(error.stack),
+                status: String(error.name)
+            });
+            throw (`Erro ao cadastrar lista de ${name}. ${error.message}`);
+        });
+}
+
+async function addListPrice(data: Price[]) {
+    const database = getFirestore(firebase);
+    const batch = writeBatch(database);
+    const listPricesOfTheDay = await getPriceListByDate(data[0].data)
+        .then((prices) => prices.map((price) => `${price.produto}_${price.idMercado}_${price.valor}`));
+    data.forEach(async (item) => {
+        const key = `${item.produto}_${item.idMercado}_${item.valor}`;
+        if (listPricesOfTheDay.includes(key))
+            return;
+        delete item.id;
+        const ref = doc(collection(database, 'precos'));
+        batch.set(ref, item);
+    })
+    return await batch.commit()
+        .catch((error: FirebaseError) => {
+            createErrorLog({
+                code: String(error.code),
+                message: error.message,
+                stack: String(error.stack),
+                status: String(error.name)
+            });
             throw (`Erro ao cadastrar lista de ${name}. ${error.message}`);
         });
 }
@@ -174,6 +211,12 @@ export async function checkIfObjectExist(name: 'mercado' | 'notaFiscal', data: s
             return false
         })
         .catch((error: FirebaseError) => {
+            createErrorLog({
+                code: String(error.code),
+                message: error.message,
+                stack: String(error.stack),
+                status: String(error.name)
+            });
             throw (`Erro ao verificar se ${name} já está cadastrado(a). ${error.message}`);
         });
 }
@@ -202,16 +245,31 @@ export async function getPriceListByName(data: string): Promise<Price[]> {
         });
 }
 
-async function checkIfPriceExist(object: Price): Promise<boolean> {
-    const {data, idMercado, produto, valor} = object;
+/**
+ * Retorna a lista de preços cadastrados no dia informado
+ * @param date Data padrão BR dd/mm/aaaa
+ * @returns lista do tipo Price
+ */
+async function getPriceListByDate(date: string): Promise<Price[]> {
     const database = getFirestore(firebase);
-    const ref = query(collection(database, 'precos'), where('data', '==', data), where('idMercado', '==', idMercado), where('produto', '==', produto), where('valor', '==', valor));
+    const ref = query(collection(database, 'precos'), where('data', '==', date));
     return await getDocs(ref)
         .then((response) => {
-            const list = response.docs.map((doc) => doc.data());
-            return list.length > 0;
+            return response.docs.map((doc) => {
+                const object = doc.data();
+                return {
+                    id: doc.id,
+                    ...object
+                }
+            }) as Price[];
         })
         .catch((error: FirebaseError) => {
-            throw (`Erro ao verificar se ${produto} já está cadastrado(a). ${error.message}`);
+            createErrorLog({
+                code: String(error.code),
+                message: error.message,
+                stack: String(error.stack),
+                status: String(error.name)
+            });
+            throw (`Erro ao buscar a preços pelo data. ${error.message}`);
         });
 }

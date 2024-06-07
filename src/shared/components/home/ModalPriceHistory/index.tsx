@@ -67,10 +67,8 @@ export default function ModalPriceHistory({ close, open, onError, query }: Modal
                             <PriceHistoryChart height={300} prices={prices} />
                     }
                 </Box>
-                <DialogContentText>
-                    <Stack alignItems='center' direction='row' gap={1}>
-                        Desde o primeiro registro, variação de <strong style={{ color: variation < 0 || variation === 0 ? 'green' : 'red' }}>{loading ? <CircularProgress color='inherit' size={17} /> : `${variation}%.`}</strong>
-                    </Stack>
+                <DialogContentText >
+                        Desde o primeiro registro, variação de <strong style={{ color: variation < 0 || variation === 0 ? 'green' : 'red' }}>{loading ? <CircularProgress color='inherit' size={17} /> : `${variation}%`}</strong>.
                 </DialogContentText>
             </DialogContent>
             <DialogActions>

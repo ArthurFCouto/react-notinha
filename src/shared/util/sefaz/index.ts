@@ -164,7 +164,7 @@ export function createListItems(doc: Document, market: Market, invoice: Invoice)
 async function handleError(error: AxiosError) {
     createErrorLog({
         code: error.code || 'Not specified',
-        message: error.message,
+        message: `${error.message} - ${error.request}`,
         stack: error.stack || 'Not specified',
         status: String(error.status) || 'Not specified'
     });
