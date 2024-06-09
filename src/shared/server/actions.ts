@@ -1,6 +1,6 @@
 'use server'
 
-import { addListObject, addObject, getObjectList, getPriceListByName } from '@/shared/service/firebase';
+import { addListDocuments, addDocument, getDocumentList, getPriceListByName } from '@/shared/service/firebase';
 import { createInvoice, createListItems, createMarket, createVirtualDocument } from '@/shared/util/sefaz';
 
 interface Response {
@@ -13,15 +13,15 @@ export async function addTaxCoupon(url: string): Promise<Response> {
         const virtualDocument = await createVirtualDocument(url);
         const market = await createMarket(virtualDocument);
         if (!market.id) {
-            const idMarket = await addObject('mercado', market);
+            const idMarket = await addDocument('mercado', market);
             market.id = idMarket;
         }
         const invoice = await createInvoice(virtualDocument, url)
-        const idInvoice = await addObject('notaFiscal', invoice);
+        const idInvoice = await addDocument('notaFiscal', invoice);
         invoice.id = idInvoice;
         const items = createListItems(virtualDocument, market, invoice);
-        await addListObject({
-            name: 'precos',
+        await addListDocuments({
+            path: 'precos',
             data: items
         });
         return {
@@ -40,7 +40,7 @@ export async function addTaxCoupon(url: string): Promise<Response> {
 
 export async function getPrices() {
     try {
-        const list = await getObjectList('precos');
+        const list = await getDocumentList('precos');
         return {
             status: 200,
             data: list
