@@ -5,13 +5,6 @@ import {
 import { FirebaseError } from 'firebase/app';
 import firebase from '@/shared/config/firebase';
 
-export interface ErrorLog {
-    code: string,
-    message: string,
-    stack: string,
-    status: string,
-}
-
 export interface Market {
     id?: string,
     CEP: string,
@@ -75,12 +68,7 @@ export async function addObject(name: 'mercado' | 'notaFiscal' | 'precos', data:
             return response.id as string;
         })
         .catch((error: FirebaseError) => {
-            createErrorLog({
-                code: String(error.code),
-                message: error.message,
-                stack: String(error.stack),
-                status: String(error.name)
-            });
+            createErrorLog(error);
             throw (`Erro ao cadastrar ${name}. ${error.message}`);
         });
 }
@@ -98,12 +86,7 @@ export async function addListObject(object: MarketFirebase | InvoiceFirebase | P
     })
     return await batch.commit()
         .catch((error: FirebaseError) => {
-            createErrorLog({
-                code: String(error.code),
-                message: error.message,
-                stack: String(error.stack),
-                status: String(error.name)
-            });
+            createErrorLog(error);
             throw (`Erro ao cadastrar lista de ${name}. ${error.message}`);
         });
 }
@@ -123,20 +106,18 @@ async function addListPrice(data: Price[]) {
     })
     return await batch.commit()
         .catch((error: FirebaseError) => {
-            createErrorLog({
-                code: String(error.code),
-                message: error.message,
-                stack: String(error.stack),
-                status: String(error.name)
-            });
+            createErrorLog(error);
             throw (`Erro ao cadastrar lista de ${name}. ${error.message}`);
         });
 }
 
-export async function createErrorLog(log: ErrorLog) {
-    const data = {
-        ...log,
-        date: new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString()
+export async function createErrorLog(log: any) {
+    const data =     {
+        date: new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString(),
+        code: log.code || 'Not specified',
+        message: `${log.message} - ${log.request}`,
+        stack: log.stack || 'Not specified',
+        status: String(log.status) || 'Not specified'
     };
     const database = getFirestore(firebase);
     await addDoc(collection(database, 'logs'), data)
@@ -180,23 +161,23 @@ export async function getObjectList(name: 'mercado' | 'notaFiscal' | 'precos'): 
         });
 }
 
-export async function checkIfObjectExist(name: 'mercado', data: string): Promise<Market | false>;
+export async function checkIfDocumentExist(path: 'mercado', data: string): Promise<Market | false>;
 
-export async function checkIfObjectExist(name: 'notaFiscal', data: string): Promise<Invoice | false>;
+export async function checkIfDocumentExist(path: 'notaFiscal', data: string): Promise<Invoice | false>;
 
 /**
  * Retorna se um mercado ou nota fiscal está cadastrado
- * @param name Deve ser 'mercado' ou 'notaFiscal'
+ * @param path Deve ser 'mercado' ou 'notaFiscal'
  * @param data Deve ser o CNPJ ou a CHAVE da nota fiscal
  * @returns Um objeto Mercado ou Nota Fiscal, ou false quando não existir
  */
-export async function checkIfObjectExist(name: 'mercado' | 'notaFiscal', data: string): Promise<Market | Invoice | false> {
+export async function checkIfDocumentExist(path: 'mercado' | 'notaFiscal', data: string): Promise<Market | Invoice | false> {
     const field = {
         'mercado': 'CNPJ',
         'notaFiscal': 'chave'
     };
     const database = getFirestore(firebase);
-    const ref = query(collection(database, data), where(field[name], '==', data));
+    const ref = query(collection(database, path), where(field[path], '==', data));
     return await getDocs(ref)
         .then((response) => {
             const list = response.docs.map((doc) => {
@@ -217,7 +198,7 @@ export async function checkIfObjectExist(name: 'mercado' | 'notaFiscal', data: s
                 stack: String(error.stack),
                 status: String(error.name)
             });
-            throw (`Erro ao verificar se ${name} já está cadastrado(a). ${error.message}`);
+            throw (`Erro ao verificar se ${path} já está cadastrado(a). ${error.message}`);
         });
 }
 

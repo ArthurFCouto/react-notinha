@@ -1,12 +1,11 @@
 import axios, { AxiosError } from 'axios';
 import jsdom from 'jsdom';
-import { checkIfObjectExist, createErrorLog, Invoice, Market, Price } from '@/shared/service/firebase';
+import { checkIfDocumentExist, createErrorLog, Invoice, Market, Price } from '@/shared/service/firebase';
 import { ConvertStringToNumber, FormatDate } from '..';
 
 interface PricesWork {
     [index: string]: Price
 }
-
 
 function CheckUrl(url: string) {
     const regex = /portalsped\.fazenda\.mg\.gov\.br\/portalnfce\/sistema\/qrcode\.xhtml\?p=/;
@@ -22,7 +21,7 @@ function getInvoiceKey(doc: Document) {
         const key = element.querySelector('table tbody tr:first-of-type td')?.textContent;
         return String(key).replace(/[^\d]/g, '');
     } catch (error: any) {
-        handleError(error);
+        createErrorLog(error);
         throw (`Erro interno - ${error.message}`);
     }
 }
@@ -37,7 +36,7 @@ function getNumberCNPJ(doc: Document) {
         const limiter = allText.indexOf(',');
         return allText.slice(0, limiter).replace(/[^\d]/g, '');
     } catch (error: any) {
-        handleError(error);
+        createErrorLog(error);
         throw (`Erro interno - ${error.message}`);
     }
 }
@@ -56,14 +55,14 @@ export async function createVirtualDocument(url: string): Promise<Document> {
             return virtualDocument.window.document;
         })
         .catch((error: AxiosError) => {
-            handleError(error);
+            createErrorLog(error);
             throw (`Erro interno - ${error.message}`);
         });
 }
 
 export async function createMarket(doc: Document): Promise<Market> {
     const cnpj = getNumberCNPJ(doc);
-    const market = await checkIfObjectExist('mercado', cnpj);
+    const market = await checkIfDocumentExist('mercado', cnpj);
     if (market)
         return market;
 
@@ -86,14 +85,14 @@ export async function createMarket(doc: Document): Promise<Market> {
             } as Market;
         })
         .catch((error: AxiosError) => {
-            handleError(error);
+            createErrorLog(error);
             throw (`Erro interno - ${error.message}`);
         });
 };
 
 export async function createInvoice(doc: Document, url: string): Promise<Invoice> {
     const key = getInvoiceKey(doc);
-    const invoice = await checkIfObjectExist('notaFiscal', key);
+    const invoice = await checkIfDocumentExist('notaFiscal', key);
     if (invoice)
         throw ('Este cupom já está cadastrado.');
     try {
@@ -115,7 +114,7 @@ export async function createInvoice(doc: Document, url: string): Promise<Invoice
             valorTotal: totalPrice
         };
     } catch (error: any) {
-        handleError(error);
+        createErrorLog(error);
         throw (`Erro interno - ${error.message}`);
     }
 }
@@ -140,7 +139,6 @@ export function createListItems(doc: Document, market: Market, invoice: Invoice)
             })
             const amount = ConvertStringToNumber(columnData[1]);
             const totalPrice = ConvertStringToNumber(columnData[3]);
-            //const key = columnData[0] + '_' + columnData[1] + '_' + columnData[3];
             const key = columnData[0];
             if (!items[key]) {
                 items[key] = {
@@ -156,16 +154,7 @@ export function createListItems(doc: Document, market: Market, invoice: Invoice)
         });
         return Object.values(items);
     } catch (error: any) {
-        handleError(error);
+        createErrorLog(error);
         throw (`Erro interno - ${error.message}`);
     }
-}
-
-async function handleError(error: AxiosError) {
-    createErrorLog({
-        code: error.code || 'Not specified',
-        message: `${error.message} - ${error.request}`,
-        stack: error.stack || 'Not specified',
-        status: String(error.status) || 'Not specified'
-    });
 }
