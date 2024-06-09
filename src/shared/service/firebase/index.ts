@@ -19,7 +19,7 @@ export interface Market {
 }
 
 interface MarketFirebase {
-    name: 'mercado',
+    path: 'mercado',
     data: Market[]
 }
 
@@ -34,7 +34,7 @@ export interface Invoice {
 }
 
 interface InvoiceFirebase {
-    name: 'notaFiscal',
+    path: 'notaFiscal',
     data: Invoice[]
 }
 
@@ -50,69 +50,69 @@ export interface Price {
 }
 
 interface PriceFirebase {
-    name: 'precos',
+    path: 'precos',
     data: Price[]
 }
 
-export async function addObject(name: 'mercado', data: Market): Promise<string>;
+export async function addDocument(path: 'mercado', data: Market): Promise<string>;
 
-export async function addObject(name: 'notaFiscal', data: Invoice): Promise<string>;
+export async function addDocument(path: 'notaFiscal', data: Invoice): Promise<string>;
 
-export async function addObject(name: 'precos', data: Price): Promise<string>;
+export async function addDocument(path: 'precos', data: Price): Promise<string>;
 
-export async function addObject(name: 'mercado' | 'notaFiscal' | 'precos', data: Market | Invoice | Price) {
+export async function addDocument(path: 'mercado' | 'notaFiscal' | 'precos', data: Market | Invoice | Price) {
     delete data.id;
     const database = getFirestore(firebase);
-    return await addDoc(collection(database, name), data)
+    return await addDoc(collection(database, path), data)
         .then((response) => {
-            return response.id as string;
+            return response.id;
         })
         .catch((error: FirebaseError) => {
             createErrorLog(error);
-            throw (`Erro ao cadastrar ${name}. ${error.message}`);
+            throw (`Erro ao cadastrar ${path}. ${error.message}`);
         });
 }
 
-export async function addListObject(object: MarketFirebase | InvoiceFirebase | PriceFirebase) {
-    const { data, name } = object;
-    if (name === 'precos')
-        return addListPrice(data);
+export async function addListDocuments(object: MarketFirebase | InvoiceFirebase | PriceFirebase) {
+    const { data, path } = object;
+    if (path === 'precos')
+        return addPriceList(data);
     const database = getFirestore(firebase);
     const batch = writeBatch(database);
     data.forEach(async (item) => {
         delete item.id;
-        const ref = doc(collection(database, name));
+        const ref = doc(collection(database, path));
         batch.set(ref, item);
     })
     return await batch.commit()
         .catch((error: FirebaseError) => {
             createErrorLog(error);
-            throw (`Erro ao cadastrar lista de ${name}. ${error.message}`);
+            throw (`Erro ao cadastrar lista de ${path}. ${error.message}`);
         });
 }
 
-async function addListPrice(data: Price[]) {
+async function addPriceList(data: Price[]) {
     const database = getFirestore(firebase);
     const batch = writeBatch(database);
     const listPricesOfTheDay = await getPriceListByDate(data[0].data)
         .then((prices) => prices.map((price) => `${price.produto}_${price.idMercado}_${price.valor}`));
-    data.forEach(async (item) => {
-        const key = `${item.produto}_${item.idMercado}_${item.valor}`;
+    data.forEach(async (price) => {
+        const key = `${price.produto}_${price.idMercado}_${price.valor}`;
         if (listPricesOfTheDay.includes(key))
             return;
-        delete item.id;
+        delete price.id;
         const ref = doc(collection(database, 'precos'));
-        batch.set(ref, item);
+        batch.set(ref, price);
     })
     return await batch.commit()
         .catch((error: FirebaseError) => {
             createErrorLog(error);
-            throw (`Erro ao cadastrar lista de ${name}. ${error.message}`);
+            throw (`Erro ao cadastrar lista de precos. ${error.message}`);
         });
 }
 
 export async function createErrorLog(log: any) {
-    const data =     {
+    const data = {
         date: new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString(),
         code: log.code || 'Not specified',
         message: `${log.message} - ${log.request}`,
@@ -126,20 +126,20 @@ export async function createErrorLog(log: any) {
         });
 }
 
-export async function getObjectList(name: 'mercado'): Promise<Market[]>;
+export async function getDocumentList(path: 'mercado'): Promise<Market[]>;
 
-export async function getObjectList(name: 'notaFiscal'): Promise<Invoice[]>;
+export async function getDocumentList(path: 'notaFiscal'): Promise<Invoice[]>;
 
-export async function getObjectList(name: 'precos'): Promise<Price[]>;
+export async function getDocumentList(path: 'precos'): Promise<Price[]>;
 
-export async function getObjectList(name: 'mercado' | 'notaFiscal' | 'precos'): Promise<Market[] | Invoice[] | Price[]> {
+export async function getDocumentList(path: 'mercado' | 'notaFiscal' | 'precos'): Promise<Market[] | Invoice[] | Price[]> {
     const order = {
         'mercado': 'nomeFantasia',
         'precos': 'produto',
         'notaFiscal': 'data'
     };
     const database = getFirestore(firebase);
-    const ref = query(collection(database, name), orderBy(order[name]));
+    const ref = query(collection(database, path), orderBy(order[path]));
     return await getDocs(ref)
         .then((response) => {
             return response.docs.map((doc) => {
@@ -151,13 +151,8 @@ export async function getObjectList(name: 'mercado' | 'notaFiscal' | 'precos'): 
             }) as Market[] | Invoice[] | Price[];
         })
         .catch((error: FirebaseError) => {
-            createErrorLog({
-                code: String(error.code),
-                message: error.message,
-                stack: String(error.stack),
-                status: String(error.name)
-            });
-            throw (`Erro ao buscar a lista de objetos. ${error.message}`);
+            createErrorLog(error);
+            throw (`Erro ao buscar a lista de ${path}. ${error.message}`);
         });
 }
 
@@ -192,12 +187,7 @@ export async function checkIfDocumentExist(path: 'mercado' | 'notaFiscal', data:
             return false
         })
         .catch((error: FirebaseError) => {
-            createErrorLog({
-                code: String(error.code),
-                message: error.message,
-                stack: String(error.stack),
-                status: String(error.name)
-            });
+            createErrorLog(error);
             throw (`Erro ao verificar se ${path} já está cadastrado(a). ${error.message}`);
         });
 }
@@ -216,12 +206,7 @@ export async function getPriceListByName(data: string): Promise<Price[]> {
             }) as Price[];
         })
         .catch((error: FirebaseError) => {
-            createErrorLog({
-                code: String(error.code),
-                message: error.message,
-                stack: String(error.stack),
-                status: String(error.name)
-            });
+            createErrorLog(error);
             throw (`Erro ao buscar a preços pelo nome. ${error.message}`);
         });
 }
@@ -233,7 +218,7 @@ export async function getPriceListByName(data: string): Promise<Price[]> {
  */
 async function getPriceListByDate(date: string): Promise<Price[]> {
     const database = getFirestore(firebase);
-    const ref = query(collection(database, 'precos'), where('data', '==', date));
+    const ref = query(collection(database, 'precos'), where('data', '==', date), orderBy('produto'));
     return await getDocs(ref)
         .then((response) => {
             return response.docs.map((doc) => {
@@ -245,12 +230,7 @@ async function getPriceListByDate(date: string): Promise<Price[]> {
             }) as Price[];
         })
         .catch((error: FirebaseError) => {
-            createErrorLog({
-                code: String(error.code),
-                message: error.message,
-                stack: String(error.stack),
-                status: String(error.name)
-            });
+            createErrorLog(error);
             throw (`Erro ao buscar a preços pelo data. ${error.message}`);
         });
 }

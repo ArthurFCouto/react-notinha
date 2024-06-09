@@ -81,97 +81,99 @@ export default function Home() {
     }, []);
 
     return (
-        <Box
-            alignItems='center'
-            display='flex'
-            flexDirection='column'
-            height='100%'
-        >
+        <>
             <Box
-                component='main'
-                padding={1}
-                maxWidth='lg'
+                alignItems='center'
+                display='flex'
+                flexDirection='column'
+                height='100%'
             >
-                <Typography
-                    variant='h4'
-                    gutterBottom
-                    sx={{
-                        alignItems: 'center',
-                        display: 'flex',
-                        justifyContent: 'start'
-                    }}
-                >
-                    Notinha
-                    <HistoryEdu fontSize='inherit' />
-                </Typography>
-                <Typography variant='h5' gutterBottom>
-                    Acompanhe o preço dos produtos de mercado com informações reais e atualizadas.
-                </Typography>
                 <Box
-                    display='flex'
-                    flexDirection='column'
-                    justifyContent='center'
-                    alignItems='center'
-                    paddingY={5}
-                    gap={3}
+                    component='main'
+                    padding={1}
+                    maxWidth='lg'
                 >
-                    <Stack direction='row' gap={2}>
-                        <Button endIcon={sendingUrl ? <CircularProgress color='inherit' size={20} /> : <QrCode />} onClick={() => setOpenQR(true)} variant='outlined'>Escanear</Button>
-                        {/*<Button endIcon={sendingUrl ? <CircularProgress color='inherit' size={20} /> : <QrCode />} onClick={() => SendUrl('https://portalsped.fazenda.mg.gov.br/portalnfce/sistema/qrcode.xhtml?p=31240602274225000161650040003274431807746699|2|1|1|b8c056a83232d3b5eae81417e191275d3473f9a1', sendingUrl, setSendingUrl, dispatchAlert)} variant='outlined'>Teste</Button> */}
-                        <Button endIcon={loading ? <CircularProgress color='inherit' size={20} /> : <Refresh />} onClick={() => UpdateListPrices(loading, setLoading, setPrices, setOriginalPrices, dispatchAlert)} variant='contained'>Listar Itens</Button>
-                    </Stack>
-                </Box>
-                <Paper
-                    alignItems='center'
-                    component={Box}
-                    display='flex'
-                    marginBottom={0.5}
-                    paddingX={0.5}
-                    paddingY={1}
-                    width='100%'
-                >
-                    <FilterList sx={{ margin: 1 }} />
-                    <InputBase
-                        inputRef={filterRef}
-                        onChange={(e) => FilterListPrices(loading, originalPrices, setPrices, e.target.value)}
-                        placeholder='Filtrar esta lista'
-                        sx={{ flex: 1 }}
-                        disabled={originalPrices.length === 0 ? true : false}
-                    />
-                    <Divider sx={{ height: '30px' }} orientation='vertical' />
-                    <IconButton
-                        color='primary'
-                        onClick={clearFilter}
+                    <Typography
+                        variant='h4'
+                        gutterBottom
+                        sx={{
+                            alignItems: 'center',
+                            display: 'flex',
+                            justifyContent: 'start'
+                        }}
                     >
-                        <Clear />
-                    </IconButton>
-                </Paper>
+                        Notinha
+                        <HistoryEdu fontSize='inherit' />
+                    </Typography>
+                    <Typography variant='h5' gutterBottom>
+                        Acompanhe o preço dos produtos de mercado com informações reais e atualizadas.
+                    </Typography>
+                    <Box
+                        display='flex'
+                        flexDirection='column'
+                        justifyContent='center'
+                        alignItems='center'
+                        paddingY={5}
+                        gap={3}
+                    >
+                        <Stack direction='row' gap={2}>
+                            <Button endIcon={sendingUrl ? <CircularProgress color='inherit' size={20} /> : <QrCode />} onClick={() => setOpenQR(true)} variant='outlined'>Escanear</Button>
+                            {/*<Button endIcon={sendingUrl ? <CircularProgress color='inherit' size={20} /> : <QrCode />} onClick={() => SendUrl('https://portalsped.fazenda.mg.gov.br/portalnfce/sistema/qrcode.xhtml?p=31240602274225000161650040003274431807746699|2|1|1|b8c056a83232d3b5eae81417e191275d3473f9a1', sendingUrl, setSendingUrl, dispatchAlert)} variant='outlined'>Teste</Button> */}
+                            <Button endIcon={loading ? <CircularProgress color='inherit' size={20} /> : <Refresh />} onClick={() => UpdateListPrices(loading, setLoading, setPrices, setOriginalPrices, dispatchAlert)} variant='contained'>Listar Itens</Button>
+                        </Stack>
+                    </Box>
+                    <Paper
+                        alignItems='center'
+                        component={Box}
+                        display='flex'
+                        marginBottom={0.5}
+                        paddingX={0.5}
+                        paddingY={1}
+                        width='100%'
+                    >
+                        <FilterList sx={{ margin: 1 }} />
+                        <InputBase
+                            inputRef={filterRef}
+                            onChange={(e) => FilterListPrices(loading, originalPrices, setPrices, e.target.value)}
+                            placeholder='Filtrar esta lista'
+                            sx={{ flex: 1 }}
+                            disabled={originalPrices.length === 0 ? true : false}
+                        />
+                        <Divider sx={{ height: '30px' }} orientation='vertical' />
+                        <IconButton
+                            color='primary'
+                            onClick={clearFilter}
+                        >
+                            <Clear />
+                        </IconButton>
+                    </Paper>
+                    {
+                        loading && (
+                            <CardItemsLoading amount={10} />
+                        )
+                    }
+                    {
+                        (prices.length > 0 && !loading) && (
+                            <CardItems items={prices} clickOnHistory={handleHistory} />
+                        )
+                    }
+                </Box>
                 {
-                    loading && (
-                        <CardItemsLoading amount={10} />
-                    )
-                }
-                {
-                    (prices.length > 0 && !loading) && (
-                        <CardItems items={prices} clickOnHistory={handleHistory} />
+                    showButtonToTop && (
+                        <Fab
+                            color='primary'
+                            sx={{
+                                position: 'fixed',
+                                bottom: 15,
+                                right: 15
+                            }}
+                            onClick={goToTop}
+                        >
+                            <North />
+                        </Fab>
                     )
                 }
             </Box>
-            {
-                showButtonToTop && (
-                    <Fab
-                        color='primary'
-                        sx={{
-                            position: 'fixed',
-                            bottom: 15,
-                            right: 15
-                        }}
-                        onClick={goToTop}
-                    >
-                        <North />
-                    </Fab>
-                )
-            }
             <ModalQrReader
                 close={() => setOpenQR(false)}
                 getCode={(code) => SendUrl(code, sendingUrl, setSendingUrl, dispatchAlert)}
@@ -186,6 +188,6 @@ export default function Home() {
             />
             <CustomAlert />
             <Footer />
-        </Box>
+        </>
     )
 }
