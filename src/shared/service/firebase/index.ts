@@ -115,7 +115,8 @@ export async function createErrorLog(log: any) {
     const data = {
         date: new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString(),
         code: log.code || 'Not specified',
-        message: `${log.message} - ${log.request}`,
+        message: `${log.message}`,
+        request: log.request,
         stack: log.stack || 'Not specified',
         status: String(log.status) || 'Not specified'
     };
@@ -192,9 +193,9 @@ export async function checkIfDocumentExist(path: 'mercado' | 'notaFiscal', data:
         });
 }
 
-export async function getPriceListByName(data: string): Promise<Price[]> {
+export async function getPriceListByName(name: string): Promise<Price[]> {
     const database = getFirestore(firebase);
-    const ref = query(collection(database, 'precos'), where('produto', '==', data));
+    const ref = query(collection(database, 'precos'), where('produto', '==', name));
     return await getDocs(ref)
         .then((response) => {
             return response.docs.map((doc) => {
@@ -218,7 +219,7 @@ export async function getPriceListByName(data: string): Promise<Price[]> {
  */
 async function getPriceListByDate(date: string): Promise<Price[]> {
     const database = getFirestore(firebase);
-    const ref = query(collection(database, 'precos'), where('data', '==', date), orderBy('produto'));
+    const ref = query(collection(database, 'precos'), where('data', '==', date));
     return await getDocs(ref)
         .then((response) => {
             return response.docs.map((doc) => {

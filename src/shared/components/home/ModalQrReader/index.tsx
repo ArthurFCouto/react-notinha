@@ -30,7 +30,6 @@ export default function ModalQrReader({ close, getCode, onError, open }: ModalQr
             fullWidth
             onClose={close}
             open={open}
-            scroll='paper'
         >
             <DialogTitle>
                 <Stack alignItems='center' direction='row' gap={1}>

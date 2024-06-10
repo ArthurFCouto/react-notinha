@@ -1,4 +1,4 @@
-'use server'
+'use server';
 
 import { addListDocuments, addDocument, getDocumentList, getPriceListByName } from '@/shared/service/firebase';
 import { createInvoice, createListItems, createMarket, createVirtualDocument } from '@/shared/util/sefaz';
@@ -26,7 +26,7 @@ export async function addTaxCoupon(url: string): Promise<Response> {
         });
         return {
             status: 200,
-            data: ''
+            data: {}
         }
     } catch (error: any) {
         //return Promise.reject(new Error(error)) as any;
@@ -56,6 +56,21 @@ export async function getPrices() {
 export async function getPricesByName(query: string) {
     try {
         const list = await getPriceListByName(query);
+        return {
+            status: 200,
+            data: list
+        }
+    } catch (error: any) {
+        return {
+            status: 500,
+            data: error
+        }
+    }
+}
+
+export async function getListUrlInvoice() {
+    try {
+        const list = (await getDocumentList('notaFiscal')).map((invoice) => invoice.url);
         return {
             status: 200,
             data: list

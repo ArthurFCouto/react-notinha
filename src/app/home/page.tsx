@@ -2,13 +2,13 @@
 
 import { useEffect, useReducer, useRef, useState } from 'react';
 import {
-    Alert, Box, Button, CircularProgress,
+    Alert, Box, CircularProgress,
     Divider, Fab, IconButton, InputBase,
-    Paper, Snackbar, Stack, Typography
+    Paper, Snackbar, Typography
 } from '@mui/material';
 import {
-    Clear, FilterList,
-    HistoryEdu, North, QrCode, Refresh
+    Clear, CloudUpload,
+    HistoryEdu, North, Refresh
 } from '@mui/icons-material';
 import { Price } from '@/shared/service/firebase';
 import Footer from '@/shared/components/footer';
@@ -71,9 +71,9 @@ export default function Home() {
         }
         window.addEventListener('scroll', handleShowToTopButton);
 
-        //UpdateListPrices(loading, setLoading, setPrices, setOriginalPrices, dispatchAlert);
-
         clearFilter();
+
+        UpdateListPrices(loading, setLoading, setPrices, setOriginalPrices, dispatchAlert);
 
         return () => {
             window.addEventListener('scroll', handleShowToTopButton);
@@ -81,99 +81,95 @@ export default function Home() {
     }, []);
 
     return (
-        <>
+        <Box
+            display='flex'
+            flexDirection='column'
+            height='100%'
+        >
             <Box
-                alignItems='center'
-                display='flex'
-                flexDirection='column'
-                height='100%'
+                component='main'
+                padding={1}
+                maxWidth='lg'
+                marginX='auto'
             >
-                <Box
-                    component='main'
-                    padding={1}
-                    maxWidth='lg'
+                <Typography
+                    variant='h4'
+                    gutterBottom
+                    sx={{
+                        alignItems: 'center',
+                        display: 'flex',
+                        justifyContent: 'start'
+                    }}
                 >
-                    <Typography
-                        variant='h4'
-                        gutterBottom
-                        sx={{
-                            alignItems: 'center',
-                            display: 'flex',
-                            justifyContent: 'start'
-                        }}
+                    Notinha
+                    <HistoryEdu fontSize='inherit' />
+                </Typography>
+                <Typography variant='h5' gutterBottom>
+                    Acompanhe o preço dos produtos de mercado com informações reais e atualizadas.
+                </Typography>
+                <Paper
+                    alignItems='center'
+                    component={Box}
+                    display='flex'
+                    marginBottom={2.5}
+                    marginTop={3.5}
+                    paddingX={0.5}
+                    paddingY={1}
+                    width='100%'
+                >
+                    <IconButton
+                        color='secondary'
+                        onClick={() => setOpenQR(true)}
                     >
-                        Notinha
-                        <HistoryEdu fontSize='inherit' />
-                    </Typography>
-                    <Typography variant='h5' gutterBottom>
-                        Acompanhe o preço dos produtos de mercado com informações reais e atualizadas.
-                    </Typography>
-                    <Box
-                        display='flex'
-                        flexDirection='column'
-                        justifyContent='center'
-                        alignItems='center'
-                        paddingY={5}
-                        gap={3}
+                        {sendingUrl ? <CircularProgress color='inherit' size={20} /> : <CloudUpload />}
+                    </IconButton>
+                    <InputBase
+                        inputRef={filterRef}
+                        onChange={(e) => FilterListPrices(loading, originalPrices, setPrices, e.target.value)}
+                        placeholder='Atualize a lista e digite o que procura...'
+                        sx={{ flex: 1 }}
+                        disabled={originalPrices.length === 0 ? true : false}
+                    />
+                    <Divider sx={{ height: '30px' }} orientation='vertical' />
+                    <IconButton
+                        color='primary'
+                        onClick={clearFilter}
                     >
-                        <Stack direction='row' gap={2}>
-                            <Button endIcon={sendingUrl ? <CircularProgress color='inherit' size={20} /> : <QrCode />} onClick={() => setOpenQR(true)} variant='outlined'>Escanear</Button>
-                            {/*<Button endIcon={sendingUrl ? <CircularProgress color='inherit' size={20} /> : <QrCode />} onClick={() => SendUrl('https://portalsped.fazenda.mg.gov.br/portalnfce/sistema/qrcode.xhtml?p=31240602274225000161650040003274431807746699|2|1|1|b8c056a83232d3b5eae81417e191275d3473f9a1', sendingUrl, setSendingUrl, dispatchAlert)} variant='outlined'>Teste</Button> */}
-                            <Button endIcon={loading ? <CircularProgress color='inherit' size={20} /> : <Refresh />} onClick={() => UpdateListPrices(loading, setLoading, setPrices, setOriginalPrices, dispatchAlert)} variant='contained'>Listar Itens</Button>
-                        </Stack>
-                    </Box>
-                    <Paper
-                        alignItems='center'
-                        component={Box}
-                        display='flex'
-                        marginBottom={0.5}
-                        paddingX={0.5}
-                        paddingY={1}
-                        width='100%'
+                        <Clear />
+                    </IconButton>
+                    <IconButton
+                        color='primary'
+                        onClick={() => UpdateListPrices(loading, setLoading, setPrices, setOriginalPrices, dispatchAlert)}
                     >
-                        <FilterList sx={{ margin: 1 }} />
-                        <InputBase
-                            inputRef={filterRef}
-                            onChange={(e) => FilterListPrices(loading, originalPrices, setPrices, e.target.value)}
-                            placeholder='Filtrar esta lista'
-                            sx={{ flex: 1 }}
-                            disabled={originalPrices.length === 0 ? true : false}
-                        />
-                        <Divider sx={{ height: '30px' }} orientation='vertical' />
-                        <IconButton
-                            color='primary'
-                            onClick={clearFilter}
-                        >
-                            <Clear />
-                        </IconButton>
-                    </Paper>
-                    {
-                        loading && (
-                            <CardItemsLoading amount={10} />
-                        )
-                    }
-                    {
-                        (prices.length > 0 && !loading) && (
-                            <CardItems items={prices} clickOnHistory={handleHistory} />
-                        )
-                    }
-                </Box>
+                        {loading ? <CircularProgress color='inherit' size={20} /> : <Refresh />}
+                    </IconButton>
+                </Paper>
                 {
-                    showButtonToTop && (
-                        <Fab
-                            color='primary'
-                            sx={{
-                                position: 'fixed',
-                                bottom: 15,
-                                right: 15
-                            }}
-                            onClick={goToTop}
-                        >
-                            <North />
-                        </Fab>
+                    loading && (
+                        <CardItemsLoading amount={10} />
+                    )
+                }
+                {
+                    (prices.length > 0 && !loading) && (
+                        <CardItems items={prices} clickOnHistory={handleHistory} />
                     )
                 }
             </Box>
+            {
+                showButtonToTop && (
+                    <Fab
+                        color='primary'
+                        sx={{
+                            position: 'fixed',
+                            bottom: 15,
+                            right: 15
+                        }}
+                        onClick={goToTop}
+                    >
+                        <North />
+                    </Fab>
+                )
+            }
             <ModalQrReader
                 close={() => setOpenQR(false)}
                 getCode={(code) => SendUrl(code, sendingUrl, setSendingUrl, dispatchAlert)}
@@ -188,6 +184,6 @@ export default function Home() {
             />
             <CustomAlert />
             <Footer />
-        </>
+        </Box>
     )
 }

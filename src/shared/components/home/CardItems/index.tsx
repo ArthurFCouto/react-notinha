@@ -20,19 +20,24 @@ export default function CardItems({ items, clickOnHistory }: CardItemsProps) {
                     <div key={item.id}>
                         <ListItem alignItems='flex-start'>
                             <ListItemAvatar color='primary'>
-                                <Avatar>
+                                <Avatar sx={{ bgcolor: '#008000' }}>
                                     {item.unidadeMedida.slice(0, 2)}
                                 </Avatar>
                             </ListItemAvatar>
                             <ListItemText
-                                primary={item.produto}
+                                primary={
+                                    <Typography>
+                                        {item.produto}
+                                    </Typography>
+                                }
                                 secondary={
                                     <>
                                         <Typography
-                                            sx={{ display: 'inline' }}
-                                            component='span'
-                                            variant='body2'
                                             color='text.primary'
+                                            fontWeight={500}
+                                            letterSpacing={-1}
+                                            sx={{ display: 'inline' }}
+                                            variant='body2'
                                         >
                                             {`${BRCurrencyFormat(parseFloat(item.valor))} no ${item.mercado} `}
                                         </Typography>

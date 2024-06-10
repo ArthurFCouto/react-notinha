@@ -41,7 +41,7 @@ export default function PriceHistoryChart({ height, prices }: PriceHistoryChartP
                 <AreaChart data={prices}>
                     <CartesianGrid strokeDasharray='3 3' />
                     <XAxis dataKey='data' tick={(props) => <CustomizedAxisTick {...props} />} />
-                    <YAxis />
+                    <YAxis type='number' domain={['auto', 'auto']}/>
                     <Tooltip />
                     <Area type='monotone' dataKey='valor' stroke='#1976d2' fill='#1976d2' />
                 </AreaChart>
