@@ -9,9 +9,8 @@ const LightTheme = createTheme({
         },
     },
     typography: {
-        fontFamily: '"Montserrat", "Poppins", sans-serif',
-        fontSize: 12,
-        htmlFontSize: 12,
+        fontFamily: '"Montserrat", "Raleway", "Poppins", sans-serif',
+        fontSize: 12
     },
 });
 

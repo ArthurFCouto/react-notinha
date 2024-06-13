@@ -9,9 +9,8 @@ const DarkTheme = createTheme({
         },
     },
     typography: {
-        fontFamily: '"Montserrat", "Poppins", sans-serif',
+        fontFamily: '"Montserrat", "Raleway", "Poppins", sans-serif',
         fontSize: 12,
-        htmlFontSize: 14,
     },
 });
 

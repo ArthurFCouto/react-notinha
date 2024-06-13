@@ -7,7 +7,7 @@ import {
     Stack, Typography
 } from '@mui/material'
 import { Player } from '@lottiefiles/react-lottie-player';
-import { Timeline } from '@mui/icons-material';
+import { History } from '@mui/icons-material';
 import { Price } from '@/shared/service/firebase';
 import lottieLoading from '@/shared/assets/loading-2.json';
 import PriceHistoryChart from '../PriceHistoryChart';
@@ -39,7 +39,7 @@ export default function ModalPriceHistory({ close, open, onError, query }: Modal
         >
             <DialogTitle>
                 <Stack alignItems='center' direction='row' gap={1}>
-                    Histórico de Preços <Timeline />
+                    Histórico de Preços <History color='primary' />
                 </Stack>
             </DialogTitle>
             <DialogContent dividers>

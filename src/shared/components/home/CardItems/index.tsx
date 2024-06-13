@@ -1,4 +1,4 @@
-import { Timeline } from '@mui/icons-material';
+import { History } from '@mui/icons-material';
 import {
     Avatar, Divider, IconButton, List,
     ListItem, ListItemAvatar, ListItemIcon,
@@ -35,7 +35,6 @@ export default function CardItems({ items, clickOnHistory }: CardItemsProps) {
                                         <Typography
                                             color='text.primary'
                                             fontWeight={500}
-                                            letterSpacing={-1}
                                             sx={{ display: 'inline' }}
                                             variant='body2'
                                         >
@@ -47,7 +46,7 @@ export default function CardItems({ items, clickOnHistory }: CardItemsProps) {
                             />
                             <ListItemIcon>
                                 <IconButton onClick={() => clickOnHistory(item.produto)}>
-                                    <Timeline color='primary' fontSize='inherit' />
+                                    <History color='primary' fontSize='inherit' />
                                 </IconButton>
                             </ListItemIcon>
                         </ListItem>

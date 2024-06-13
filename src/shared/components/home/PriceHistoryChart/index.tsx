@@ -17,6 +17,7 @@ interface CustomizedProps {
 }
 
 export default function PriceHistoryChart({ height, prices }: PriceHistoryChartProps) {
+
     const CustomizedAxisTick = ({ x, y, payload }: CustomizedProps) => {
         return (
             <g transform={`translate(${x},${y})`} >
@@ -38,12 +39,22 @@ export default function PriceHistoryChart({ height, prices }: PriceHistoryChartP
     return (
         <Stack height={height} width='100%'>
             <ResponsiveContainer >
-                <AreaChart data={prices}>
-                    <CartesianGrid strokeDasharray='3 3' />
+                <AreaChart data={prices} margin={{ top: 5, right: 0, left: 5, bottom: 5 }}>
+                    <CartesianGrid fill='#efefef' strokeDasharray='3 3' />
                     <XAxis dataKey='data' tick={(props) => <CustomizedAxisTick {...props} />} />
-                    <YAxis type='number' domain={['auto', 'auto']}/>
+                    <YAxis
+                        allowDecimals={false}
+                        label={{ value: 'Preço (R$)', angle: -90, position: 'insideLeft' }}
+                        type='number'
+                        domain={[(dataMin: any) => dataMin < 2 ? 0 : (Math.trunc(dataMin) - 2), (dataMax: any) => (Math.trunc(dataMax) + 2)]}
+                    />
                     <Tooltip />
-                    <Area type='monotone' dataKey='valor' stroke='#1976d2' fill='#1976d2' />
+                    <Area
+                        dataKey='valor'
+                        fill='#1976d2'
+                        stroke='#1976d2'
+                        type='monotone'
+                    />
                 </AreaChart>
             </ResponsiveContainer>
         </Stack>
