@@ -19,8 +19,8 @@ const ThemeContext = createContext<Partial<ThemeContextData>>({});
 export const useAppThemeContext = () => useContext(ThemeContext);
 
 export const AppThemeProvider = ({ children }: AppThemeProviderProps) => {
-    const defaultTheme = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
-    const [themeName, setThemeName] = useState<'light' | 'dark'>(defaultTheme);
+    //const defaultTheme = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+    const [themeName, setThemeName] = useState<'light' | 'dark'>('light');
 
     const toggleTheme = useCallback(() => {
         setThemeName(oldThemeName => oldThemeName === 'light' ? 'dark' : 'light');
