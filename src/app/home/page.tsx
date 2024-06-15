@@ -73,7 +73,7 @@ export default function Home() {
 
         clearFilter();
 
-        UpdateListPrices(loading, setLoading, setPrices, setOriginalPrices, dispatchAlert);
+        //UpdateListPrices(loading, setLoading, setPrices, setOriginalPrices, dispatchAlert);
 
         return () => {
             window.addEventListener('scroll', handleShowToTopButton);

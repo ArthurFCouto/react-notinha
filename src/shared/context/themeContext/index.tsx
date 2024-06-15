@@ -1,29 +1,25 @@
 'use client';
 
 import { createContext, useCallback, useContext, useMemo, useState } from 'react';
-import { ThemeProvider } from '@mui/material';
-import LightTheme from '../../themes/light';
-import DarkTheme from '../../themes/dark';
+import { CssBaseline, ThemeProvider, useMediaQuery } from '@mui/material';
+import LightTheme from '@/shared/themes/light';
+import DarkTheme from '@/shared/themes/dark';
 
 interface ThemeContextData {
     themeName: 'light' | 'dark';
     toggleTheme: () => void;
 }
 
-interface AppThemeProviderProps {
-    children: React.ReactNode;
-}
-
 const ThemeContext = createContext<Partial<ThemeContextData>>({});
 
 export const useAppThemeContext = () => useContext(ThemeContext);
 
-export const AppThemeProvider = ({ children }: AppThemeProviderProps) => {
-    //const defaultTheme = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
-    const [themeName, setThemeName] = useState<'light' | 'dark'>('light');
+export const AppThemeProvider = ({ children }: Readonly<{ children: React.ReactNode }>) => {
+    const prefersDarkMode = useMediaQuery('(prefers-color-scheme: dark)') ? 'dark' : 'light';
+    const [themeName, setThemeName] = useState<'light' | 'dark'>(prefersDarkMode);
 
     const toggleTheme = useCallback(() => {
-        setThemeName(oldThemeName => oldThemeName === 'light' ? 'dark' : 'light');
+        setThemeName((oldThemeName) => oldThemeName === 'light' ? 'dark' : 'light');
     }, []);
 
     const theme = useMemo(() => {
@@ -33,6 +29,7 @@ export const AppThemeProvider = ({ children }: AppThemeProviderProps) => {
     return (
         <ThemeContext.Provider value={{ themeName, toggleTheme }}>
             <ThemeProvider theme={theme}>
+                <CssBaseline />
                 {children}
             </ThemeProvider>
         </ThemeContext.Provider>

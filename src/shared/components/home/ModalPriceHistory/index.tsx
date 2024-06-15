@@ -72,7 +72,7 @@ export default function ModalPriceHistory({ close, open, onError, query }: Modal
                 </DialogContentText>
             </DialogContent>
             <DialogActions>
-                <Button onClick={close} variant='contained'>
+                <Button onClick={close} size='small' variant='contained'>
                     Fechar
                 </Button>
             </DialogActions>

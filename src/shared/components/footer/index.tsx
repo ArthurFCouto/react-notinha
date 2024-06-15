@@ -3,11 +3,17 @@ import { Box, Container, Link as MUILink, Typography } from '@mui/material';
 
 export default function Footer() {
     const Copyright = () => (
-        <Typography variant='body2' color='text.secondary'>
+        <Typography variant='body1' >
             {'Copyright © '}
-            <MUILink component={Link} color='inherit' href='https://instagram.com/arthur_fcouto'>
+            <MUILink
+            color='inherit'
+            component={Link}
+            href='https://instagram.com/arthur_fcouto'
+            title='Conheça meu IG'
+            >
                 Arthur_FCouto
-            </MUILink>{' '}
+            </MUILink>
+            {' '}
             {new Date().getFullYear()}
             {'.'}
         </Typography>
@@ -15,16 +21,11 @@ export default function Footer() {
 
     return (
         <Box
+            bgcolor={(theme) => theme.palette.background.paper}
             component='footer'
-            sx={{
-                py: 3,
-                px: 2,
-                mt: 'auto',
-                backgroundColor: (theme) =>
-                    theme.palette.mode === 'light'
-                        ? theme.palette.grey[200]
-                        : theme.palette.grey[800],
-            }}
+            marginTop='auto'
+            paddingY={3}
+            paddingX={2}
         >
             <Container maxWidth='xl'>
                 <Copyright />
