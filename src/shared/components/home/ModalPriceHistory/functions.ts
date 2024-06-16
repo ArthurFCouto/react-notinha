@@ -15,7 +15,7 @@ export async function UpdateChart(onError: Function, query: string, setLoading: 
             }
         });
     setLoading(false);
-}
+};
 
 function OrderByDate(list: Price[]) {
     const newList = list.sort((prev, last) => CustomGetTime(prev.data) - CustomGetTime(last.data));
@@ -24,7 +24,7 @@ function OrderByDate(list: Price[]) {
         return newList.slice(length - 10, length - 1);
     }
     return newList;
-}
+};
 
 function CalculateVariance(list: Price[]) {
     if(list.length === 0 || list.length === 1)
@@ -33,4 +33,4 @@ function CalculateVariance(list: Price[]) {
     const prev = ConvertStringToNumber(list[0].valor);
     const last = ConvertStringToNumber(list[length-1].valor);
     return parseFloat(((last-prev)/prev*100).toFixed(2));
-}
+};

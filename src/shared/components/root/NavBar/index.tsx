@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import {
     AppBar, Button, Box, MenuItem,
-    Toolbar, Typography, useTheme
+    Toolbar, Typography, useTheme,
+    IconButton
 } from '@mui/material';
 import { AccountBox, Menu } from '@mui/icons-material';
 import Image from 'next/image';
@@ -52,6 +53,7 @@ export default function NavBar() {
                         alignItems='center'
                         display='flex'
                         flexGrow={1}
+                        gap={2}
                         paddingX={0}
                     >
                         <Image
@@ -60,11 +62,10 @@ export default function NavBar() {
                             height={50}
                             width={130}
                         />
-                        <Box sx={{ display: { xs: 'none', md: 'flex' } }}>
+                        <Box sx={{ display: { xs: 'none', md: 'flex' } }} gap={1}>
                             <MenuItem
                                 onClick={() => router.push('/home')}
                                 sx={{
-                                    marginLeft: 1,
                                     paddingY: 0.75,
                                     paddingX: 1.5
                                 }}
@@ -78,9 +79,7 @@ export default function NavBar() {
                     <Box
                         alignItems='center'
                         gap={1}
-                        sx={{
-                            display: { xs: 'none', md: 'flex' },
-                        }}
+                        sx={{ display: { xs: 'none', md: 'flex' } }}
                     >
                         <Button
                             color='primary'
@@ -95,24 +94,20 @@ export default function NavBar() {
                             disabled
                             endIcon={<AccountBox />}
                             size='medium'
+                            sx={{ borderRadius: '50px' }}
                             variant='contained'
                         >
                             Login
                         </Button>
                     </Box>
                     <Box sx={{ display: { md: 'none' } }}>
-                        <Button
-                            variant='text'
-                            color='primary'
-                            aria-label='menu'
-                            onClick={toggleDrawer}
-                        >
+                        <IconButton color='primary' onClick={toggleDrawer} size='medium'>
                             <Menu />
-                        </Button>
+                        </IconButton>
                         <MUIDrawer open={openDrawer} onClose={toggleDrawer} />
                     </Box>
                 </Toolbar>
             </Box>
         </AppBar >
     );
-}
+};

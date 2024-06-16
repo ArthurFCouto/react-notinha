@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { Box, BoxProps, Container, Link as MUILink, Typography } from '@mui/material';
 
-export default function Footer(props: BoxProps) {
+export default function Footer() {
     const Copyright = () => (
         <Typography variant='body1' >
             {'Copyright © '}
@@ -11,7 +11,7 @@ export default function Footer(props: BoxProps) {
             href='https://instagram.com/arthur_fcouto'
             title='Conheça meu IG'
             >
-                arthur_fCouto
+                arthur_fcouto
             </MUILink>
             {' '}
             {new Date().getFullYear()}
@@ -27,7 +27,6 @@ export default function Footer(props: BoxProps) {
             paddingY={3}
             paddingX={2}
             width='100%'
-            {...props}
         >
             <Container maxWidth='lg'>
                 <Copyright />

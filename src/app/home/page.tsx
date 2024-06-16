@@ -13,7 +13,7 @@ import {
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Price } from '@/shared/service/firebase';
-import Footer from '@/shared/components/footer';
+import Footer from '@/shared/components/root/footer';
 import { FilterListPrices, HandleStateAlert, SendUrl, UpdateListPrices } from './functions';
 import ModalQrReader from '@/shared/components/home/ModalQrReader';
 import ModalPriceHistory from '@/shared/components/home/ModalPriceHistory';
