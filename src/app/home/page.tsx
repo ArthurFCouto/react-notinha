@@ -10,6 +10,8 @@ import {
     Clear, CloudUpload,
     HistoryEdu, North, Refresh
 } from '@mui/icons-material';
+import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { Price } from '@/shared/service/firebase';
 import Footer from '@/shared/components/footer';
 import { FilterListPrices, HandleStateAlert, SendUrl, UpdateListPrices } from './functions';
@@ -27,6 +29,8 @@ export default function Home() {
     const [showPriceHistory, setShowPriceHistory] = useState(false);
     const [queryPriceHistory, setQueryPriceHistory] = useState('');
     const filterRef = useRef<HTMLInputElement>(null);
+    const router = useRouter();
+
     const [stateAlert, dispatchAlert] = useReducer(HandleStateAlert, {
         message: '',
         severity: 'success',
@@ -92,18 +96,13 @@ export default function Home() {
                 maxWidth='lg'
                 marginX='auto'
             >
-                <Typography
-                    variant='h4'
-                    gutterBottom
-                    sx={{
-                        alignItems: 'center',
-                        display: 'flex',
-                        justifyContent: 'start'
-                    }}
-                >
-                    Notinha
-                    <HistoryEdu fontSize='inherit' />
-                </Typography>
+                <Image
+                    alt='Notinha'
+                    height={50}
+                    onClick={() => router.push('/')}
+                    src='/logo-name.png'
+                    width={130}
+                />
                 <Typography variant='h5' gutterBottom>
                     Acompanhe o preço dos produtos de mercado com informações reais e atualizadas.
                 </Typography>
