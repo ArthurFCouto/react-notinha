@@ -1,7 +1,8 @@
 'use client';
 
-import { createContext, useCallback, useContext, useMemo, useState } from 'react';
-import { CssBaseline, ThemeProvider, useMediaQuery } from '@mui/material';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { CssBaseline, useMediaQuery } from '@mui/material';
+import { ThemeProvider } from '@mui/material/styles';
 import LightTheme from '@/shared/themes/light';
 import DarkTheme from '@/shared/themes/dark';
 
@@ -15,7 +16,7 @@ const ThemeContext = createContext<Partial<ThemeContextData>>({});
 export const useAppThemeContext = () => useContext(ThemeContext);
 
 export const AppThemeProvider = ({ children }: Readonly<{ children: React.ReactNode }>) => {
-    const prefersDarkMode = useMediaQuery('(prefers-color-scheme: dark)') ? 'dark' : 'light';
+    const prefersDarkMode = useMediaQuery('(prefers-color-scheme: dark)', { noSsr: true }) ? 'dark' : 'light';
     const [themeName, setThemeName] = useState<'light' | 'dark'>(prefersDarkMode);
 
     const toggleTheme = useCallback(() => {
@@ -34,4 +35,4 @@ export const AppThemeProvider = ({ children }: Readonly<{ children: React.ReactN
             </ThemeProvider>
         </ThemeContext.Provider>
     )
-}
+};

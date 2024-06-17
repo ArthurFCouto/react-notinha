@@ -1,8 +1,9 @@
-import { createTheme } from '@mui/material';
+import { createTheme } from '@mui/material/styles';
 
 const DarkTheme = createTheme({
     palette: {
         mode: 'dark',
+        /*
         background: {
             default: '#EFEFEF',
             paper: '#FEFEFE',
@@ -24,6 +25,7 @@ const DarkTheme = createTheme({
             secondary: 'rgba(0, 0, 0, 0.6)',
             disabled: 'rgba(0, 0, 0, 0.38)',
         }
+        */
     },
     typography: {
         fontFamily: '"Montserrat", "Raleway", "Poppins", "Roboto", sans-serif',
