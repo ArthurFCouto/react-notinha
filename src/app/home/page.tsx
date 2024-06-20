@@ -4,20 +4,21 @@ import { useEffect, useReducer, useRef, useState } from 'react';
 import {
     Alert, Box, CircularProgress,
     Divider, Fab, IconButton, InputBase,
-    Paper, Snackbar, Typography
+    Paper, Snackbar, Typography,
+    useMediaQuery,
+    useTheme
 } from '@mui/material';
 import {
     Clear, CloudUpload,
-    HistoryEdu, North, Refresh
+    North, Refresh
 } from '@mui/icons-material';
-import Image from 'next/image';
-import { useRouter } from 'next/navigation';
 import { Price } from '@/shared/service/firebase';
 import Footer from '@/shared/components/root/footer';
 import { FilterListPrices, HandleStateAlert, SendUrl, UpdateListPrices } from './functions';
 import ModalQrReader from '@/shared/components/home/ModalQrReader';
 import ModalPriceHistory from '@/shared/components/home/ModalPriceHistory';
 import CardItems, { CardItemsLoading } from '@/shared/components/home/CardItems';
+import NavBar from '@/shared/components/root/NavBar';
 
 export default function Home() {
     const [loading, setLoading] = useState(false);
@@ -29,7 +30,8 @@ export default function Home() {
     const [showPriceHistory, setShowPriceHistory] = useState(false);
     const [queryPriceHistory, setQueryPriceHistory] = useState('');
     const filterRef = useRef<HTMLInputElement>(null);
-    const router = useRouter();
+    const theme = useTheme();
+    const mdDownScreen = useMediaQuery(theme.breakpoints.down('md'));
 
     const [stateAlert, dispatchAlert] = useReducer(HandleStateAlert, {
         message: '',
@@ -95,23 +97,15 @@ export default function Home() {
                 padding={1}
                 maxWidth='lg'
                 marginX='auto'
+                width='100%'
             >
-                <Image
-                    alt='Notinha'
-                    height={50}
-                    onClick={() => router.push('/')}
-                    src='/logo-name.png'
-                    width={130}
-                />
-                <Typography variant='h5' gutterBottom>
-                    Acompanhe o preço dos produtos de mercado com informações reais e atualizadas.
-                </Typography>
+                <NavBar />
                 <Paper
                     alignItems='center'
                     component={Box}
                     display='flex'
                     marginBottom={2.5}
-                    marginTop={3.5}
+                    marginTop={theme.spacing(12)}
                     paddingX={0.5}
                     paddingY={1}
                     width='100%'
@@ -125,7 +119,7 @@ export default function Home() {
                     <InputBase
                         inputRef={filterRef}
                         onChange={(e) => FilterListPrices(loading, originalPrices, setPrices, e.target.value)}
-                        placeholder='Atualize a lista e digite o que procura...'
+                        placeholder='Produto, data ou mercado...'
                         sx={{ flex: 1 }}
                         disabled={originalPrices.length === 0 ? true : false}
                     />

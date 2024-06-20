@@ -4,11 +4,10 @@ import { useState } from 'react';
 import {
     AppBar, Button, Box, Checkbox,
     IconButton, Link as MUILink, MenuItem,
-    Toolbar, Typography, useTheme,
+    Toolbar, Typography, useTheme
 } from '@mui/material';
 import { AccountBox, DarkMode, LightMode, Menu } from '@mui/icons-material';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
 import MUIDrawer from '../MUIDrawer';
 import { useAppThemeContext } from '@/shared/context/themeContext';
 import Link from 'next/link';
@@ -16,9 +15,8 @@ import Link from 'next/link';
 export default function NavBar() {
     const { themeName, toggleTheme } = useAppThemeContext();
     const theme = useTheme();
-    const [openDrawer, setOpenDrawer] = useState<boolean>(false);
+    const [openDrawer, setOpenDrawer] = useState(false);
     const toggleDrawer = () => setOpenDrawer((prev) => !prev);
-    const router = useRouter();
 
     return (
         <AppBar
@@ -66,7 +64,7 @@ export default function NavBar() {
                                 width={130}
                             />
                         </MUILink>
-                        <Box sx={{ display: { xs: 'none', md: 'flex' }}} gap={1}>
+                        <Box sx={{ display: { xs: 'none', md: 'flex' } }} gap={1}>
                             <MenuItem
                                 sx={{
                                     paddingY: 0.75,

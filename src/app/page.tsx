@@ -26,16 +26,16 @@ export default function Home() {
     >
       <Box
         component='main'
-        padding={1.5}
         maxWidth='lg'
         marginX='auto'
+        padding={1.5}
+        width='100%'
       >
         <NavBar />
         <Grid
           container
-          marginTop={mdDownScreen ? theme.spacing(12) : 0}
-          //height={`calc(100vh - ${theme.spacing(12)})`}
-          height={mdDownScreen ? 'auto' : '100vh'}
+          height={mdDownScreen ? 'auto' : '100dvh'}
+          marginTop={mdDownScreen ? 13 : 0}
         >
           <Grid
             display='flex'
@@ -52,22 +52,23 @@ export default function Home() {
               fontWeight={600}
               gutterBottom
               lineHeight={1.2}
+              letterSpacing={-1.5}
               textAlign={mdDownScreen ? 'center' : 'start'}
-              variant={mdDownScreen ? 'h4' : 'h2'}
+              variant={mdDownScreen ? 'h3' : 'h2'}
             >
               O segredo para encontrar os melhores preços
             </Typography>
             <Typography
-              marginTop={mdDownScreen ? 2 : 0}
-              variant={mdDownScreen ? 'h6' : 'h4'}
+              marginTop={mdDownScreen ? 2 : 1}
               gutterBottom
               textAlign={mdDownScreen ? 'center' : 'start'}
+              variant={mdDownScreen ? 'h5' : 'h4'}
             >
-              Descubra onde encontrar os melhores preços para os produtos da sua lista de compras no mercado.
+              Descubra onde encontrar os melhores preços para os produtos da sua lista de compras.
             </Typography>
             <Stack
               alignItems={mdDownScreen ? 'center' : 'end'}
-              marginTop={theme.spacing(5)}
+              marginTop={5}
               width='100%'
             >
               <Button
@@ -89,7 +90,6 @@ export default function Home() {
           <Grid
             alignItems='center'
             display='flex'
-            flexDirection='column'
             item
             justifyContent='center'
             md={5}
@@ -98,21 +98,33 @@ export default function Home() {
             xs={12}
           >
             <Image
-              alt='Notinha'
-              src='/cart.png'
+              alt='Carrinho de compras'
               height={sizeImage}
+              src='/cart.png'
               width={sizeImage}
             />
+          </Grid>
+          <Grid
+            display='flex'
+            item
+            justifyContent='center'
+            paddingLeft={0}
+            paddingY={mdDownScreen ? 3 : 0}
+            xs={12}
+          >
+            <Typography color='primary' textAlign='center' variant='h5'>
+              Compare preços de diversos mercados em um só lugar e encontre a melhor opção para suas compras!
+            </Typography>
           </Grid>
         </Grid>
         <Grid
           container
-          marginBottom={theme.spacing(4)}
+          marginBottom={4}
           rowGap={3}
         >
           <Grid
             display='flex'
-            flexDirection={mdDownScreen ? 'column-reverse' : 'column'}
+            flexDirection='column'
             rowGap={3}
             item
             justifyContent='center'
@@ -132,10 +144,9 @@ export default function Home() {
             />
             <Typography
               marginTop={mdDownScreen ? 2 : 0}
-              variant={mdDownScreen ? 'h6' : 'h4'}
-              textAlign={mdDownScreen ? 'center' : 'start'}
+              variant={mdDownScreen ? 'h5' : 'h4'}
+              textAlign='center'
             >
-              {/*Compare preços de diversos mercados em um só lugar e encontre a melhor opção para suas compras!*/}
               Acompanhar a evolução dos preços dos produtos nos mercados nunca foi tão fácil.
             </Typography>
           </Grid>
@@ -175,7 +186,7 @@ export default function Home() {
               paddingY={6}
               width='100%'
             >
-              <Typography textAlign='center' variant={mdDownScreen ? 'subtitle1' : 'h5'}>
+              <Typography textAlign='center' variant='h5'>
                 Tenha acesso ao histórico de preços, compare preços em diversos mercado, acompanhe seus gastos e faça escolhas inteligentes que economizam seu dinheiro.
               </Typography>
             </Paper>
@@ -188,9 +199,9 @@ export default function Home() {
             xs={12}
           >
             <img
-              srcSet='/market.jpg?w=164&h=164&fit=crop&auto=format&dpr=2 2x'
+              //srcSet='/market.jpg?w=164&h=164&fit=crop&auto=format&dpr=2 2x'
               src='/market.jpg'
-              alt='Mercado'
+              alt='Corredor de mercado'
               loading='lazy'
               width='90%'
               style={{
