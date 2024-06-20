@@ -2,15 +2,16 @@
 
 import { useState } from 'react';
 import {
-    AppBar, Button, Box, MenuItem,
+    AppBar, Button, Box, Checkbox,
+    IconButton, Link as MUILink, MenuItem,
     Toolbar, Typography, useTheme,
-    IconButton
 } from '@mui/material';
-import { AccountBox, Menu } from '@mui/icons-material';
+import { AccountBox, DarkMode, LightMode, Menu } from '@mui/icons-material';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import MUIDrawer from '../MUIDrawer';
 import { useAppThemeContext } from '@/shared/context/themeContext';
+import Link from 'next/link';
 
 export default function NavBar() {
     const { themeName, toggleTheme } = useAppThemeContext();
@@ -28,7 +29,7 @@ export default function NavBar() {
                 bgcolor: 'transparent',
                 backgroundImage: 'none',
                 height: theme.spacing(11),
-                marginTop: 2,
+                paddingTop: 2
             }}
         >
             <Box
@@ -42,7 +43,7 @@ export default function NavBar() {
                     sx={(theme) => ({
                         alignItems: 'center',
                         display: 'flex',
-                        backdropFilter: 'blur(24px)',
+                        //backdropFilter: 'blur(24px)',
                         bgcolor: theme.palette.background.paper,
                         borderRadius: '100px',
                         boxShadow: theme.palette.mode === 'light'
@@ -56,25 +57,27 @@ export default function NavBar() {
                         display='flex'
                         flexGrow={1}
                         gap={2}
-                        paddingX={0}
                     >
-                        <Image
-                            alt='Notinha'
-                            src='/logo-name.png'
-                            height={50}
-                            width={130}
-                        />
-                        <Box sx={{ display: { xs: 'none', md: 'flex' } }} gap={1}>
+                        <MUILink component={Link} href='/' underline='none'>
+                            <Image
+                                alt='Notinha logo'
+                                src='/logo-name.png'
+                                height={50}
+                                width={130}
+                            />
+                        </MUILink>
+                        <Box sx={{ display: { xs: 'none', md: 'flex' }}} gap={1}>
                             <MenuItem
-                                onClick={() => router.push('/home')}
                                 sx={{
                                     paddingY: 0.75,
                                     paddingX: 1.5
                                 }}
                             >
-                                <Typography variant='body1' color='text.primary'>
-                                    Buscar
-                                </Typography>
+                                <MUILink component={Link} href='/home' underline='none'>
+                                    <Typography color='text.primary' fontWeight={500} variant='body1'>
+                                        Buscar
+                                    </Typography>
+                                </MUILink>
                             </MenuItem>
                         </Box>
                     </Box>
@@ -83,6 +86,13 @@ export default function NavBar() {
                         gap={1}
                         sx={{ display: { xs: 'none', md: 'flex' } }}
                     >
+                        <Checkbox
+                            checked={themeName === 'dark'}
+                            checkedIcon={<DarkMode />}
+                            icon={<LightMode />}
+                            onChange={toggleTheme}
+                            size='medium'
+                        />
                         <Button
                             color='primary'
                             disabled
