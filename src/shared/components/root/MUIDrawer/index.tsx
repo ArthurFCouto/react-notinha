@@ -1,16 +1,19 @@
-import { AccountBox } from '@mui/icons-material';
+import { AccountBox, DarkMode, LightMode, PersonAddAlt1 } from '@mui/icons-material';
 import {
-    Box, Button, Divider, Drawer,
+    Box, Button, ButtonGroup, Checkbox, Divider, Drawer,
+    IconButton,
     MenuItem, Typography, useTheme
 } from '@mui/material';
 import { useRouter } from 'next/navigation';
 
 interface MUIDrawerProps {
     open: boolean,
-    onClose: () => void
+    onClose: () => void,
+    contextTheme: 'light' | 'dark',
+    toggleTheme: () => void
 }
 
-export default function MUIDrawer({ open, onClose }: MUIDrawerProps) {
+export default function MUIDrawer({ open, onClose, contextTheme, toggleTheme }: MUIDrawerProps) {
     const theme = useTheme();
     const router = useRouter();
 
@@ -23,34 +26,44 @@ export default function MUIDrawer({ open, onClose }: MUIDrawerProps) {
                 paddingY={1}
             >
                 <MenuItem
+                    sx={{ alignItems: 'center', display: 'flex', justifyContent: 'space-between', paddingY: 1.5 }}
+                >
+                    <ButtonGroup>
+                        <IconButton
+                            color='primary'
+                            disabled
+                            size='medium'
+                            sx={{ marginRight: 1.5 }}
+                        >
+                            <PersonAddAlt1 />
+                        </IconButton>
+                        <Button
+                            color='primary'
+                            disabled
+                            endIcon={<AccountBox />}
+                            size='medium'
+                            sx={{ marginRight: 1.5 }}
+                            variant='outlined'
+                        >
+                            Login
+                        </Button>
+                    </ButtonGroup>
+                    <Checkbox
+                        checked={contextTheme === 'dark'}
+                        checkedIcon={<DarkMode />}
+                        icon={<LightMode />}
+                        onChange={toggleTheme}
+                        size='medium'
+                    />
+                </MenuItem>
+                <Divider />
+                <MenuItem
                     onClick={() => router.push('/home')}
                     sx={{ paddingY: 1.5 }}
                 >
                     <Typography variant='body1' color='text.primary'>
                         Buscar
                     </Typography>
-                </MenuItem>
-                <Divider />
-                <MenuItem>
-                    <Button
-                        color='primary'
-                        disabled
-                        variant='contained'
-                        sx={{ width: '100%' }}
-                    >
-                        Cadastrar
-                    </Button>
-                </MenuItem>
-                <MenuItem>
-                    <Button
-                        color='primary'
-                        disabled
-                        endIcon={<AccountBox />}
-                        variant='outlined'
-                        sx={{ width: '100%' }}
-                    >
-                        Login
-                    </Button>
                 </MenuItem>
             </Box>
         </Drawer>

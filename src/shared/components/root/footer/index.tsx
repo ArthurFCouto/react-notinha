@@ -37,7 +37,7 @@ export default function Footer() {
                 <WhatsApp />
             </IconButton>
         </Stack>
-    )
+    );
 
     return (
         <Box
@@ -55,4 +55,4 @@ export default function Footer() {
             </Container>
         </Box>
     )
-}
+};

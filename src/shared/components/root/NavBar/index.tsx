@@ -10,8 +10,10 @@ import { AccountBox, Menu } from '@mui/icons-material';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import MUIDrawer from '../MUIDrawer';
+import { useAppThemeContext } from '@/shared/context/themeContext';
 
 export default function NavBar() {
+    const { themeName, toggleTheme } = useAppThemeContext();
     const theme = useTheme();
     const [openDrawer, setOpenDrawer] = useState<boolean>(false);
     const toggleDrawer = () => setOpenDrawer((prev) => !prev);
@@ -104,7 +106,12 @@ export default function NavBar() {
                         <IconButton color='primary' onClick={toggleDrawer} size='medium'>
                             <Menu />
                         </IconButton>
-                        <MUIDrawer open={openDrawer} onClose={toggleDrawer} />
+                        <MUIDrawer
+                            open={openDrawer}
+                            onClose={toggleDrawer}
+                            contextTheme={themeName}
+                            toggleTheme={toggleTheme}
+                        />
                     </Box>
                 </Toolbar>
             </Box>

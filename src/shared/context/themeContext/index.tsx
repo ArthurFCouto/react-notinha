@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useMemo, useState } from 'react';
 import { CssBaseline, useMediaQuery } from '@mui/material';
 import { ThemeProvider } from '@mui/material/styles';
 import LightTheme from '@/shared/themes/light';
@@ -11,7 +11,10 @@ interface ThemeContextData {
     toggleTheme: () => void;
 }
 
-const ThemeContext = createContext<Partial<ThemeContextData>>({});
+const ThemeContext = createContext<ThemeContextData>({
+    themeName: 'light',
+    toggleTheme: () => { }
+});
 
 export const useAppThemeContext = () => useContext(ThemeContext);
 
