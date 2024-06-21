@@ -67,8 +67,13 @@ export default function ModalPriceHistory({ close, open, onError, query }: Modal
                             <PriceHistoryChart height={300} prices={prices} />
                     }
                 </Box>
+                {
+                    prices.length > 0 && (
+                        <Typography color='primary' textAlign='center' width='100%' variant='h6'>{prices[0].mercado}</Typography>
+                    )
+                }
                 <DialogContentText >
-                        Desde o primeiro registro, variação de <strong style={{ color: variation < 0 || variation === 0 ? 'green' : 'red' }}>{loading ? <CircularProgress color='inherit' size={17} /> : `${variation}%`}</strong>.
+                    Desde o primeiro registro, variação de <strong style={{ color: variation < 0 || variation === 0 ? 'green' : 'red' }}>{loading ? <CircularProgress color='inherit' size={17} /> : `${variation}%`}</strong>.
                 </DialogContentText>
             </DialogContent>
             <DialogActions>
@@ -77,5 +82,5 @@ export default function ModalPriceHistory({ close, open, onError, query }: Modal
                 </Button>
             </DialogActions>
         </Dialog >
-    )
-}
+    );
+};

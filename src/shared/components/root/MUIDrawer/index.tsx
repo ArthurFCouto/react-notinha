@@ -1,10 +1,10 @@
-import { AccountBox, DarkMode, LightMode, PersonAddAlt1 } from '@mui/icons-material';
+import { DarkMode, LightMode } from '@mui/icons-material';
 import {
-    Box, Button, ButtonGroup, Checkbox, Divider, Drawer,
-    IconButton,
+    Box, Checkbox, Divider, Drawer,
     MenuItem, Typography, useTheme
 } from '@mui/material';
 import { useRouter } from 'next/navigation';
+import MenuLogin from '../MenuLogin';
 
 interface MUIDrawerProps {
     open: boolean,
@@ -26,28 +26,14 @@ export default function MUIDrawer({ open, onClose, contextTheme, toggleTheme }: 
                 paddingY={1}
             >
                 <MenuItem
-                    sx={{ alignItems: 'center', display: 'flex', justifyContent: 'space-between', paddingY: 1.5 }}
+                    sx={{
+                        alignItems: 'center',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        paddingY: 1.5
+                    }}
                 >
-                    <ButtonGroup>
-                        <IconButton
-                            color='primary'
-                            disabled
-                            size='medium'
-                            sx={{ marginRight: 1.5 }}
-                        >
-                            <PersonAddAlt1 />
-                        </IconButton>
-                        <Button
-                            color='primary'
-                            disabled
-                            endIcon={<AccountBox />}
-                            size='medium'
-                            sx={{ marginRight: 1.5 }}
-                            variant='outlined'
-                        >
-                            Login
-                        </Button>
-                    </ButtonGroup>
+                    <MenuLogin />
                     <Checkbox
                         checked={contextTheme === 'dark'}
                         checkedIcon={<DarkMode />}
@@ -67,5 +53,5 @@ export default function MUIDrawer({ open, onClose, contextTheme, toggleTheme }: 
                 </MenuItem>
             </Box>
         </Drawer>
-    )
+    );
 };

@@ -1,5 +1,8 @@
 import Link from 'next/link';
-import { Box, BoxProps, Container, Divider, IconButton, Link as MUILink, Stack, Typography } from '@mui/material';
+import {
+    Box, Container, Divider, IconButton,
+    Link as MUILink, Stack, Typography
+} from '@mui/material';
 import { GitHub, LinkedIn, WhatsApp } from '@mui/icons-material';
 
 export default function Footer() {
@@ -54,5 +57,5 @@ export default function Footer() {
                 <SocialMedia />
             </Container>
         </Box>
-    )
+    );
 };

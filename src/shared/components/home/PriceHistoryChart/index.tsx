@@ -34,7 +34,7 @@ export default function PriceHistoryChart({ height, prices }: PriceHistoryChartP
                 </text>
             </g >
         );
-    }
+    };
 
     return (
         <Stack height={height} width='100%'>
@@ -58,5 +58,5 @@ export default function PriceHistoryChart({ height, prices }: PriceHistoryChartP
                 </AreaChart>
             </ResponsiveContainer>
         </Stack>
-    )
-}
+    );
+};
