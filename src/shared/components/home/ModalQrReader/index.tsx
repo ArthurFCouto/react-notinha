@@ -1,10 +1,10 @@
 'use client';
 
 import {
-    Button, Dialog, DialogActions,
-    DialogContent, DialogContentText, DialogTitle, Stack
+    Dialog, DialogContent, DialogTitle,
+    IconButton, Stack, Typography
 } from '@mui/material';
-import { QrCodeScanner } from '@mui/icons-material';
+import { Close, QrCodeScanner } from '@mui/icons-material';
 import QrReader from '../QrReader';
 
 interface ModalQrReaderProps {
@@ -33,20 +33,18 @@ export default function ModalQrReader({ close, getCode, onError, open }: ModalQr
         >
             <DialogTitle>
                 <Stack alignItems='center' direction='row' gap={1}>
-                    Leitor de QR Code <QrCodeScanner />
+                    Centralize o QR Code <QrCodeScanner />
+                    <IconButton color='primary' onClick={close} size='large' sx={{ marginLeft: 'auto' }}>
+                        <Close />
+                    </IconButton>
                 </Stack>
             </DialogTitle>
             <DialogContent dividers>
-                <DialogContentText>
-                    Escaneie o QR Code do cupom fiscal recebido no mercado.
-                </DialogContentText>
-                <QrReader getCode={handleGetCode} onError={handleError} openCamera={open}/>
+                <Typography>
+                    Envie seu cupom fiscal escaneando o QR Code.
+                </Typography>
+                <QrReader getCode={handleGetCode} onError={handleError} openCamera={open} />
             </DialogContent>
-            <DialogActions>
-                <Button autoFocus onClick={close} variant='contained'>
-                    Cancelar
-                </Button>
-            </DialogActions>
         </Dialog>
     );
 };

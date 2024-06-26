@@ -12,11 +12,15 @@ import { Player } from '@lottiefiles/react-lottie-player';
 import lottieNotinha from '@/shared/assets/notinha.json';
 import PriceHistoryChart from '@/shared/components/home/PriceHistoryChart';
 import { Search } from '@mui/icons-material';
+import { useRouter } from 'next/navigation';
 
 export default function Home() {
   const theme = useTheme();
   const mdDownScreen = useMediaQuery(theme.breakpoints.down('md'));
   const sizeImage = mdDownScreen ? 275 : 300;
+  const route = useRouter();
+
+  const goToHome = () => route.push('home');
 
   return (
     <Box
@@ -35,7 +39,7 @@ export default function Home() {
         <Grid
           container
           height={mdDownScreen ? 'auto' : '100dvh'}
-          marginTop={mdDownScreen ? 13 : 0}
+          marginTop={mdDownScreen ? 15 : 0}
         >
           <Grid
             display='flex'
@@ -72,7 +76,7 @@ export default function Home() {
               width='100%'
             >
               <Button
-                href='/home'
+                onClick={goToHome}
                 size='large'
                 variant='contained'
                 sx={{
@@ -212,7 +216,7 @@ export default function Home() {
             />
             <Fab
               color='primary'
-              href='/home'
+              onClick={goToHome}
               variant='extended'
               sx={{
                 fontSize: 14,

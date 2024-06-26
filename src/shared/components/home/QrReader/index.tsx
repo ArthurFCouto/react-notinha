@@ -1,11 +1,12 @@
-/* https://medium.com/readytowork-org/implementing-a-qr-code-scanner-in-react-4c8f4e3c6f2e
+/*
+ * https://medium.com/readytowork-org/implementing-a-qr-code-scanner-in-react-4c8f4e3c6f2e
  * https://www.npmjs.com/package/qr-scanner
  */
 
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { Box, IconButton } from '@mui/material';
+import { Avatar, Box, IconButton } from '@mui/material';
 import { Cameraswitch } from '@mui/icons-material';
 import QrScanner from 'qr-scanner';
 import { Player } from '@lottiefiles/react-lottie-player';
@@ -22,6 +23,7 @@ export default function QrReader({ getCode, onError, openCamera }: QrReaderProps
     const [startingCamera, setStartingCamera] = useState(true);
     const scanner = useRef<QrScanner>();
     const videoElement = useRef<HTMLVideoElement>(null);
+    const height = window.innerHeight;
 
     const onScanSuccess = (result: QrScanner.ScanResult) => {
         getCode(result.data);
@@ -66,11 +68,12 @@ export default function QrReader({ getCode, onError, openCamera }: QrReaderProps
 
     return (
         <Box
-            height={350}
+            height={height / 2}
             position='relative'
             paddingTop={2}
         >
             <Box
+                borderRadius={1}
                 component='video'
                 ref={videoElement}
                 width='100%'
@@ -85,29 +88,28 @@ export default function QrReader({ getCode, onError, openCamera }: QrReaderProps
                         loop
                         src={lottieLoading}
                         style={{
-                            bottom: '25%',
-                            height: 200,
+                            height: height / 3.5,
                             left: '25%',
                             position: 'absolute',
                             right: '25%',
-                            top: '25%',
-                            width: 200
+                            top: '20%',
+                            width: height / 3.5
                         }}
                     />
                 )
             }
-            <IconButton
-                color='primary'
-                onClick={handleCameraswitch}
-                size='large'
+            <Avatar
                 sx={{
+                    bgcolor: (theme) => theme.palette.primary.contrastText,
                     position: 'absolute',
                     bottom: 10,
                     right: 10
                 }}
             >
-                <Cameraswitch fontSize='inherit' />
-            </IconButton>
+                <IconButton color='primary' onClick={handleCameraswitch} size='large'>
+                    <Cameraswitch fontSize='inherit' />
+                </IconButton>
+            </Avatar>
         </Box >
-    )
-}
+    );
+};

@@ -4,10 +4,11 @@ import { useEffect, useState } from 'react';
 import {
     Box, Button, CircularProgress, Dialog, DialogActions,
     DialogContent, DialogContentText, DialogTitle,
+    IconButton,
     Stack, Typography
 } from '@mui/material'
 import { Player } from '@lottiefiles/react-lottie-player';
-import { History } from '@mui/icons-material';
+import { Close, History } from '@mui/icons-material';
 import { Price } from '@/shared/service/firebase';
 import lottieLoading from '@/shared/assets/loading-2.json';
 import PriceHistoryChart from '../PriceHistoryChart';
@@ -40,6 +41,9 @@ export default function ModalPriceHistory({ close, open, onError, query }: Modal
             <DialogTitle>
                 <Stack alignItems='center' direction='row' gap={1}>
                     Histórico de Preços <History color='primary' />
+                    <IconButton color='primary' onClick={close} size='large' sx={{ marginLeft: 'auto' }}>
+                        <Close />
+                    </IconButton>
                 </Stack>
             </DialogTitle>
             <DialogContent dividers>
@@ -68,19 +72,14 @@ export default function ModalPriceHistory({ close, open, onError, query }: Modal
                     }
                 </Box>
                 {
-                    prices.length > 0 && (
-                        <Typography color='primary' textAlign='center' width='100%' variant='h6'>{prices[0].mercado}</Typography>
+                    (prices.length > 0 && !loading) && (
+                        <Typography color='primary' gutterBottom textAlign='center' width='100%' variant='h6'>{prices[0].mercado}</Typography>
                     )
                 }
                 <DialogContentText >
                     Desde o primeiro registro, variação de <strong style={{ color: variation < 0 || variation === 0 ? 'green' : 'red' }}>{loading ? <CircularProgress color='inherit' size={17} /> : `${variation}%`}</strong>.
                 </DialogContentText>
             </DialogContent>
-            <DialogActions>
-                <Button onClick={close} size='small' variant='contained'>
-                    Fechar
-                </Button>
-            </DialogActions>
         </Dialog >
     );
 };
