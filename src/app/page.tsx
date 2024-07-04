@@ -39,7 +39,8 @@ export default function Home() {
         <Grid
           container
           height={mdDownScreen ? 'auto' : '100dvh'}
-          marginTop={mdDownScreen ? 15 : 0}
+          //marginTop={mdDownScreen ? 15 : 0}
+          marginTop={15}
         >
           <Grid
             display='flex'

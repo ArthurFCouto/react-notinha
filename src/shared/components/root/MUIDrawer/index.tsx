@@ -18,7 +18,11 @@ export default function MUIDrawer({ open, onClose, contextTheme, toggleTheme }: 
     const router = useRouter();
 
     return (
-        <Drawer anchor='right' open={open} onClose={onClose}>
+        <Drawer
+            anchor='right'
+            open={open}
+            onClose={onClose}
+        >
             <Box
                 bgcolor={theme.palette.background.paper}
                 flexGrow={1}
@@ -36,8 +40,8 @@ export default function MUIDrawer({ open, onClose, contextTheme, toggleTheme }: 
                     <MenuLogin />
                     <Checkbox
                         checked={contextTheme === 'dark'}
-                        checkedIcon={<DarkMode />}
-                        icon={<LightMode />}
+                        checkedIcon={<LightMode />}
+                        icon={<DarkMode />}
                         onChange={toggleTheme}
                         size='medium'
                     />

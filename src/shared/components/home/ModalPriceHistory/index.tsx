@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import {
-    Box, Button, CircularProgress, Dialog, DialogActions,
+    Box, CircularProgress, Dialog,
     DialogContent, DialogContentText, DialogTitle,
     IconButton,
     Stack, Typography
@@ -40,8 +40,8 @@ export default function ModalPriceHistory({ close, open, onError, query }: Modal
         >
             <DialogTitle>
                 <Stack alignItems='center' direction='row' gap={1}>
-                    Histórico de Preços <History color='primary' />
-                    <IconButton color='primary' onClick={close} size='large' sx={{ marginLeft: 'auto' }}>
+                    Histórico de Preços <History />
+                    <IconButton color='primary' onClick={close} size='large' sx={{ marginLeft: 'auto', marginRight: '-12px' }}> 
                         <Close />
                     </IconButton>
                 </Stack>

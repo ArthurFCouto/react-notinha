@@ -34,14 +34,14 @@ export default function ModalQrReader({ close, getCode, onError, open }: ModalQr
             <DialogTitle>
                 <Stack alignItems='center' direction='row' gap={1}>
                     Centralize o QR Code <QrCodeScanner />
-                    <IconButton color='primary' onClick={close} size='large' sx={{ marginLeft: 'auto' }}>
+                    <IconButton color='primary' onClick={close} size='large' sx={{ marginLeft: 'auto', marginRight: '-12px' }}>
                         <Close />
                     </IconButton>
                 </Stack>
             </DialogTitle>
             <DialogContent dividers>
                 <Typography>
-                    Envie seu cupom fiscal escaneando o QR Code.
+                    Envie seu cupom fiscal escaneando seu QR Code.
                 </Typography>
                 <QrReader getCode={handleGetCode} onError={handleError} openCamera={open} />
             </DialogContent>

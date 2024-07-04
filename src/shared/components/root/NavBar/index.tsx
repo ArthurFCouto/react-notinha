@@ -86,8 +86,8 @@ export default function NavBar() {
                     >
                         <Checkbox
                             checked={themeName === 'dark'}
-                            checkedIcon={<DarkMode />}
-                            icon={<LightMode />}
+                            checkedIcon={<LightMode />}
+                            icon={<DarkMode />}
                             onChange={toggleTheme}
                             size='medium'
                         />
