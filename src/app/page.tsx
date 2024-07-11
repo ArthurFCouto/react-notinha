@@ -17,7 +17,7 @@ import { useRouter } from 'next/navigation';
 export default function Home() {
   const theme = useTheme();
   const mdDownScreen = useMediaQuery(theme.breakpoints.down('md'));
-  const sizeImage = mdDownScreen ? 275 : 300;
+  const sizeImage = mdDownScreen ? 275 : 325;
   const route = useRouter();
 
   const goToHome = () => route.push('home');
@@ -39,8 +39,7 @@ export default function Home() {
         <Grid
           container
           height={mdDownScreen ? 'auto' : '100dvh'}
-          //marginTop={mdDownScreen ? 15 : 0}
-          marginTop={15}
+          paddingTop={12}
         >
           <Grid
             display='flex'
@@ -73,7 +72,7 @@ export default function Home() {
             </Typography>
             <Stack
               alignItems={mdDownScreen ? 'center' : 'end'}
-              marginTop={5}
+              marginTop={2}
               width='100%'
             >
               <Button

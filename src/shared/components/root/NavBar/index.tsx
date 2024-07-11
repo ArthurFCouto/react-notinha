@@ -23,10 +23,9 @@ export default function NavBar() {
             color='primary'
             position='fixed'
             sx={{
-                boxShadow: 0,
-                bgcolor: 'transparent',
+                bgcolor: theme.palette.primary.main,
                 backgroundImage: 'none',
-                height: theme.spacing(11),
+                height: theme.spacing(12),
                 paddingTop: 2
             }}
         >
@@ -38,17 +37,11 @@ export default function NavBar() {
             >
                 <Toolbar
                     variant='regular'
-                    sx={(theme) => ({
+                    sx={{
                         alignItems: 'center',
                         display: 'flex',
-                        //backdropFilter: 'blur(24px)',
-                        bgcolor: theme.palette.background.paper,
-                        borderRadius: '100px',
-                        boxShadow: theme.palette.mode === 'light'
-                            ? `0 0 1px rgba(85, 166, 246, 0.1), 1px 1.5px 2px -1px rgba(85, 166, 246, 0.15), 4px 4px 12px -2.5px rgba(85, 166, 246, 0.15)`
-                            : '0 0 1px rgba(2, 31, 59, 0.7), 1px 1.5px 2px -1px rgba(2, 31, 59, 0.65), 4px 4px 12px -2.5px rgba(2, 31, 59, 0.65)',
                         justifyContent: 'space-between',
-                    })}
+                    }}
                 >
                     <Box
                         alignItems='center'
@@ -72,7 +65,7 @@ export default function NavBar() {
                                 }}
                             >
                                 <MUILink component={Link} href='/home' underline='none'>
-                                    <Typography color='text.primary' fontWeight={500} variant='body1'>
+                                    <Typography color='text.primary' fontWeight={600} variant='body1'>
                                         Buscar
                                     </Typography>
                                 </MUILink>
@@ -111,7 +104,7 @@ export default function NavBar() {
                         </Button>
                     </Box>
                     <Box sx={{ display: { md: 'none' } }}>
-                        <IconButton color='primary' onClick={toggleDrawer} size='medium'>
+                        <IconButton onClick={toggleDrawer} size='medium'>
                             <Menu />
                         </IconButton>
                         <MUIDrawer

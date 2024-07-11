@@ -4,6 +4,17 @@ const LightTheme = createTheme({
     palette: {
         mode: 'light',
         background: {
+            default: '#fefeee',
+          },
+        primary: {
+            main: '#01c117',
+            contrastText: '#ffffff',
+        },
+        secondary: {
+            main: '#fff110',
+        },
+        /*
+        background: {
             default: '#EFEFEF',
             paper: '#FEFEFE',
         },
@@ -24,6 +35,7 @@ const LightTheme = createTheme({
             secondary: 'rgba(0, 0, 0, 0.6)',
             disabled: 'rgba(0, 0, 0, 0.38)',
         }
+            */
     },
     typography: {
         fontFamily: '"Montserrat", "Raleway", "Poppins", "Roboto", sans-serif',
