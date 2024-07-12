@@ -19,7 +19,7 @@ export const metadata: Metadata = {
     email: false,
     address: false,
     telephone: false,
-  },
+  }
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

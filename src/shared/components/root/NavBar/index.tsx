@@ -4,7 +4,8 @@ import { useState } from 'react';
 import {
     AppBar, Button, Box, Checkbox,
     IconButton, Link as MUILink, MenuItem,
-    Toolbar, Typography, useTheme
+    Toolbar, Typography, useTheme,
+    useMediaQuery
 } from '@mui/material';
 import { AccountBox, DarkMode, LightMode, Menu } from '@mui/icons-material';
 import Image from 'next/image';
@@ -15,6 +16,7 @@ import Link from 'next/link';
 export default function NavBar() {
     const { themeName, toggleTheme } = useAppThemeContext();
     const theme = useTheme();
+    const mdDownScreen = useMediaQuery(theme.breakpoints.down('md'));
     const [openDrawer, setOpenDrawer] = useState(false);
     const toggleDrawer = () => setOpenDrawer((prev) => !prev);
 
@@ -25,14 +27,14 @@ export default function NavBar() {
             sx={{
                 bgcolor: theme.palette.primary.main,
                 backgroundImage: 'none',
-                height: theme.spacing(12),
-                paddingTop: 2
+                height: mdDownScreen ? theme.spacing(9) : theme.spacing(12),
+                paddingTop: mdDownScreen ? 0 : 2
             }}
         >
             <Box
+                height='100%'
                 marginX='auto'
                 maxWidth='lg'
-                paddingX={1.5}
                 width='100%'
             >
                 <Toolbar
@@ -40,6 +42,7 @@ export default function NavBar() {
                     sx={{
                         alignItems: 'center',
                         display: 'flex',
+                        height: '100%',
                         justifyContent: 'space-between',
                     }}
                 >
