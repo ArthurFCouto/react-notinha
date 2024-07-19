@@ -191,7 +191,7 @@ export default function Home() {
               width='100%'
             >
               <Typography textAlign='center' variant='h5'>
-                Tenha acesso ao histórico de preços, compare preços em diversos mercado, acompanhe seus gastos e faça escolhas inteligentes que economizam seu dinheiro.
+                Tenha acesso ao histórico de preços, acompanhe seus gastos, compare preços em diversos mercado e faça escolhas inteligentes que economizam seu dinheiro.
               </Typography>
             </Paper>
           </Grid>
@@ -229,7 +229,7 @@ export default function Home() {
                 top: '50%'
               }}
             >
-              <Search />
+              <Search/>
               Experimente
             </Fab>
           </Grid>

@@ -1,5 +1,5 @@
 import {
-    addDoc, collection, doc, getDocs,
+    addDoc, and, collection, doc, getDocs,
     getFirestore, orderBy, query, where, writeBatch
 } from 'firebase/firestore';
 import { FirebaseError } from 'firebase/app';
@@ -71,7 +71,7 @@ export async function addDocument(path: 'mercado' | 'notaFiscal' | 'precos', dat
             createErrorLog(error);
             throw (`Erro ao cadastrar ${path}. ${error.message}`);
         });
-}
+};
 
 export async function addListDocuments(object: MarketFirebase | InvoiceFirebase | PriceFirebase) {
     const { data, path } = object;
@@ -89,7 +89,7 @@ export async function addListDocuments(object: MarketFirebase | InvoiceFirebase 
             createErrorLog(error);
             throw (`Erro ao cadastrar lista de ${path}. ${error.message}`);
         });
-}
+};
 
 async function addPriceList(data: Price[]) {
     const database = getFirestore(firebase);
@@ -109,7 +109,7 @@ async function addPriceList(data: Price[]) {
             createErrorLog(error);
             throw (`Erro ao cadastrar lista de precos. ${error.message}`);
         });
-}
+};
 
 export async function createErrorLog(log: any) {
     const data = {
@@ -125,7 +125,7 @@ export async function createErrorLog(log: any) {
         .catch((error: FirebaseError) => {
             console.log('Erro ao armazenar log de erro.', error);
         });
-}
+};
 
 export async function getDocumentList(path: 'mercado'): Promise<Market[]>;
 
@@ -155,7 +155,7 @@ export async function getDocumentList(path: 'mercado' | 'notaFiscal' | 'precos')
             createErrorLog(error);
             throw (`Erro ao buscar a lista de ${path}. ${error.message}`);
         });
-}
+};
 
 export async function checkIfDocumentExist(path: 'mercado', data: string): Promise<Market | false>;
 
@@ -191,7 +191,7 @@ export async function checkIfDocumentExist(path: 'mercado' | 'notaFiscal', data:
             createErrorLog(error);
             throw (`Erro ao verificar se ${path} já está cadastrado(a). ${error.message}`);
         });
-}
+};
 
 export async function getPriceListByName(name: string): Promise<Price[]> {
     const database = getFirestore(firebase);
@@ -210,7 +210,26 @@ export async function getPriceListByName(name: string): Promise<Price[]> {
             createErrorLog(error);
             throw (`Erro ao buscar a preços pelo nome. ${error.message}`);
         });
-}
+};
+
+export async function getPriceListByNameAndMarket(name: string, market: string): Promise<Price[]> {
+    const database = getFirestore(firebase);
+    const ref = query(collection(database, 'precos'), and(where('produto', '==', name), where('mercado', '==', market)));
+    return await getDocs(ref)
+        .then((response) => {
+            return response.docs.map((doc) => {
+                const object = doc.data();
+                return {
+                    id: doc.id,
+                    ...object
+                }
+            }) as Price[];
+        })
+        .catch((error: FirebaseError) => {
+            createErrorLog(error);
+            throw (`Erro ao buscar a preços pelo nome. ${error.message}`);
+        });
+};
 
 /**
  * Retorna a lista de preços cadastrados no dia informado
@@ -234,4 +253,4 @@ async function getPriceListByDate(date: string): Promise<Price[]> {
             createErrorLog(error);
             throw (`Erro ao buscar a preços pelo data. ${error.message}`);
         });
-}
+};

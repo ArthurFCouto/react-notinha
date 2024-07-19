@@ -31,9 +31,9 @@ const LightTheme = createTheme({
             contrastText: '#EFEFEF'
         },
         text: {
-            primary: 'rgba(0, 0, 0, 0.87)',
-            secondary: 'rgba(0, 0, 0, 0.6)',
-            disabled: 'rgba(0, 0, 0, 0.38)',
+            primary: 'rgba(0, 0, 0, 0.85)',
+            secondary: 'rgba(0, 0, 0, 0.55)',
+            disabled: 'rgba(0, 0, 0, 0.35)',
         }
             */
     },

@@ -19,6 +19,7 @@ export default function NavBar() {
     const mdDownScreen = useMediaQuery(theme.breakpoints.down('md'));
     const [openDrawer, setOpenDrawer] = useState(false);
     const toggleDrawer = () => setOpenDrawer((prev) => !prev);
+    const linkColor = themeName === 'dark' ? 'text.primary' : 'primary.contrastText'
 
     return (
         <AppBar
@@ -28,13 +29,12 @@ export default function NavBar() {
                 bgcolor: theme.palette.primary.main,
                 backgroundImage: 'none',
                 height: mdDownScreen ? theme.spacing(9) : theme.spacing(12),
-                paddingTop: mdDownScreen ? 0 : 2
             }}
         >
             <Box
                 height='100%'
                 marginX='auto'
-                maxWidth='lg'
+                maxWidth='xl'
                 width='100%'
             >
                 <Toolbar
@@ -68,7 +68,7 @@ export default function NavBar() {
                                 }}
                             >
                                 <MUILink component={Link} href='/home' underline='none'>
-                                    <Typography color='text.primary' fontWeight={600} variant='body1'>
+                                    <Typography color={linkColor} fontWeight={600} variant='body1'>
                                         Buscar
                                     </Typography>
                                 </MUILink>
@@ -82,24 +82,27 @@ export default function NavBar() {
                     >
                         <Checkbox
                             checked={themeName === 'dark'}
-                            checkedIcon={<LightMode />}
-                            icon={<DarkMode />}
+                            checkedIcon={<LightMode color='action' />}
+                            icon={<DarkMode color='action' />}
                             onChange={toggleTheme}
                             size='medium'
                         />
                         <Button
-                            color='primary'
+                            color='secondary'
                             disabled
-                            size='medium'
-                            variant='text'
+                            size='large'
+                            variant='outlined'
+                            sx={{
+                                borderRadius: '50px'
+                            }}
                         >
                             Cadastrar
                         </Button>
                         <Button
-                            color='primary'
+                            color='secondary'
                             disabled
                             endIcon={<AccountBox />}
-                            size='medium'
+                            size='large'
                             sx={{ borderRadius: '50px' }}
                             variant='contained'
                         >
@@ -107,7 +110,7 @@ export default function NavBar() {
                         </Button>
                     </Box>
                     <Box sx={{ display: { md: 'none' } }}>
-                        <IconButton onClick={toggleDrawer} size='medium'>
+                        <IconButton onClick={toggleDrawer} size='large'>
                             <Menu />
                         </IconButton>
                         <MUIDrawer
