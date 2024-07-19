@@ -24,6 +24,7 @@ export default function NavBar() {
     return (
         <AppBar
             color='primary'
+            enableColorOnDark
             position='fixed'
             sx={{
                 bgcolor: theme.palette.primary.main,

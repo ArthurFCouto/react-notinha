@@ -3,14 +3,13 @@
 import { useEffect, useReducer, useRef, useState } from 'react';
 import {
     Alert, Box, CircularProgress,
-    Divider, Fab, IconButton, InputBase,
-    Paper, Snackbar, Typography,
-    useMediaQuery,
-    useTheme
+    Divider, Fab, Fade, IconButton, InputBase,
+    Paper, Snackbar, useMediaQuery, useTheme
 } from '@mui/material';
 import {
     Clear, CloudUpload,
-    North, Refresh
+    KeyboardArrowUp,
+    Refresh
 } from '@mui/icons-material';
 import { Price } from '@/shared/service/firebase';
 import Footer from '@/shared/components/root/footer';
@@ -73,7 +72,7 @@ export default function Home() {
 
     useEffect(() => {
         const handleShowToTopButton = () => {
-            window.scrollY > window.innerHeight / 2 ? setShowButtonToTop(true) : setShowButtonToTop(false);
+            window.scrollY > window.innerHeight / 1.5 ? setShowButtonToTop(true) : setShowButtonToTop(false);
         }
         window.addEventListener('scroll', handleShowToTopButton);
 
@@ -148,21 +147,19 @@ export default function Home() {
                     )
                 }
             </Box>
-            {
-                showButtonToTop && (
-                    <Fab
-                        color='primary'
-                        sx={{
-                            position: 'fixed',
-                            bottom: 15,
-                            right: 15
-                        }}
-                        onClick={goToTop}
-                    >
-                        <North />
-                    </Fab>
-                )
-            }
+            <Fade in={showButtonToTop}>
+                <Fab
+                    color='primary'
+                    sx={{
+                        position: 'fixed',
+                        bottom: 15,
+                        right: 15
+                    }}
+                    onClick={goToTop}
+                >
+                    <KeyboardArrowUp />
+                </Fab>
+            </Fade>
             <ModalQrReader
                 close={() => setOpenQR(false)}
                 getCode={(code) => SendUrl(code, sendingUrl, setSendingUrl, dispatchAlert)}
@@ -179,4 +176,4 @@ export default function Home() {
             <Footer />
         </Box>
     )
-}
+};

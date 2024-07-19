@@ -1,7 +1,7 @@
 import { DarkMode, LightMode } from '@mui/icons-material';
 import {
     Box, Checkbox, Divider, Drawer,
-    MenuItem, Typography, useTheme
+    MenuItem, Typography
 } from '@mui/material';
 import { useRouter } from 'next/navigation';
 import MenuLogin from '../MenuLogin';
@@ -14,7 +14,6 @@ interface MUIDrawerProps {
 }
 
 export default function MUIDrawer({ open, onClose, contextTheme, toggleTheme }: MUIDrawerProps) {
-    const theme = useTheme();
     const router = useRouter();
 
     return (
@@ -24,7 +23,7 @@ export default function MUIDrawer({ open, onClose, contextTheme, toggleTheme }: 
             onClose={onClose}
         >
             <Box
-                bgcolor={theme.palette.background.paper}
+                bgcolor={(theme) => theme.palette.background.paper}
                 flexGrow={1}
                 minWidth='60dvw'
                 paddingY={1}
@@ -40,8 +39,8 @@ export default function MUIDrawer({ open, onClose, contextTheme, toggleTheme }: 
                     <MenuLogin />
                     <Checkbox
                         checked={contextTheme === 'dark'}
-                        checkedIcon={<LightMode />}
-                        icon={<DarkMode />}
+                        checkedIcon={<LightMode color='action' />}
+                        icon={<DarkMode color='action' />}
                         onChange={toggleTheme}
                         size='medium'
                     />
