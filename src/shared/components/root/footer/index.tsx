@@ -6,7 +6,7 @@ import { GitHub, LinkedIn, WhatsApp } from '@mui/icons-material';
 
 export default function Footer() {
     const Copyright = () => (
-        <Typography variant='body1' sx={{ paddingX: 2 }}>
+        <Typography variant='body1'>
             {'Copyright © '}
             <Tooltip title='Conheça meu IG'>
                 <Link color='inherit' href='https://instagram.com/arthur_fcouto' target='_blank'>
@@ -46,14 +46,14 @@ export default function Footer() {
 
     return (
         <Box
-            bgcolor={(theme)=> theme.palette.background.paper}
+            bgcolor={(theme) => theme.palette.background.paper}
             boxShadow='0px 10px 10px 5px #000'
             component='footer'
             marginTop='auto'
             paddingY={2}
             width='100%'
         >
-            <Stack direction='column' marginX='auto' maxWidth='xk'>
+            <Stack direction='column' marginX='auto' maxWidth='xl' paddingX={2}>
                 <Copyright />
                 <Divider orientation='horizontal' sx={{ marginBottom: 1, marginTop: 2 }} />
                 <SocialMedia />

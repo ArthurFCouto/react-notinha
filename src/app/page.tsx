@@ -1,26 +1,37 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import {
   Box, Button, Fab, Grid,
   Paper, Stack, Typography, useMediaQuery,
   useTheme
 } from '@mui/material';
+import { Search } from '@mui/icons-material';
 import Footer from '@/shared/components/root/footer';
 import NavBar from '@/shared/components/root/NavBar';
 import { Player } from '@lottiefiles/react-lottie-player';
 import lottieNotinha from '@/shared/assets/notinha.json';
 import PriceHistoryChart from '@/shared/components/home/PriceHistoryChart';
-import { Search } from '@mui/icons-material';
-import { useRouter } from 'next/navigation';
+import { getPricesByName } from '@/shared/server/actions';
+import { Price } from '@/shared/service/firebase';
 
 export default function Home() {
   const theme = useTheme();
   const mdDownScreen = useMediaQuery(theme.breakpoints.down('md'));
-  const sizeImage = mdDownScreen ? 275 : 325;
+  const sizeImage = mdDownScreen ? 250 : 375;
   const route = useRouter();
-
+  const [chartData, setChartData] = useState<Price[]>([]);
   const goToHome = () => route.push('home');
+
+  useEffect(() => {
+    const getPrices = async () => {
+      const response = await getPricesByName(names[Math.floor(Math.random() * 3)].toUpperCase());
+        setChartData(response.data);
+    };
+    getPrices();
+  }, []);
 
   return (
     <Box
@@ -30,16 +41,15 @@ export default function Home() {
     >
       <Box
         component='main'
-        maxWidth='lg'
+        maxWidth='xl'
         marginX='auto'
-        padding={1.5}
         width='100%'
       >
         <NavBar />
         <Grid
           container
           height={mdDownScreen ? 'auto' : '100dvh'}
-          paddingTop={mdDownScreen ? 9 : 12}
+          paddingTop={mdDownScreen ? 11 : 14}
         >
           <Grid
             display='flex'
@@ -47,8 +57,8 @@ export default function Home() {
             item
             justifyContent='center'
             md={7}
-            paddingLeft={0}
-            paddingY={mdDownScreen ? 6 : 0}
+            paddingLeft={mdDownScreen ? 0 : 2}
+            paddingTop={mdDownScreen ? 6 : 0}
             xs={12}
           >
             <Typography
@@ -60,15 +70,15 @@ export default function Home() {
               textAlign={mdDownScreen ? 'center' : 'start'}
               variant={mdDownScreen ? 'h3' : 'h2'}
             >
-              O segredo para encontrar os melhores preços
+              Descubra o segredo dos melhores preços
             </Typography>
             <Typography
-              marginTop={mdDownScreen ? 2 : 1}
+              marginTop={mdDownScreen ? 3 : 1}
               gutterBottom
               textAlign={mdDownScreen ? 'center' : 'start'}
               variant={mdDownScreen ? 'h5' : 'h4'}
             >
-              Descubra onde encontrar os melhores preços para os produtos da sua lista de compras.
+              Saiba onde encontrar os menores preços para sua lista de compras.
             </Typography>
             <Stack
               alignItems={mdDownScreen ? 'center' : 'end'}
@@ -116,14 +126,19 @@ export default function Home() {
             paddingY={mdDownScreen ? 3 : 0}
             xs={12}
           >
-            <Typography color='primary' textAlign='center' variant='h5'>
-              Compare preços de diversos mercados em um só lugar e encontre a melhor opção para suas compras!
+            <Typography
+              color='primary.dark'
+              textAlign='center'
+              variant='h5'
+            >
+              Compare preços de vários mercados em um só lugar e economize nas suas compras!
             </Typography>
           </Grid>
         </Grid>
         <Grid
           container
           marginBottom={4}
+          paddingX={1}
           rowGap={3}
         >
           <Grid
@@ -151,7 +166,7 @@ export default function Home() {
               variant={mdDownScreen ? 'h5' : 'h4'}
               textAlign='center'
             >
-              Acompanhar a evolução dos preços dos produtos nos mercados nunca foi tão fácil.
+              Acompanhe a variação dos preços dos produtos de forma <strong>Fácil</strong> e <strong>Intuitiva</strong>.
             </Typography>
           </Grid>
           <Grid
@@ -160,23 +175,27 @@ export default function Home() {
             md={7}
             xs={12}
           >
-            <Paper
-              component={Box}
-              display='flex'
-              flexDirection='column'
-              paddingX={3}
-              paddingY={3}
-              rowGap={3}
-              width='100%'
-            >
-              <Typography gutterBottom textAlign='center' width='100%' variant='h6'>
-                Evolução do preço da <strong>Banana Prata</strong>
-              </Typography>
-              <PriceHistoryChart height={300} prices={prices} />
-              <Typography color='primary' textAlign='center' width='100%' variant='h6'>
-                SUPERMERCADO JACI
-              </Typography>
-            </Paper>
+            {
+              (chartData.length > 0) && (
+                <Paper
+                  component={Box}
+                  display='flex'
+                  flexDirection='column'
+                  paddingX={3}
+                  paddingY={3}
+                  rowGap={3}
+                  width='100%'
+                >
+                  <Typography gutterBottom textAlign='center' width='100%' variant='h6'>
+                    Evolução do preço da <strong>{chartData[0].produto}</strong>
+                  </Typography>
+                  <Typography color='primary.dark' textAlign='center' width='100%' variant='h6'>
+                    {chartData[0].mercado}
+                  </Typography>
+                  <PriceHistoryChart height={300} prices={chartData} />
+                </Paper>
+              )
+            }
           </Grid>
           <Grid
             item
@@ -191,7 +210,7 @@ export default function Home() {
               width='100%'
             >
               <Typography textAlign='center' variant='h5'>
-                Tenha acesso ao histórico de preços, acompanhe seus gastos, compare preços em diversos mercado e faça escolhas inteligentes que economizam seu dinheiro.
+              Tenha acesso ao histórico de preços, controle seus gastos, compare valores em diferentes mercados e faça escolhas inteligentes para poupar dinheiro.
               </Typography>
             </Paper>
           </Grid>
@@ -203,7 +222,6 @@ export default function Home() {
             xs={12}
           >
             <img
-              //srcSet='/market.jpg?w=164&h=164&fit=crop&auto=format&dpr=2 2x'
               src='/market.jpg'
               alt='Corredor de mercado'
               loading='lazy'
@@ -229,7 +247,7 @@ export default function Home() {
                 top: '50%'
               }}
             >
-              <Search/>
+              <Search />
               Experimente
             </Fab>
           </Grid>
@@ -240,95 +258,4 @@ export default function Home() {
   );
 };
 
-const prices = [
-  {
-    'id': 'mLkoryZNYwxfUszxDUwv',
-    'valor': '7.99',
-    'idNotaFiscal': 'ol3XVRWf2zcOOgSnmo2i',
-    'mercado': 'SUPERMERCADO JACI',
-    'data': '25/04/2024',
-    'produto': 'BANANA PRATA',
-    'idMercado': 'lsRTMlrro2wPjwkiInv1',
-    'unidadeMedida': 'KG'
-  },
-  {
-    'id': 'm9CtgMmAxkeSt3Pg6tXd',
-    'data': '02/05/2024',
-    'produto': 'BANANA PRATA',
-    'unidadeMedida': 'KG',
-    'idNotaFiscal': 'PTmw6weDe9wmm3DeIin5',
-    'valor': '6.99',
-    'idMercado': 'lsRTMlrro2wPjwkiInv1',
-    'mercado': 'SUPERMERCADO JACI'
-  },
-  {
-    'id': 'enl5eoKPqC8ljxj8sbe6',
-    'idNotaFiscal': 'amZAuVlgJJi7Hf8ko1tx',
-    'mercado': 'SUPERMERCADO JACI',
-    'unidadeMedida': 'KG',
-    'produto': 'BANANA PRATA',
-    'valor': '6.99',
-    'idMercado': 'lsRTMlrro2wPjwkiInv1',
-    'data': '08/05/2024'
-  },
-  {
-    'id': 'CWs9IFJC0qc2q73Gs640',
-    'unidadeMedida': 'KG',
-    'mercado': 'SUPERMERCADO JACI',
-    'data': '21/05/2024',
-    'idMercado': 'lsRTMlrro2wPjwkiInv1',
-    'idNotaFiscal': '1wKIBdozarWi55BdWxJb',
-    'produto': 'BANANA PRATA',
-    'valor': '5.99'
-  },
-  {
-    'id': 'zrzTfJRfNm1p6AMXSjhj',
-    'mercado': 'SUPERMERCADO JACI',
-    'unidadeMedida': 'KG',
-    'data': '24/05/2024',
-    'produto': 'BANANA PRATA',
-    'idNotaFiscal': 'gz8MDYng9fNGsP715SAH',
-    'valor': '5.99',
-    'idMercado': 'lsRTMlrro2wPjwkiInv1'
-  },
-  {
-    'id': 'TXewd0zFfpoZEG6ScE4v',
-    'produto': 'BANANA PRATA',
-    'idNotaFiscal': 'U1FHzEOjdkwZ2dF9Bx2Q',
-    'idMercado': 'lsRTMlrro2wPjwkiInv1',
-    'unidadeMedida': 'KG',
-    'valor': '5.99',
-    'mercado': 'SUPERMERCADO JACI',
-    'data': '26/05/2024'
-  },
-  {
-    'id': 'BdSax9upVA6bdUntGaKK',
-    'unidadeMedida': 'KG',
-    'produto': 'BANANA PRATA',
-    'mercado': 'SUPERMERCADO JACI',
-    'idNotaFiscal': 'CvFlgpEOAgeYpn2CehpU',
-    'idMercado': 'lsRTMlrro2wPjwkiInv1',
-    'valor': '5.60',
-    'data': '29/05/2024'
-  },
-  {
-    'id': 'PLeVt88x4yxfx42VrOUu',
-    'data': '04/06/2024',
-    'valor': '5.60',
-    'unidadeMedida': 'KG',
-    'idMercado': 'lsRTMlrro2wPjwkiInv1',
-    'produto': 'BANANA PRATA',
-    'idNotaFiscal': 'Jk6gq9nULd0COzsh7ucB',
-    'mercado': 'SUPERMERCADO JACI'
-  },
-  {
-    'id': '9Nx7RQ0rUF9GWR6aJLF0',
-    'valor': '5.60',
-    'unidadeMedida': 'KG',
-    'produto': 'BANANA PRATA',
-    'data': '07/06/2024',
-    'mercado': 'SUPERMERCADO JACI',
-    'idNotaFiscal': 'HCAvMLhAeUNWbCPj92Hl',
-    'idMercado': 'lsRTMlrro2wPjwkiInv1'
-  }
-];
+const names = ['Banana Prata', 'Laranja kg', 'Leite cond pir 39'];
