@@ -1,6 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
+import Link from 'next/link';
 import {
     AppBar, Button, Box, Checkbox,
     IconButton, Link as MUILink, MenuItem,
@@ -8,17 +10,15 @@ import {
     useMediaQuery
 } from '@mui/material';
 import { AccountBox, DarkMode, LightMode, Menu } from '@mui/icons-material';
-import Image from 'next/image';
-import MUIDrawer from '../MUIDrawer';
 import { useAppThemeContext } from '@/shared/context/themeContext';
-import Link from 'next/link';
+import MUIDrawer from '../MUIDrawer';
 
 export default function NavBar() {
     const { themeName, toggleTheme } = useAppThemeContext();
     const theme = useTheme();
     const mdDownScreen = useMediaQuery(theme.breakpoints.down('md'));
-    const [openDrawer, setOpenDrawer] = useState(false);
-    const toggleDrawer = () => setOpenDrawer((prev) => !prev);
+    const [openMUIDrawer, setOpenMUIDrawer] = useState(false);
+    const toggleDrawer = () => setOpenMUIDrawer((prev) => !prev);
     const linkColor = themeName === 'dark' ? 'text.primary' : 'primary.contrastText'
 
     return (
@@ -115,7 +115,7 @@ export default function NavBar() {
                             <Menu />
                         </IconButton>
                         <MUIDrawer
-                            open={openDrawer}
+                            open={openMUIDrawer}
                             onClose={toggleDrawer}
                             contextTheme={themeName}
                             toggleTheme={toggleTheme}

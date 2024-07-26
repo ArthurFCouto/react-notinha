@@ -68,8 +68,9 @@ export async function UpdateListPrices(loading: boolean, setLoading: Dispatch<Se
                 if (data.length === 0)
                     dispatchAlert({ type: 'open', message: 'Não há preços cadastrados no momento.', severity: 'error' });
                 else {
-                    setPrices(RemoveDuplicateProduct(data));
-                    setOriginalPrices(RemoveDuplicateProduct(data));
+                    const list = RemoveDuplicateProduct(data);
+                    setPrices(list);
+                    setOriginalPrices(list);
                 }
             } else {
                 dispatchAlert({ type: 'open', message: response.data, severity: 'error' });
@@ -92,7 +93,7 @@ function RemoveDuplicateProduct(originalList: Price[]): Price[] {
             // The date has the format dd/mm/yyyy
             const currentDate = CustomGetTime(data);
             const listItemDate = CustomGetTime(map[key].data);
-            if (currentDate > listItemDate) 
+            if (currentDate > listItemDate)
                 map[key] = preco;
         } else {
             map[key] = preco;

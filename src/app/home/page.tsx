@@ -81,7 +81,7 @@ export default function Home() {
         //UpdateListPrices(loading, setLoading, setPrices, setOriginalPrices, dispatchAlert);
 
         return () => {
-            window.addEventListener('scroll', handleShowToTopButton);
+            window.removeEventListener('scroll', handleShowToTopButton);
         }
     }, []);
 
@@ -94,7 +94,7 @@ export default function Home() {
             <Box
                 component='main'
                 padding={1}
-                maxWidth='lg'
+                maxWidth='xl'
                 marginX='auto'
                 width='100%'
             >

@@ -1,9 +1,9 @@
+import { useRouter } from 'next/navigation';
 import { DarkMode, LightMode } from '@mui/icons-material';
 import {
     Box, Checkbox, Divider, Drawer,
     MenuItem, Typography
 } from '@mui/material';
-import { useRouter } from 'next/navigation';
 import MenuLogin from '../MenuLogin';
 
 interface MUIDrawerProps {
