@@ -1,6 +1,6 @@
 'use server';
 
-import { addDocument, addDocumentList, getDocumentList, getPriceListByName, getPriceListByNameAndMarket } from '@/shared/service/firebase';
+import { addDocument, addDocumentList, getDocumentList, getPriceListByName, getPriceListByNameAndMarket, getPriceListWithPagination } from '@/shared/service/firebase';
 import { createInvoice, createItemList, createMarket, createVirtualDocument } from '@/shared/util/sefaz';
 
 interface Response {
@@ -38,6 +38,21 @@ export async function addTaxCoupon(url: string): Promise<Response> {
 export async function getPrices() {
     try {
         const list = await getDocumentList('precos');
+        return {
+            status: 200,
+            data: list
+        }
+    } catch (error: any) {
+        return {
+            status: 500,
+            data: error
+        }
+    }
+};
+
+export async function getPricesWithPagination(start: number, limit: number) {
+    try {
+        const list = await getPriceListWithPagination(start, limit);
         return {
             status: 200,
             data: list

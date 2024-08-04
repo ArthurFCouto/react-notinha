@@ -1,6 +1,6 @@
 import {
     addDoc, and, collection, doc, getDocs,
-    getFirestore, orderBy, query, where, writeBatch
+    getFirestore, limit, orderBy, query, startAt, where, writeBatch
 } from 'firebase/firestore';
 import { FirebaseError } from 'firebase/app';
 import firebase from '@/shared/config/firebase';
@@ -243,5 +243,24 @@ async function getPriceListByDate(date: string): Promise<Price[]> {
         .catch((error: FirebaseError) => {
             createErrorLog(error);
             throw (`Erro ao buscar a preços pelo data. ${error.message}`);
+        });
+};
+
+export async function getPriceListWithPagination(start: number, end: number): Promise<Price[]> {
+    const database = getFirestore(firebase);
+    const ref = query(collection(database, 'precos'), orderBy('produto'), startAt(start), limit(end));
+    return await getDocs(ref)
+        .then((response) => {
+            return response.docs.map((doc) => {
+                const object = doc.data();
+                return {
+                    id: doc.id,
+                    ...object
+                }
+            }) as Price[];
+        })
+        .catch((error: FirebaseError) => {
+            createErrorLog(error);
+            throw (`Erro ao buscar a lista de precos. ${error.message}`);
         });
 };

@@ -17,7 +17,7 @@ interface CardItemsProps {
 }
 
 export default function CardItems({ items, clickOnHistory }: CardItemsProps) {
-    const transitionValue = (value: number) => value > 20 ? '0ms' : `${value * 50}ms`;
+    const transitionValue = (value: number) => value > 20 ? '1000ms' : `${value * 50}ms`;
     const theme = useTheme();
     const mdDownScreen = useMediaQuery(theme.breakpoints.down('md'));
 
