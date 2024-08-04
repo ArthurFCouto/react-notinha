@@ -10,7 +10,12 @@ interface PricesWork {
 function CheckUrl(url: string) {
     const regex = /portalsped\.fazenda\.mg\.gov\.br\/portalnfce\/sistema\/qrcode\.xhtml\?p=/;
     return regex.test(url);
-}
+};
+
+const mainActivity = {
+    'code': '47.11-3-02',
+    'text': 'Comércio varejista de mercadorias em geral, com predominância de produtos alimentícios - supermercados'
+};
 
 /**
   * Retorna a chave de acesso da Nota Fiscal (somente numeros)
@@ -24,7 +29,7 @@ function getInvoiceKey(doc: Document) {
         createErrorLog(error);
         throw (`Erro interno - ${error.message}`);
     }
-}
+};
 
 /**
   * Retorna os CNPJ do mercado emissor da Nota Fiscal (somente numeros)
@@ -39,7 +44,7 @@ function getNumberCNPJ(doc: Document) {
         createErrorLog(error);
         throw (`Erro interno - ${error.message}`);
     }
-}
+};
 
 /**
   * Cria um document virtual para tratar os dados da página da SEFAZ
@@ -58,7 +63,7 @@ export async function createVirtualDocument(url: string): Promise<Document> {
             createErrorLog(error);
             throw (`Erro interno - ${error.message}`);
         });
-}
+};
 
 export async function createMarket(doc: Document): Promise<Market> {
     const cnpj = getNumberCNPJ(doc);
@@ -67,11 +72,15 @@ export async function createMarket(doc: Document): Promise<Market> {
         return market;
 
     axios.defaults.timeout = 30000;
-    axios.defaults.timeoutErrorMessage = 'Dados do CNPJ - Tempo de espera de resposta do servidor encerrado.';
+    axios.defaults.timeoutErrorMessage = 'CNPJ - Tempo de espera de resposta do servidor encerrado.';
 
     return await axios.get(`https://receitaws.com.br/v1/cnpj/${cnpj.replace(/[^\d]/g, '')}`)
         .then((response) => {
             const { data } = response;
+
+            if(!data.atividade_principal.includes(mainActivity))
+                throw ('Este CUPOM FISCAL provavelmente não é de mercado.');
+
             return {
                 CEP: data.cep,
                 CNPJ: cnpj,
@@ -117,12 +126,12 @@ export async function createInvoice(doc: Document, url: string): Promise<Invoice
         createErrorLog(error);
         throw (`Erro interno - ${error.message}`);
     }
-}
+};
 
 /**
   * Retorna uma lista dos itens da Nota Fiscal (sem repetição)
   */
-export function createListItems(doc: Document, market: Market, invoice: Invoice): Array<Price> {
+export function createItemList(doc: Document, market: Market, invoice: Invoice): Array<Price> {
     try {
         const element = doc.querySelector('.table.table-striped') as Element;
         const items: PricesWork = {};
@@ -157,4 +166,4 @@ export function createListItems(doc: Document, market: Market, invoice: Invoice)
         createErrorLog(error);
         throw (`Erro interno - ${error.message}`);
     }
-}
+};

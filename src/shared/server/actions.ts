@@ -1,7 +1,7 @@
 'use server';
 
-import { addListDocuments, addDocument, getDocumentList, getPriceListByName, getPriceListByNameAndMarket } from '@/shared/service/firebase';
-import { createInvoice, createListItems, createMarket, createVirtualDocument } from '@/shared/util/sefaz';
+import { addDocument, addDocumentList, getDocumentList, getPriceListByName, getPriceListByNameAndMarket } from '@/shared/service/firebase';
+import { createInvoice, createItemList, createMarket, createVirtualDocument } from '@/shared/util/sefaz';
 
 interface Response {
     status: 200 | 500,
@@ -19,11 +19,8 @@ export async function addTaxCoupon(url: string): Promise<Response> {
         const invoice = await createInvoice(virtualDocument, url)
         const idInvoice = await addDocument('notaFiscal', invoice);
         invoice.id = idInvoice;
-        const items = createListItems(virtualDocument, market, invoice);
-        await addListDocuments({
-            path: 'precos',
-            data: items
-        });
+        const items = createItemList(virtualDocument, market, invoice);
+        await addDocumentList('precos', items);
         return {
             status: 200,
             data: {}
@@ -36,7 +33,7 @@ export async function addTaxCoupon(url: string): Promise<Response> {
             data: error
         }
     }
-}
+};
 
 export async function getPrices() {
     try {
@@ -51,7 +48,7 @@ export async function getPrices() {
             data: error
         }
     }
-}
+};
 
 export async function getPricesByName(query: string, market?: string) {
     try {
@@ -66,7 +63,7 @@ export async function getPricesByName(query: string, market?: string) {
             data: error
         }
     }
-}
+};
 
 export async function getListUrlInvoice() {
     try {
@@ -81,4 +78,4 @@ export async function getListUrlInvoice() {
             data: error
         }
     }
-}
+};
