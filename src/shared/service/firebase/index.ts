@@ -18,11 +18,6 @@ export interface Market {
     razaoSocial: string
 }
 
-interface MarketFirebase {
-    path: 'mercado',
-    data: Market[]
-}
-
 export interface Invoice {
     id?: string,
     CNPJ: string,
@@ -31,11 +26,6 @@ export interface Invoice {
     url: string,
     userID: string | null,
     valorTotal: string
-}
-
-interface InvoiceFirebase {
-    path: 'notaFiscal',
-    data: Invoice[]
 }
 
 export interface Price {
@@ -47,11 +37,6 @@ export interface Price {
     produto: string,
     unidadeMedida: string,
     valor: string,
-}
-
-interface PriceFirebase {
-    path: 'precos',
-    data: Price[]
 }
 
 export async function addDocument(path: 'mercado', data: Market): Promise<string>;
@@ -73,13 +58,18 @@ export async function addDocument(path: 'mercado' | 'notaFiscal' | 'precos', dat
         });
 };
 
-export async function addListDocuments(object: MarketFirebase | InvoiceFirebase | PriceFirebase) {
-    const { data, path } = object;
+export async function addDocumentList(path: 'mercado', list: Market[]): Promise<void>;
+
+export async function addDocumentList(path: 'notaFiscal', list: Invoice[]): Promise<void>;
+
+export async function addDocumentList(path: 'precos', list: Price[]): Promise<void>;
+
+export async function addDocumentList(path: 'mercado' | 'notaFiscal' | 'precos', list: Market[] | Invoice[] | Price[]) {
     if (path === 'precos')
-        return addPriceList(data);
+        return addPriceList(list as Price[]);
     const database = getFirestore(firebase);
     const batch = writeBatch(database);
-    data.forEach(async (item) => {
+    list.forEach(async (item) => {
         delete item.id;
         const ref = doc(collection(database, path));
         batch.set(ref, item);
@@ -91,14 +81,15 @@ export async function addListDocuments(object: MarketFirebase | InvoiceFirebase 
         });
 };
 
-async function addPriceList(data: Price[]) {
+async function addPriceList(list: Price[]) {
     const database = getFirestore(firebase);
     const batch = writeBatch(database);
-    const listPricesOfTheDay = await getPriceListByDate(data[0].data)
+    const { data } = list[0];
+    const PriceListOfTheDay = await getPriceListByDate(data)
         .then((prices) => prices.map((price) => `${price.produto}_${price.idMercado}_${price.valor}`));
-    data.forEach(async (price) => {
+    list.forEach((price) => {
         const key = `${price.produto}_${price.idMercado}_${price.valor}`;
-        if (listPricesOfTheDay.includes(key))
+        if (PriceListOfTheDay.includes(key))
             return;
         delete price.id;
         const ref = doc(collection(database, 'precos'));
@@ -133,11 +124,11 @@ export async function getDocumentList(path: 'notaFiscal'): Promise<Invoice[]>;
 
 export async function getDocumentList(path: 'precos'): Promise<Price[]>;
 
-export async function getDocumentList(path: 'mercado' | 'notaFiscal' | 'precos'): Promise<Market[] | Invoice[] | Price[]> {
+export async function getDocumentList(path: 'mercado' | 'notaFiscal' | 'precos') {
     const order = {
         'mercado': 'nomeFantasia',
         'precos': 'produto',
-        'notaFiscal': 'data'
+        'notaFiscal': 'chave'
     };
     const database = getFirestore(firebase);
     const ref = query(collection(database, path), orderBy(order[path]));
@@ -234,7 +225,7 @@ export async function getPriceListByNameAndMarket(name: string, market: string):
 /**
  * Retorna a lista de preços cadastrados no dia informado
  * @param date Data padrão BR dd/mm/aaaa
- * @returns lista do tipo Price
+ * @returns Lista do tipo Price
  */
 async function getPriceListByDate(date: string): Promise<Price[]> {
     const database = getFirestore(firebase);
