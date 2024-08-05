@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useReducer, useRef, useState } from 'react';
+import { useEffect, useMemo, useReducer, useRef, useState, useTransition } from 'react';
 import {
     Alert, Box, CircularProgress,
     Divider, Fab, Fade, IconButton, InputBase,
@@ -12,22 +12,24 @@ import {
     Refresh
 } from '@mui/icons-material';
 import { Price } from '@/shared/service/firebase';
-import Footer from '@/shared/components/root/footer';
-import { FilterListPrices, HandleStateAlert, SendUrl, UpdateListPrices } from './functions';
+import Footer from '@/shared/components/root/Footer';
+import { HandleStateAlert, SendUrl, UpdateListPrices } from './functions';
 import ModalQrReader from '@/shared/components/home/ModalQrReader';
 import ModalPriceHistory from '@/shared/components/home/ModalPriceHistory';
 import CardItems, { CardItemsLoading } from '@/shared/components/home/CardItems';
 import NavBar from '@/shared/components/root/NavBar';
+import ButtonGoToTop from '@/shared/components/root/ButtonGoToTop';
 
 export default function Home() {
     const [loading, setLoading] = useState(false);
     const [sendingUrl, setSendingUrl] = useState(false);
     const [openQR, setOpenQR] = useState(false);
-    const [prices, setPrices] = useState<Price[]>([]);
+    //const [prices, setPrices] = useState<Price[]>([]);
     const [originalPrices, setOriginalPrices] = useState<Price[]>([]);
-    const [showButtonToTop, setShowButtonToTop] = useState(false);
     const [showPriceHistory, setShowPriceHistory] = useState(false);
     const [queryPriceHistory, setQueryPriceHistory] = useState('');
+    const [searchInput, setSearchInput] = useState('');
+    const [isPending, startTransition] = useTransition();
     const filterRef = useRef<HTMLInputElement>(null);
     const theme = useTheme();
     const mdDownScreen = useMediaQuery(theme.breakpoints.down('md'));
@@ -37,6 +39,16 @@ export default function Home() {
         severity: 'success',
         open: false
     });
+
+    const prices = useMemo(()=> {
+        return originalPrices.filter((price) => (price.mercado.toLowerCase().includes(searchInput.toLowerCase()) || price.produto.toLowerCase().includes(searchInput.toLowerCase()) || price.data.toLowerCase().includes(searchInput.toLowerCase())));
+    }, [originalPrices, searchInput])
+
+    const clearFilter = () => {
+        setPrices(originalPrices);
+        if (filterRef.current !== null)
+            filterRef.current.value = '';
+    }
 
     const CustomAlert = () => (
         <Snackbar
@@ -55,34 +67,13 @@ export default function Home() {
         </Snackbar>
     )
 
-    const clearFilter = () => {
-        setPrices(originalPrices);
-        if (filterRef.current !== null)
-            filterRef.current.value = '';
-    }
-
-    const goToTop = () => {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-
     const handleHistory = (query: string) => {
         setQueryPriceHistory(query);
         setShowPriceHistory(true);
     }
 
     useEffect(() => {
-        const handleShowToTopButton = () => {
-            window.scrollY > window.innerHeight / 1.5 ? setShowButtonToTop(true) : setShowButtonToTop(false);
-        }
-        window.addEventListener('scroll', handleShowToTopButton);
-
         clearFilter();
-
-        //UpdateListPrices(loading, setLoading, setPrices, setOriginalPrices, dispatchAlert);
-
-        return () => {
-            window.removeEventListener('scroll', handleShowToTopButton);
-        }
     }, []);
 
     return (
@@ -117,7 +108,11 @@ export default function Home() {
                     </IconButton>
                     <InputBase
                         inputRef={filterRef}
-                        onChange={(e) => FilterListPrices(loading, originalPrices, setPrices, e.target.value)}
+                        onChange={(e) => {
+                            startTransition(() => {
+                                setSearchInput(e.target.value);
+                            })
+                        }}
                         placeholder='Produto, data ou mercado...'
                         sx={{ flex: 1 }}
                         disabled={originalPrices.length === 0 ? true : false}
@@ -147,19 +142,6 @@ export default function Home() {
                     )
                 }
             </Box>
-            <Fade in={showButtonToTop}>
-                <Fab
-                    color='primary'
-                    sx={{
-                        position: 'fixed',
-                        bottom: 15,
-                        right: 15
-                    }}
-                    onClick={goToTop}
-                >
-                    <KeyboardArrowUp />
-                </Fab>
-            </Fade>
             <ModalQrReader
                 close={() => setOpenQR(false)}
                 getCode={(code) => SendUrl(code, sendingUrl, setSendingUrl, dispatchAlert)}
@@ -172,6 +154,7 @@ export default function Home() {
                 open={showPriceHistory}
                 query={queryPriceHistory}
             />
+            <ButtonGoToTop />
             <CustomAlert />
             <Footer />
         </Box>

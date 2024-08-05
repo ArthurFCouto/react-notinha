@@ -1,7 +1,6 @@
 import { Dispatch, SetStateAction } from 'react';
 import { addTaxCoupon, getPrices } from '@/shared/server/actions';
 import { Price } from '@/shared/service/firebase';
-import { CustomGetTime } from '@/shared/util';
 
 type AlertClose = {
     type: 'close'
@@ -30,7 +29,7 @@ export function HandleStateAlert(state: AlertState, action: AlertActions) {
         default:
             return state;
     }
-}
+};
 
 export async function SendUrl(url: string, sendingUrl: boolean, setSendingUrl: Dispatch<SetStateAction<boolean>>, dispatchAlert: Dispatch<AlertActions>) {
     if (sendingUrl) {
@@ -68,41 +67,12 @@ export async function UpdateListPrices(loading: boolean, setLoading: Dispatch<Se
                 if (data.length === 0)
                     dispatchAlert({ type: 'open', message: 'Não há preços cadastrados no momento.', severity: 'error' });
                 else {
-                    const list = RemoveDuplicateProduct(data);
-                    setPrices(list);
-                    setOriginalPrices(list);
+                    setPrices(data);
+                    setOriginalPrices(data);
                 }
             } else {
                 dispatchAlert({ type: 'open', message: response.data, severity: 'error' });
             }
         });
     setLoading(false);
-}
-
-function RemoveDuplicateProduct(originalList: Price[]): Price[] {
-    if (originalList.length === 0)
-        return originalList;
-    const map: {
-        [key: string]: Price
-    } = {};
-
-    originalList.forEach((preco) => {
-        const { produto, data, mercado } = preco;
-        const key = produto + '_' + mercado;
-        if (map[key]) {
-            // The date has the format dd/mm/yyyy
-            const currentDate = CustomGetTime(data);
-            const listItemDate = CustomGetTime(map[key].data);
-            if (currentDate > listItemDate)
-                map[key] = preco;
-        } else {
-            map[key] = preco;
-        }
-    });
-    return Object.values(map);
-}
-
-export function FilterListPrices(loading: boolean, originalPrices: Price[], setPrices: Dispatch<SetStateAction<Price[]>>, value: string) {
-    if (originalPrices.length === 0 || loading) return
-    setPrices(originalPrices.filter((price) => (price.mercado.toLowerCase().includes(value.toLowerCase()) || price.produto.toLowerCase().includes(value.toLowerCase()) || price.data.toLowerCase().includes(value.toLowerCase()))));
-}
+};

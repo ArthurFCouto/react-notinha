@@ -1,7 +1,8 @@
 'use server';
 
-import { addDocument, addDocumentList, getDocumentList, getPriceListByName, getPriceListByNameAndMarket, getPriceListWithPagination } from '@/shared/service/firebase';
+import { addDocument, addDocumentList, getDocumentList, getPriceListByName, getPriceListByNameAndMarket, getPriceListWithPagination, Price } from '@/shared/service/firebase';
 import { createInvoice, createItemList, createMarket, createVirtualDocument } from '@/shared/util/sefaz';
+import { CustomGetTime } from '../util';
 
 interface Response {
     status: 200 | 500,
@@ -35,12 +36,35 @@ export async function addTaxCoupon(url: string): Promise<Response> {
     }
 };
 
+function RemoveDuplicatePrice(originalList: Price[]): Price[] {
+    if (originalList.length === 0)
+        return originalList;
+    const map: {
+        [key: string]: Price
+    } = {};
+
+    originalList.forEach((preco) => {
+        const { produto, data, mercado } = preco;
+        const key = produto + '_' + mercado;
+        if (map[key]) {
+            // The date has the format dd/mm/yyyy
+            const currentDate = CustomGetTime(data);
+            const listItemDate = CustomGetTime(map[key].data);
+            if (currentDate > listItemDate)
+                map[key] = preco;
+        } else {
+            map[key] = preco;
+        }
+    });
+    return Object.values(map);
+}
+
 export async function getPrices() {
     try {
         const list = await getDocumentList('precos');
         return {
             status: 200,
-            data: list
+            data: RemoveDuplicatePrice(list)
         }
     } catch (error: any) {
         return {
