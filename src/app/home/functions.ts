@@ -55,10 +55,9 @@ export async function SendUrl(url: string, sendingUrl: boolean, setSendingUrl: D
         })
 };
 
-export async function UpdateListPrices(loading: boolean, setLoading: Dispatch<SetStateAction<boolean>>, setPrices: Dispatch<SetStateAction<Price[]>>, setOriginalPrices: Dispatch<SetStateAction<Price[]>>, dispatchAlert: Dispatch<AlertActions>) {
+export async function UpdateListPrices(loading: boolean, setLoading: Dispatch<SetStateAction<boolean>>, setOriginalPrices: Dispatch<SetStateAction<Price[]>>, dispatchAlert: Dispatch<AlertActions>) {
     if (loading) return;
     setLoading(true);
-    setPrices([]);
     setOriginalPrices([]);
     await getPrices()
         .then((response) => {
@@ -66,10 +65,8 @@ export async function UpdateListPrices(loading: boolean, setLoading: Dispatch<Se
                 const { data } = response;
                 if (data.length === 0)
                     dispatchAlert({ type: 'open', message: 'Não há preços cadastrados no momento.', severity: 'error' });
-                else {
-                    setPrices(data);
+                else 
                     setOriginalPrices(data);
-                }
             } else {
                 dispatchAlert({ type: 'open', message: response.data, severity: 'error' });
             }

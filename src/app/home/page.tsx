@@ -3,12 +3,11 @@
 import { useEffect, useMemo, useReducer, useRef, useState, useTransition } from 'react';
 import {
     Alert, Box, CircularProgress,
-    Divider, Fab, Fade, IconButton, InputBase,
+    Divider, IconButton, InputBase,
     Paper, Snackbar, useMediaQuery, useTheme
 } from '@mui/material';
 import {
     Clear, CloudUpload,
-    KeyboardArrowUp,
     Refresh
 } from '@mui/icons-material';
 import { Price } from '@/shared/service/firebase';
@@ -24,7 +23,6 @@ export default function Home() {
     const [loading, setLoading] = useState(false);
     const [sendingUrl, setSendingUrl] = useState(false);
     const [openQR, setOpenQR] = useState(false);
-    //const [prices, setPrices] = useState<Price[]>([]);
     const [originalPrices, setOriginalPrices] = useState<Price[]>([]);
     const [showPriceHistory, setShowPriceHistory] = useState(false);
     const [queryPriceHistory, setQueryPriceHistory] = useState('');
@@ -40,12 +38,16 @@ export default function Home() {
         open: false
     });
 
-    const prices = useMemo(()=> {
+    const prices = useMemo(() => {
+        if (searchInput.trim().length === 0)
+            return originalPrices;
         return originalPrices.filter((price) => (price.mercado.toLowerCase().includes(searchInput.toLowerCase()) || price.produto.toLowerCase().includes(searchInput.toLowerCase()) || price.data.toLowerCase().includes(searchInput.toLowerCase())));
     }, [originalPrices, searchInput])
 
     const clearFilter = () => {
-        setPrices(originalPrices);
+        startTransition(() => {
+            setSearchInput('');
+        });
         if (filterRef.current !== null)
             filterRef.current.value = '';
     }
@@ -126,13 +128,13 @@ export default function Home() {
                     </IconButton>
                     <IconButton
                         color='primary'
-                        onClick={() => UpdateListPrices(loading, setLoading, setPrices, setOriginalPrices, dispatchAlert)}
+                        onClick={() => UpdateListPrices(loading, setLoading, setOriginalPrices, dispatchAlert)}
                     >
                         {loading ? <CircularProgress color='inherit' size={20} /> : <Refresh />}
                     </IconButton>
                 </Paper>
                 {
-                    loading && (
+                    (loading || isPending) && (
                         <CardItemsLoading amount={10} />
                     )
                 }
