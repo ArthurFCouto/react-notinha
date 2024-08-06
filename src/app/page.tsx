@@ -10,7 +10,7 @@ import {
 } from '@mui/material';
 import { Search } from '@mui/icons-material';
 import { Player } from '@lottiefiles/react-lottie-player';
-import Footer from '@/shared/components/root/Footer';
+import Footer from '@/shared/components/root/fFooter';
 import NavBar from '@/shared/components/root/NavBar';
 import lottieNotinha from '@/shared/assets/notinha.json';
 import PriceHistoryChart from '@/shared/components/home/PriceHistoryChart';

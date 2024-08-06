@@ -11,7 +11,7 @@ import {
     Refresh
 } from '@mui/icons-material';
 import { Price } from '@/shared/service/firebase';
-import Footer from '@/shared/components/root/Footer';
+import Footer from '@/shared/components/root/fFooter';
 import { HandleStateAlert, SendUrl, UpdateListPrices } from './functions';
 import ModalQrReader from '@/shared/components/home/ModalQrReader';
 import ModalPriceHistory from '@/shared/components/home/ModalPriceHistory';

@@ -13,9 +13,7 @@ export default function Footer() {
                     arthur_fcouto
                 </Link>
             </Tooltip>
-            {' '}
-            {new Date().getFullYear()}
-            {'.'}
+            {` ${new Date().getFullYear()}.`}
         </Typography>
     );
 
