@@ -8,7 +8,7 @@ export default function Footer() {
     const Copyright = () => (
         <Typography variant='body1'>
             {'Copyright © '}
-            <Tooltip title='Conheça meu IG'>
+            <Tooltip title='Conheça meu Insta'>
                 <Link color='inherit' href='https://instagram.com/arthur_fcouto' target='_blank'>
                     arthur_fcouto
                 </Link>
