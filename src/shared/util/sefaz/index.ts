@@ -18,7 +18,7 @@ const mainActivity = {
 };
 
 /**
-  * Retorna a chave de acesso da Nota Fiscal (somente numeros)
+  * Retorna a chave de acesso da Nota Fiscal (somente números)
   */
 function getInvoiceKey(doc: Document) {
     try {
@@ -32,7 +32,7 @@ function getInvoiceKey(doc: Document) {
 };
 
 /**
-  * Retorna os CNPJ do mercado emissor da Nota Fiscal (somente numeros)
+  * Retorna o CNPJ do mercado emissor da Nota Fiscal (somente números)
   */
 function getNumberCNPJ(doc: Document) {
     try {
@@ -74,13 +74,11 @@ export async function createMarket(doc: Document): Promise<Market> {
     axios.defaults.timeout = 30000;
     axios.defaults.timeoutErrorMessage = 'CNPJ - Tempo de espera de resposta do servidor encerrado.';
 
-    return await axios.get(`https://receitaws.com.br/v1/cnpj/${cnpj.replace(/[^\d]/g, '')}`)
+    return await axios.get(`https://receitaws.com.br/v1/cnpj/${cnpj}`)
         .then((response) => {
             const { data } = response;
-
             if(!data.atividade_principal.includes(mainActivity))
                 throw ('Este CUPOM FISCAL provavelmente não é de mercado.');
-
             return {
                 CEP: data.cep,
                 CNPJ: cnpj,
@@ -129,7 +127,7 @@ export async function createInvoice(doc: Document, url: string): Promise<Invoice
 };
 
 /**
-  * Retorna uma lista dos itens da Nota Fiscal (sem repetição)
+  * Retorna uma lista com os itens da Nota Fiscal (sem repetição)
   */
 export function createItemList(doc: Document, market: Market, invoice: Invoice): Array<Price> {
     try {

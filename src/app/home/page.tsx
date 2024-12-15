@@ -109,6 +109,7 @@ export default function Home() {
                         {sendingUrl ? <CircularProgress color='inherit' size={20} /> : <CloudUpload />}
                     </IconButton>
                     <InputBase
+                        autoComplete={"off"}
                         inputRef={filterRef}
                         onChange={(e) => {
                             startTransition(() => {
