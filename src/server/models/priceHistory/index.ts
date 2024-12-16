@@ -1,10 +1,8 @@
-export type Price = {
+export type PriceHistory = {
   id?: string;
-  nomeMercado: string;
-  nomeProduto: string;
-  unidadeMedida: string;
   valor: number;
   idMercado: string;
   idNotaFiscal: string;
+  idPreco: string;
   dataInclusao: number;
 };

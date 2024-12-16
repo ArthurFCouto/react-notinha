@@ -3,34 +3,40 @@ import { Price } from '@/shared/service/firebase';
 import { getPricesByName } from '@/shared/server/actions';
 import { ConvertStringToNumber, CustomGetTime } from '@/shared/util';
 
-export async function UpdateChart(onError: Function, query: string, setLoading: Dispatch<SetStateAction<boolean>>, setPrices: Dispatch<SetStateAction<Price[]>>, setVariation: Dispatch<SetStateAction<number>>) {
-    await getPricesByName(query)
-        .then((response) => {
-            if (response.status === 200) {
-                setPrices(OrderByDate(response.data));
-                setVariation(CalculateVariance(response.data));
-            } else {
-                onError(response.data);
-                close();
-            }
-        });
-    setLoading(false);
-};
+export async function UpdateChart(
+  onError: Function,
+  query: string,
+  setLoading: Dispatch<SetStateAction<boolean>>,
+  setPrices: Dispatch<SetStateAction<Price[]>>,
+  setVariation: Dispatch<SetStateAction<number>>
+) {
+  await getPricesByName(query).then((response) => {
+    if (response.status === 200) {
+      setPrices(OrderByDate(response.data));
+      setVariation(CalculateVariance(response.data));
+    } else {
+      onError(response.data);
+      close();
+    }
+  });
+  setLoading(false);
+}
 
 function OrderByDate(list: Price[]) {
-    const newList = list.sort((prev, last) => CustomGetTime(prev.data) - CustomGetTime(last.data));
-    const length = newList.length;
-    if (length > 10) {
-        return newList.slice(length - 10, length - 1);
-    }
-    return newList;
-};
+  const newList = list.sort(
+    (prev, last) => CustomGetTime(prev.data) - CustomGetTime(last.data)
+  );
+  const length = newList.length;
+  if (length > 10) {
+    return newList.slice(length - 10, length - 1);
+  }
+  return newList;
+}
 
 function CalculateVariance(list: Price[]) {
-    if (list.length === 0 || list.length === 1)
-        return 0;
-    const length = list.length;
-    const prev = ConvertStringToNumber(list[0].valor);
-    const last = ConvertStringToNumber(list[length - 1].valor);
-    return parseFloat(((last - prev) / prev * 100).toFixed(2));
-};
+  if (list.length === 0 || list.length === 1) return 0;
+  const length = list.length;
+  const prev = ConvertStringToNumber(list[0].valor);
+  const last = ConvertStringToNumber(list[length - 1].valor);
+  return parseFloat((((last - prev) / prev) * 100).toFixed(2));
+}

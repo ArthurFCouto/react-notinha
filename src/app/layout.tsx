@@ -12,24 +12,26 @@ export const metadata: Metadata = {
   icons: '/icon.png',
   title: 'Notinha',
   keywords: ['Precos', 'Mercado', 'Consulta'],
-  authors: [{ name: 'Arthur F Couto', url: 'https://instagram.com/arthur_fcouto' }],
+  authors: [
+    { name: 'Arthur F Couto', url: 'https://instagram.com/arthur_fcouto' },
+  ],
   creator: 'Arthur F Couto',
   publisher: 'Arthur F Couto',
   formatDetection: {
     email: false,
     address: false,
     telephone: false,
-  }
+  },
 };
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default function RootLayout({
+  children,
+}: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang='pt-BR'>
+    <html lang="pt-BR">
       <body>
-        <AppThemeProvider >
-          {children}
-        </AppThemeProvider>
+        <AppThemeProvider>{children}</AppThemeProvider>
       </body>
     </html>
   );
-};
+}

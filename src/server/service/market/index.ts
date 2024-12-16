@@ -1,83 +1,93 @@
 import { FirebaseError } from 'firebase/app';
-import InterfaceStrategy from '../base/interface';
+import {
+  addDoc,
+  collection,
+  doc,
+  Firestore,
+  getDocs,
+  getFirestore,
+  orderBy,
+  query,
+  where,
+  writeBatch,
+  WriteBatch,
+} from 'firebase/firestore';
+import firebase from '@/server/configs/firebase';
 import { EmptyMarket, Market } from '@/server/models/market';
+import SharedService from '../shared';
 
-class MarketService extends InterfaceStrategy
-{
-    private path = 'mercado';
+class MarketServiceImplements {
+  private batch: WriteBatch;
+  private database: Firestore;
+  private path = 'mercado';
 
-    constructor() {
-        super();
-    }
+  constructor() {
+    this.database = getFirestore(firebase);
+    this.batch = writeBatch(this.database);
+  }
 
-    async Create(data: Market): Promise<string> {
-        delete data.id;
+  async Create(data: Market): Promise<string> {
+    delete data.id;
 
-        return await this.addDoc(this.collection(this.database, this.path), data)
-            .then((response) => {
-                return response.id;
-            })
-            .catch((error: FirebaseError) => {
-                this.CreateErrorLog(error);
-                throw (`Erro ao cadastrar ${this.path}. ${error.message}`);
-            });
-    }
+    const market = await this.CheckIfDoesExist(data.cnpj);
+    if (market.id) return market.id;
 
-    async CreateList(list: Market[]): Promise<void> {
-        list.forEach(async (item) => {
-            delete item.id;
-            const reference = this.doc(this.collection(this.database, this.path));
-            this.batch.set(reference, item);
-        })
+    return await addDoc(collection(this.database, this.path), data)
+      .then((response) => {
+        return response.id;
+      })
+      .catch((error: FirebaseError) => {
+        SharedService.CreateErrorLog(error);
+        throw `Erro ao cadastrar ${this.path}. ${error.message}`;
+      });
+  }
 
-        return await this.batch.commit()
-            .catch((error: FirebaseError) => {
-                this.CreateErrorLog(error);
-                throw (`Erro ao cadastrar lista de ${this.path}. ${error.message}`);
-            });
-    }
+  async GetAll(): Promise<Market[]> {
+    const columnOrdem = 'nomeFantasia';
+    const reference = query(
+      collection(this.database, this.path),
+      orderBy(columnOrdem)
+    );
 
-    async GetAll(): Promise<Market[]> {
-        const columnOrdem = 'nomeFantasia';
-        const reference = this.query(this.collection(this.database, this.path), this.orderBy(columnOrdem));
+    return await getDocs(reference)
+      .then((response) => {
+        return response.docs.map((doc) => {
+          const object = doc.data();
+          return {
+            id: doc.id,
+            ...object,
+          };
+        }) as Market[];
+      })
+      .catch((error: FirebaseError) => {
+        SharedService.CreateErrorLog(error);
+        throw `Erro ao buscar a lista de ${this.path}. ${error.message}`;
+      });
+  }
 
-        return await this.getDocs(reference)
-            .then((response) => {
-                return response.docs.map((doc) => {
-                    const object = doc.data();
-                    return {
-                        id: doc.id,
-                        ...object
-                    }
-                }) as Market[];
-            })
-            .catch((error: FirebaseError) => {
-                this.CreateErrorLog(error);
-                throw (`Erro ao buscar a lista de ${this.path}. ${error.message}`);
-            });
-    }
+  private async CheckIfDoesExist(cnpj: string): Promise<Market> {
+    const field = 'cnpj';
+    const reference = query(
+      collection(this.database, this.path),
+      where(field, '==', cnpj)
+    );
 
-    async CheckIfDocumentExist(cnpj: string): Promise<Market> {
-        const field = 'cnpj';
-        const reference = this.query(this.collection(this.database, this.path), this.where(field, '==', cnpj));
-        
-        return await this.getDocs(reference)
-            .then((response) => {
-                const list = response.docs.map((doc) => {
-                    const object = doc.data();
-                    return {
-                        id: doc.id,
-                        ...object
-                    }
-                });
-                
-                return list[0] as Market ?? EmptyMarket;
-            })
-            .catch((error: FirebaseError) => {
-                this.CreateErrorLog(error);
-                throw (`Erro ao verificar se ${this.path} já está cadastrado(a). ${error.message}`);
-            });
-    }
+    return await getDocs(reference)
+      .then((response) => {
+        const list = response.docs.map((doc) => {
+          const object = doc.data();
+          return {
+            id: doc.id,
+            ...object,
+          };
+        });
+        return (list[0] as Market) ?? EmptyMarket;
+      })
+      .catch((error: FirebaseError) => {
+        SharedService.CreateErrorLog(error);
+        throw `Erro ao verificar se ${this.path} já está cadastrado(a). ${error.message}`;
+      });
+  }
 }
 
-export default new MarketService();
+export const MarketService = new MarketServiceImplements();

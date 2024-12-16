@@ -1,16 +1,16 @@
 import { createTheme } from '@mui/material/styles';
 
 const DarkTheme = createTheme({
-    palette: {
-        mode: 'dark',
-        primary: {
-            main: '#01C117',
-            contrastText: '#FFFFFF',
-        },
-        secondary: {
-            main: '#FFF110',
-        },
-        /*
+  palette: {
+    mode: 'dark',
+    primary: {
+      main: '#01C117',
+      contrastText: '#FFFFFF',
+    },
+    secondary: {
+      main: '#FFF110',
+    },
+    /*
         background: {
             default: '#EFEFEF',
             paper: '#FEFEFE',
@@ -33,11 +33,11 @@ const DarkTheme = createTheme({
             disabled: 'rgba(0, 0, 0, 0.38)',
         }
         */
-    },
-    typography: {
-        fontFamily: '"Montserrat", "Raleway", "Poppins", "Roboto", sans-serif',
-        fontSize: 12,
-    },
+  },
+  typography: {
+    fontFamily: '"Montserrat", "Raleway", "Poppins", "Roboto", sans-serif',
+    fontSize: 12,
+  },
 });
 
 export default DarkTheme;
