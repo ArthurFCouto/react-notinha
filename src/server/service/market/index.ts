@@ -14,7 +14,7 @@ import {
 } from 'firebase/firestore';
 import firebase from '@/server/configs/firebase';
 import { EmptyMarket, Market } from '@/server/models/market';
-import SharedService from '../shared';
+import SharedService from '../../shared';
 
 class MarketServiceImplements {
   private batch: WriteBatch;

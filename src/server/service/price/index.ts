@@ -1,19 +1,22 @@
 import { FirebaseError } from 'firebase/app';
 import {
-  and,
   collection,
   doc,
   Firestore,
-  getDocs,
   getFirestore,
-  query,
-  where,
-  writeBatch,
   WriteBatch,
+  writeBatch,
 } from 'firebase/firestore';
 import firebase from '@/server/configs/firebase';
-import SharedService from '../shared';
+import SharedService from '../../shared';
 import { Price } from '@/server/models/price';
+import { PriceRepository } from '@/server/repository/price';
+import { PriceHistory } from '@/server/models/priceHistory';
+
+interface PricesBaseModel extends Price {
+  keyDate: string;
+  keyMarket: string;
+}
 
 class PriceServiceImplements {
   private batch: WriteBatch;
@@ -25,14 +28,51 @@ class PriceServiceImplements {
     this.batch = writeBatch(this.database);
   }
 
-  async CreateList(list: Price[]) {
-    const { dataInclusao } = list[0];
-    const PricesOfTheDay = await this.GetAllByDate(dataInclusao).then(
+  async CreateList(prices: Price[]) {
+    const { dataInclusao } = prices[0];
+    const pricesToBeUpdated: Price[] = [];
+    const historyPrices: PriceHistory[] = [];
+    const actualPrices: PricesBaseModel[] = await PriceRepository.GetAll().then(
       (prices) =>
-        prices.map(
-          (price) => `${price.nomeProduto}_${price.idMercado}_${price.valor}`
-        )
+        prices.map((price) => {
+          return {
+            keyDate: `${price.nomeProduto}_${price.idMercado}_${price.dataInclusao}`,
+            keyMarket: `${price.nomeProduto}_${price.idMercado}`,
+            ...price,
+          };
+        })
     );
+    const actualKeysDate = actualPrices.map((price) => price.keyDate);
+    const actualKeysMarket = actualPrices.map((price) => price.keyMarket);
+
+    prices.forEach((price) => {
+      const keyDate = `${price.nomeProduto}_${price.idMercado}_${price.dataInclusao}`;
+      const keyMarket = `${price.nomeProduto}_${price.idMercado}`;
+      if (actualKeysDate.includes(keyDate)) return;
+
+      if (actualKeysMarket.includes(keyMarket)) {
+        const priceAtual = actualPrices.find(
+          (actualPrice) =>
+            actualPrice.nomeProduto == price.nomeProduto &&
+            actualPrice.idMercado == price.idMercado
+        );
+
+        if (priceAtual!.dataInclusao < price.dataInclusao) {
+          historyPrices.push(this.CreateHistoryPriceObject(priceAtual!));
+          pricesToBeUpdated.push(this.CreatePriceToBeUpdated(price));
+        } else {
+          historyPrices.push(this.CreateHistoryPriceObject(price));
+          pricesToBeUpdated.push(this.CreatePriceToBeUpdated(priceAtual!));
+        }
+        return;
+      }
+
+      delete price.id;
+      const reference = doc(collection(this.database, this.path));
+      this.batch.set(reference, price);
+    });
+
+    // GRAVAR O HISTÒRICO DE PREÇOS, ATUALIZAR OS PREÇOS E SALVAR O PREÇO ATUAL
 
     list.forEach((price) => {
       const key = `${price.nomeProduto}_${price.idMercado}_${price.valor}`;
@@ -49,98 +89,30 @@ class PriceServiceImplements {
     });
   }
 
-  async GetAllByName(name: string): Promise<Price[]> {
-    const field = 'nomeProduto';
-    const reference = query(
-      collection(this.database, this.path),
-      where(field, '==', name)
-    );
-    return await getDocs(reference)
-      .then((response) => {
-        return response.docs.map((doc) => {
-          const object = doc.data();
-          return {
-            id: doc.id,
-            ...object,
-          };
-        }) as Price[];
-      })
-      .catch((error: FirebaseError) => {
-        SharedService.CreateErrorLog(error);
-        throw `Erro ao buscar a lista de preços pelo nome. ${error.message}`;
-      });
-  }
-
-  async GetAllByNameAndMarket(
-    name: string,
-    idMarket: string
-  ): Promise<Price[]> {
-    const fieldProduto = 'nomeProduto';
-    const fieldMercado = 'idMercado';
-    const reference = query(
-      collection(this.database, this.path),
-      and(where(fieldProduto, '==', name), where(fieldMercado, '==', idMarket))
-    );
-
-    return await getDocs(reference)
-      .then((response) => {
-        return response.docs.map((doc) => {
-          const object = doc.data();
-          return {
-            id: doc.id,
-            ...object,
-          };
-        }) as Price[];
-      })
-      .catch((error: FirebaseError) => {
-        SharedService.CreateErrorLog(error);
-        throw `Erro ao buscar preços pelo nome e mercado. ${error.message}`;
-      });
-  }
-
-  async GetAllByDate(date: number): Promise<Price[]> {
-    const field = 'dataInclusao';
-    const reference = query(
-      collection(this.database, this.path),
-      where(field, '==', date)
-    );
-
-    return await getDocs(reference)
-      .then((response) => {
-        return response.docs.map((doc) => {
-          const object = doc.data();
-          return {
-            id: doc.id,
-            ...object,
-          };
-        }) as Price[];
-      })
-      .catch((error: FirebaseError) => {
-        SharedService.CreateErrorLog(error);
-        throw `Erro ao buscar os preços pela data. ${error.message}`;
-      });
-  }
-
-  /*
-    export async function getPriceListWithPagination(start: number, end: number): Promise<Price[]> {
-        const database = getFirestore(firebase);
-        const ref = query(collection(database, pathPrecos), orderBy('produto'), startAt(start), limit(end));
-        return await getDocs(ref)
-            .then((response) => {
-                return response.docs.map((doc) => {
-                    const object = doc.data();
-                    return {
-                        id: doc.id,
-                        ...object
-                    }
-                }) as Price[];
-            })
-            .catch((error: FirebaseError) => {
-                createErrorLog(error);
-                throw (`Erro ao buscar a lista de precos. ${error.message}`);
-            });
+  private CreateHistoryPriceObject = (
+    price: PricesBaseModel | Price
+  ): PriceHistory => {
+    return {
+      idPreco: String(price.id),
+      idMercado: price.idMercado,
+      idNotaFiscal: price.idNotaFiscal,
+      valor: price.valor,
+      dataInclusao: price.dataInclusao,
     };
-    */
+  };
+
+  private CreatePriceToBeUpdated = (price: PricesBaseModel | Price): Price => {
+    return {
+      id: price.id,
+      nomeProduto: price.nomeProduto,
+      nomeMercado: price.nomeMercado,
+      unidadeMedida: price.unidadeMedida,
+      idMercado: price.idMercado,
+      idNotaFiscal: price.idNotaFiscal,
+      valor: price.valor,
+      dataInclusao: price.dataInclusao,
+    };
+  };
 }
 
 export const PriceService = new PriceServiceImplements();
