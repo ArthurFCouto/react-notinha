@@ -12,7 +12,7 @@ import {
   where,
 } from 'firebase/firestore';
 import firebase from '@/server/configs/firebase';
-import SharedService from '../../shared';
+import SharedRepository from '../../shared';
 import { Price } from '@/server/models/price';
 
 class PriceRepositoryImplements {
@@ -25,11 +25,15 @@ class PriceRepositoryImplements {
 
   async GetAll(offSet?: number, amount?: number): Promise<Price[]> {
     const field = 'nomeProduto';
-    // const reference = query(collection(this.database, this.path), orderBy(field), startAt(offSet), limit(amount));
-    const reference = query(
-      collection(this.database, this.path),
-      orderBy(field)
-    );
+    const reference =
+      offSet && amount
+        ? query(
+            collection(this.database, this.path),
+            orderBy(field),
+            startAt(offSet),
+            limit(amount)
+          )
+        : query(collection(this.database, this.path), orderBy(field));
 
     return await getDocs(reference)
       .then((response) => {
@@ -42,7 +46,7 @@ class PriceRepositoryImplements {
         }) as Price[];
       })
       .catch((error: FirebaseError) => {
-        SharedService.CreateErrorLog(error);
+        SharedRepository.CreateErrorLog(error);
         throw `Erro ao buscar a lista de precos. ${error.message}`;
       });
   }
@@ -53,6 +57,7 @@ class PriceRepositoryImplements {
       collection(this.database, this.path),
       where(field, '==', name)
     );
+
     return await getDocs(reference)
       .then((response) => {
         return response.docs.map((doc) => {
@@ -64,7 +69,7 @@ class PriceRepositoryImplements {
         }) as Price[];
       })
       .catch((error: FirebaseError) => {
-        SharedService.CreateErrorLog(error);
+        SharedRepository.CreateErrorLog(error);
         throw `Erro ao buscar a lista de preços pelo nome. ${error.message}`;
       });
   }
@@ -87,7 +92,7 @@ class PriceRepositoryImplements {
         }) as Price[];
       })
       .catch((error: FirebaseError) => {
-        SharedService.CreateErrorLog(error);
+        SharedRepository.CreateErrorLog(error);
         throw `Erro ao buscar preços pelo mercado. ${error.message}`;
       });
   }
@@ -114,7 +119,7 @@ class PriceRepositoryImplements {
         }) as Price[];
       })
       .catch((error: FirebaseError) => {
-        SharedService.CreateErrorLog(error);
+        SharedRepository.CreateErrorLog(error);
         throw `Erro ao buscar preços pelo nome e mercado. ${error.message}`;
       });
   }
@@ -137,7 +142,7 @@ class PriceRepositoryImplements {
         }) as Price[];
       })
       .catch((error: FirebaseError) => {
-        SharedService.CreateErrorLog(error);
+        SharedRepository.CreateErrorLog(error);
         throw `Erro ao buscar os preços por data. ${error.message}`;
       });
   }

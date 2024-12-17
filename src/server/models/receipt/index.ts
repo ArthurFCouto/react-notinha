@@ -1,12 +1,22 @@
 export type Receipt = {
   id?: string;
   cnpj: string;
-  chave: number;
-  data: number;
+  chave: string;
   url: string;
   valorTotal: number;
   idUsuario: string;
   idMercado: string;
   dataEmissao: number;
   dataInclusao: number;
+};
+
+export const EmptyReceipt: Receipt = {
+  cnpj: '',
+  chave: '',
+  url: '',
+  valorTotal: 0,
+  idUsuario: '',
+  idMercado: '',
+  dataEmissao: 0,
+  dataInclusao: 0,
 };

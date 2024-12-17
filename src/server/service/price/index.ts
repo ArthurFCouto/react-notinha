@@ -12,11 +12,7 @@ import SharedService from '../../shared';
 import { Price } from '@/server/models/price';
 import { PriceRepository } from '@/server/repository/price';
 import { PriceHistory } from '@/server/models/priceHistory';
-
-interface PricesBaseModel extends Price {
-  keyDate: string;
-  keyMarket: string;
-}
+import { PriceHistoryService } from '../priceHistory';
 
 class PriceServiceImplements {
   private batch: WriteBatch;
@@ -28,35 +24,31 @@ class PriceServiceImplements {
     this.batch = writeBatch(this.database);
   }
 
-  async CreateList(prices: Price[]) {
-    const { dataInclusao } = prices[0];
+  async CreateList(prices: Price[]): Promise<void> {
+    if (prices.length === 0) return;
+
     const pricesToBeUpdated: Price[] = [];
     const historyPrices: PriceHistory[] = [];
-    const actualPrices: PricesBaseModel[] = await PriceRepository.GetAll().then(
-      (prices) =>
-        prices.map((price) => {
-          return {
-            keyDate: `${price.nomeProduto}_${price.idMercado}_${price.dataInclusao}`,
-            keyMarket: `${price.nomeProduto}_${price.idMercado}`,
-            ...price,
-          };
-        })
+    const actualPrices = await PriceRepository.GetAll();
+
+    const keysDataActualPrices = actualPrices.map(
+      (price) => `${price.nomeProduto}_${price.idMercado}_${price.dataInclusao}`
     );
-    const actualKeysDate = actualPrices.map((price) => price.keyDate);
-    const actualKeysMarket = actualPrices.map((price) => price.keyMarket);
+    const keysMarketActualPrices = actualPrices.map(
+      (price) => `${price.nomeProduto}_${price.idMercado}`
+    );
 
     prices.forEach((price) => {
       const keyDate = `${price.nomeProduto}_${price.idMercado}_${price.dataInclusao}`;
-      const keyMarket = `${price.nomeProduto}_${price.idMercado}`;
-      if (actualKeysDate.includes(keyDate)) return;
+      if (keysDataActualPrices.includes(keyDate)) return;
 
-      if (actualKeysMarket.includes(keyMarket)) {
+      const keyMarket = `${price.nomeProduto}_${price.idMercado}`;
+      if (keysMarketActualPrices.includes(keyMarket)) {
         const priceAtual = actualPrices.find(
           (actualPrice) =>
             actualPrice.nomeProduto == price.nomeProduto &&
             actualPrice.idMercado == price.idMercado
         );
-
         if (priceAtual!.dataInclusao < price.dataInclusao) {
           historyPrices.push(this.CreateHistoryPriceObject(priceAtual!));
           pricesToBeUpdated.push(this.CreatePriceToBeUpdated(price));
@@ -72,26 +64,34 @@ class PriceServiceImplements {
       this.batch.set(reference, price);
     });
 
-    // GRAVAR O HISTÒRICO DE PREÇOS, ATUALIZAR OS PREÇOS E SALVAR O PREÇO ATUAL
-
-    list.forEach((price) => {
-      const key = `${price.nomeProduto}_${price.idMercado}_${price.valor}`;
-      if (PricesOfTheDay.includes(key)) return;
-
-      delete price.id;
-      const reference = doc(collection(this.database, this.path));
-      this.batch.set(reference, price);
-    });
-
-    return await this.batch.commit().catch((error: FirebaseError) => {
+    await this.batch.commit().catch((error: FirebaseError) => {
       SharedService.CreateErrorLog(error);
       throw `Erro ao cadastrar lista de preços. ${error.message}`;
     });
+
+    await Promise.all([
+      this.UpdateList(pricesToBeUpdated),
+      PriceHistoryService.CreateList(historyPrices),
+    ]);
   }
 
-  private CreateHistoryPriceObject = (
-    price: PricesBaseModel | Price
-  ): PriceHistory => {
+  async UpdateList(prices: Price[]): Promise<void> {
+    prices.forEach((price) => {
+      const reference = doc(this.database, this.path, price.id!);
+      this.batch.update(reference, {
+        valor: price.valor,
+        idNotaFiscal: price.idNotaFiscal,
+        dataInclusao: price.dataInclusao,
+      });
+    });
+
+    await this.batch.commit().catch((error: FirebaseError) => {
+      SharedService.CreateErrorLog(error);
+      throw `Erro ao atualizar lista de preços. ${error.message}`;
+    });
+  }
+
+  private CreateHistoryPriceObject = (price: Price): PriceHistory => {
     return {
       idPreco: String(price.id),
       idMercado: price.idMercado,
@@ -101,7 +101,7 @@ class PriceServiceImplements {
     };
   };
 
-  private CreatePriceToBeUpdated = (price: PricesBaseModel | Price): Price => {
+  private CreatePriceToBeUpdated = (price: Price): Price => {
     return {
       id: price.id,
       nomeProduto: price.nomeProduto,
