@@ -7,6 +7,7 @@ import {
   getFirestore,
   limit,
   orderBy,
+  Query,
   query,
   startAt,
   where,
@@ -35,20 +36,7 @@ class PriceRepositoryImplements {
           )
         : query(collection(this.database, this.path), orderBy(field));
 
-    return await getDocs(reference)
-      .then((response) => {
-        return response.docs.map((doc) => {
-          const object = doc.data();
-          return {
-            id: doc.id,
-            ...object,
-          };
-        }) as Price[];
-      })
-      .catch((error: FirebaseError) => {
-        SharedRepository.CreateErrorLog(error);
-        throw `Erro ao buscar a lista de precos. ${error.message}`;
-      });
+    return this.GetDocsReturnPrices(reference);
   }
 
   async GetAllByName(name: string): Promise<Price[]> {
@@ -58,20 +46,7 @@ class PriceRepositoryImplements {
       where(field, '==', name)
     );
 
-    return await getDocs(reference)
-      .then((response) => {
-        return response.docs.map((doc) => {
-          const object = doc.data();
-          return {
-            id: doc.id,
-            ...object,
-          };
-        }) as Price[];
-      })
-      .catch((error: FirebaseError) => {
-        SharedRepository.CreateErrorLog(error);
-        throw `Erro ao buscar a lista de preços pelo nome. ${error.message}`;
-      });
+    return this.GetDocsReturnPrices(reference);
   }
 
   async GetAllByMarket(idMarket: string): Promise<Price[]> {
@@ -81,20 +56,7 @@ class PriceRepositoryImplements {
       where(fieldMercado, '==', idMarket)
     );
 
-    return await getDocs(reference)
-      .then((response) => {
-        return response.docs.map((doc) => {
-          const object = doc.data();
-          return {
-            id: doc.id,
-            ...object,
-          };
-        }) as Price[];
-      })
-      .catch((error: FirebaseError) => {
-        SharedRepository.CreateErrorLog(error);
-        throw `Erro ao buscar preços pelo mercado. ${error.message}`;
-      });
+    return this.GetDocsReturnPrices(reference);
   }
 
   async GetAllByNameAndMarket(
@@ -108,20 +70,7 @@ class PriceRepositoryImplements {
       and(where(fieldProduto, '==', name), where(fieldMercado, '==', idMarket))
     );
 
-    return await getDocs(reference)
-      .then((response) => {
-        return response.docs.map((doc) => {
-          const object = doc.data();
-          return {
-            id: doc.id,
-            ...object,
-          };
-        }) as Price[];
-      })
-      .catch((error: FirebaseError) => {
-        SharedRepository.CreateErrorLog(error);
-        throw `Erro ao buscar preços pelo nome e mercado. ${error.message}`;
-      });
+    return this.GetDocsReturnPrices(reference);
   }
 
   async GetAllByDate(date: number): Promise<Price[]> {
@@ -131,6 +80,10 @@ class PriceRepositoryImplements {
       where(field, '==', date)
     );
 
+    return this.GetDocsReturnPrices(reference);
+  }
+
+  private async GetDocsReturnPrices(reference: Query): Promise<Price[]> {
     return await getDocs(reference)
       .then((response) => {
         return response.docs.map((doc) => {
@@ -143,7 +96,7 @@ class PriceRepositoryImplements {
       })
       .catch((error: FirebaseError) => {
         SharedRepository.CreateErrorLog(error);
-        throw `Erro ao buscar os preços por data. ${error.message}`;
+        throw `Erro ao buscar os preços. ${error.message}`;
       });
   }
 }

@@ -1,7 +1,9 @@
 import { FirebaseError } from 'firebase/app';
 import {
   collection,
+  doc,
   Firestore,
+  getDoc,
   getDocs,
   getFirestore,
   orderBy,
@@ -44,13 +46,29 @@ class MarketRepositoryImplements {
   }
 
   async CheckIfDoesExist(cnpj: string): Promise<Market> {
+    const reference = doc(this.database, this.path, cnpj);
+    const snap = await getDoc(reference).catch((error: FirebaseError) => {
+      SharedRepository.CreateErrorLog(error);
+      throw `Erro ao verificar se ${this.path} já está cadastrado(a). ${error.message}`;
+    });
+
+    if (snap.exists()) {
+      const market = snap.data();
+      return {
+        id: snap.id,
+        ...market,
+      } as Market;
+    }
+
+    return EmptyMarket;
+
     const field = 'cnpj';
-    const reference = query(
+    const reference1 = query(
       collection(this.database, this.path),
       where(field, '==', cnpj)
     );
 
-    return await getDocs(reference)
+    return await getDocs(reference1)
       .then((response) => {
         const list = response.docs.map((doc) => {
           const object = doc.data();
@@ -59,7 +77,7 @@ class MarketRepositoryImplements {
             ...object,
           };
         });
-        return (list[0] as Market) ?? EmptyMarket;
+        return list.length > 0 ? (list[0] as Market) : EmptyMarket;
       })
       .catch((error: FirebaseError) => {
         SharedRepository.CreateErrorLog(error);

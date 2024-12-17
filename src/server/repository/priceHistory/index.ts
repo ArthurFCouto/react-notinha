@@ -5,6 +5,7 @@ import {
   Firestore,
   getDocs,
   getFirestore,
+  Query,
   query,
   where,
 } from 'firebase/firestore';
@@ -27,20 +28,7 @@ class PriceHistoryRespositoryImplements {
       where(field, '==', id)
     );
 
-    return await getDocs(reference)
-      .then((response) => {
-        return response.docs.map((doc) => {
-          const object = doc.data();
-          return {
-            id: doc.id,
-            ...object,
-          };
-        }) as PriceHistory[];
-      })
-      .catch((error: FirebaseError) => {
-        SharedRepository.CreateErrorLog(error);
-        throw `Erro ao buscar histórico de preços. ${error.message}`;
-      });
+    return this.GetDocsReturnPricesHistory(reference);
   }
 
   async GetAllByMarket(id: string, data?: number): Promise<PriceHistory[]> {
@@ -53,6 +41,12 @@ class PriceHistoryRespositoryImplements {
           and(where(fieldId, '==', id), where(fieldData, '==', data))
         );
 
+    return this.GetDocsReturnPricesHistory(reference);
+  }
+
+  private async GetDocsReturnPricesHistory(
+    reference: Query
+  ): Promise<PriceHistory[]> {
     return await getDocs(reference)
       .then((response) => {
         return response.docs.map((doc) => {

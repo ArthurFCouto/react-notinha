@@ -19,17 +19,20 @@ interface PricesWork {
 }
 
 class SefazServiceImplements {
-  CheckUrl(url: string): boolean {
+  /**
+   * Verifica se a url informada é referente a uma NF de MG
+   */
+  IsValidUrl(url: string): boolean {
     const regex =
       /portalsped\.fazenda\.mg\.gov\.br\/portalnfce\/sistema\/qrcode\.xhtml\?p=/;
     return regex.test(url);
   }
 
   /**
-   * Cria um document virtual para tratar os dados da página da SEFAZ
+   * Cria um document virtual para tratar os dados da página html da SEFAZ
    */
   async CreateVirtualDocument(url: string): Promise<Document> {
-    if (!this.CheckUrl(url))
+    if (!this.IsValidUrl(url))
       throw `Este QR Code não é válido para nosso sistema.`;
 
     const { JSDOM } = jsdom;
@@ -46,15 +49,15 @@ class SefazServiceImplements {
       });
   }
 
-  async CreateMarketId(doc: Document): Promise<string> {
-    const cnpj = SefazRepository.GetReceiptCNPJ(doc);
-    const exist = await MarketRepository.CheckIfDoesExist(cnpj);
-    if (exist.id) return exist.id;
-
+  /**
+   * Cria o mercado no banco de dados e retorna o Id
+   */
+  async CreateMarket(doc: Document): Promise<Market> {
     axios.defaults.timeout = 30000;
     axios.defaults.timeoutErrorMessage =
       'CNPJ - Tempo de espera de resposta do servidor encerrado.';
 
+    const cnpj = SefazRepository.GetReceiptCNPJ(doc);
     const market = await axios
       .get(`https://receitaws.com.br/v1/cnpj/${cnpj}`)
       .then((response) => {
@@ -84,14 +87,16 @@ class SefazServiceImplements {
     return MarketService.Create(market);
   }
 
-  async CreateReceiptObject(doc: Document, url: string): Promise<Receipt> {
+  async CreateReceiptObject(
+    doc: Document,
+    url: string,
+    market: Market
+  ): Promise<Receipt> {
     const key = SefazRepository.GetReceiptKey(doc);
-    const receipt = await ReceiptRepository.CheckIfDoesExist(key);
-    if (receipt) throw 'Este cupom já está cadastrado.';
+    const exist = await ReceiptRepository.CheckIfDoesExist(key);
+    if (exist) throw 'Este cupom já está cadastrado.';
 
     try {
-      const marketId = await this.CreateMarketId(doc);
-
       const element = doc.getElementById('collapse4') as HTMLElement;
       const table = element.querySelector('table:nth-child(8)') as Element;
       const line = table.querySelector('tbody tr') as Element;
@@ -102,15 +107,17 @@ class SefazServiceImplements {
       const column = lineTwo.querySelector('td');
       const totalPrice = String(column?.textContent)
         .slice(3)
-        .replaceAll('.', '')
+        .replace(/[^\d.,]/g, '')
+        .replace('.', '')
         .replace(',', '.');
+
       return {
         cnpj: SefazRepository.GetReceiptCNPJ(doc),
         chave: SefazRepository.GetReceiptKey(doc),
         url,
         valorTotal: parseFloat(totalPrice),
         idUsuario: '',
-        idMercado: marketId,
+        idMercado: market.id!,
         dataEmissao: issueDate,
         dataInclusao: new Date().getTime(),
       };
@@ -126,9 +133,9 @@ class SefazServiceImplements {
   CreateItemList(doc: Document, market: Market, receipt: Receipt): Price[] {
     try {
       const items: PricesWork = {};
-
       const element = doc.querySelector('.table.table-striped') as Element;
       const lines = element.querySelectorAll('tbody tr');
+
       lines.forEach((line) => {
         const columnData: string[] = [];
         const columns = line.querySelectorAll('td');
@@ -141,19 +148,26 @@ class SefazServiceImplements {
           }
           columnData[index] = String(column.textContent?.trim());
         });
+
         const amount = parseFloat(
-          columnData[1].replace(/[^\d.,]/g, '').replace(',', '.')
-        );
+          columnData[1].replace(/[^\d.,]/g, '').replace('.', ',')
+        ).toFixed(3);
+
         const totalPrice = parseFloat(
-          columnData[3].replace(/[^\d.,]/g, '').replace(',', '.')
-        );
+          columnData[3]
+            .replace(/[^\d.,]/g, '')
+            .replace('.', '')
+            .replace(',', '.')
+        ).toFixed(2);
+
         const key = columnData[0];
+
         if (!items[key]) {
           items[key] = {
             nomeMercado: market.nomeFantasia,
             nomeProduto: columnData[0],
             unidadeMedida: columnData[2].slice(4),
-            valor: totalPrice / amount,
+            valor: parseFloat(totalPrice) / parseFloat(amount),
             idMercado: market.id!,
             idNotaFiscal: receipt.id!,
             dataInclusao: receipt.dataInclusao,
@@ -167,6 +181,11 @@ class SefazServiceImplements {
     }
   }
 
+  /**
+   * Recebe a data no formado informado no cumpom fiscal e retorna o timestamp da data na hora 00:00:00
+   * @param date - Deve estar no formato 01/01/2000 23:59:59
+   * @returns O timestamp da data no horário 00:00:00
+   */
   private GenerateTimestamp(date: string): number {
     const currentDate = date.split('/');
     const newDate = new Date(

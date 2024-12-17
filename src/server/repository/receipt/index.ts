@@ -1,12 +1,12 @@
 import {
   collection,
+  doc,
   Firestore,
+  getDoc,
   getDocs,
   getFirestore,
+  orderBy,
   query,
-  where,
-  writeBatch,
-  WriteBatch,
 } from 'firebase/firestore';
 import firebase from '@/server/configs/firebase';
 import SharedRepository from '../../shared';
@@ -14,37 +14,52 @@ import { EmptyReceipt, Receipt } from '@/server/models/receipt';
 import { FirebaseError } from 'firebase/app';
 
 class ReceiptRepositoryImplements {
-  private batch: WriteBatch;
   private database: Firestore;
   private path = 'notaFiscal';
 
   constructor() {
     this.database = getFirestore(firebase);
-    this.batch = writeBatch(this.database);
   }
 
-  async CheckIfDoesExist(chave: string): Promise<Receipt> {
-    const field = 'chave';
+  async GetAll(): Promise<Receipt[]> {
+    const columnOrdem = 'dataInclusao';
     const reference = query(
       collection(this.database, this.path),
-      where(field, '==', chave)
+      orderBy(columnOrdem)
     );
 
     return await getDocs(reference)
       .then((response) => {
-        const list = response.docs.map((doc) => {
+        return response.docs.map((doc) => {
           const object = doc.data();
           return {
             id: doc.id,
             ...object,
           };
-        });
-        return (list[0] as Receipt) ?? EmptyReceipt;
+        }) as Receipt[];
       })
       .catch((error: FirebaseError) => {
         SharedRepository.CreateErrorLog(error);
-        throw `Erro ao verificar se ${this.path} já está cadastrado(a). ${error.message}`;
+        throw `Erro ao buscar a lista de ${this.path}. ${error.message}`;
       });
+  }
+
+  async CheckIfDoesExist(chave: string): Promise<Receipt> {
+    const reference = doc(this.database, this.path, chave);
+    const snap = await getDoc(reference).catch((error: FirebaseError) => {
+      SharedRepository.CreateErrorLog(error);
+      throw `Erro ao verificar se ${this.path} já está cadastrado(a). ${error.message}`;
+    });
+
+    if (snap.exists()) {
+      const market = snap.data();
+      return {
+        id: snap.id,
+        ...market,
+      } as Receipt;
+    }
+
+    return EmptyReceipt;
   }
 }
 
