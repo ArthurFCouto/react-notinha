@@ -21,8 +21,8 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import { Price } from '@/shared/service/firebase';
 import { BRCurrencyFormat } from '@/shared/util';
+import { Price } from '@/server/models/price';
 
 const monts = [
   'JAN',
@@ -64,7 +64,7 @@ export default function CardItems({ items, clickOnHistory }: CardItemsProps) {
                     justifyContent="space-between"
                     width="100%"
                   >
-                    <Tooltip arrow title={item.produto}>
+                    <Tooltip arrow title={item.nomeProduto}>
                       <Box overflow="hidden">
                         <Typography
                           component="div"
@@ -75,7 +75,7 @@ export default function CardItems({ items, clickOnHistory }: CardItemsProps) {
                           textTransform="capitalize"
                           variant={mdDownScreen ? 'h6' : 'h5'}
                         >
-                          {item.produto.toLowerCase()}
+                          {item.nomeProduto.toLowerCase()}
                         </Typography>
                         <Typography
                           color="text.secondary"
@@ -92,7 +92,7 @@ export default function CardItems({ items, clickOnHistory }: CardItemsProps) {
                           gutterBottom
                           variant={mdDownScreen ? 'body2' : 'body1'}
                         >
-                          {item.mercado}
+                          {item.nomeMercado}
                         </Typography>
                       </Box>
                     </Tooltip>
@@ -113,9 +113,9 @@ export default function CardItems({ items, clickOnHistory }: CardItemsProps) {
                           textAlign="center"
                           variant="button"
                         >
-                          {item.data.slice(0, 2)}
+                          {/*item.data.slice(0, 2)*/}
                           <br />
-                          {monts[parseInt(item.data.slice(3, 5)) - 1]}
+                          {/*monts[parseInt(item.data.slice(3, 5)) - 1]*/}
                         </Typography>
                       </Box>
                     </Tooltip>
@@ -139,9 +139,9 @@ export default function CardItems({ items, clickOnHistory }: CardItemsProps) {
                     letterSpacing={1}
                     variant={mdDownScreen ? 'h6' : 'h5'}
                   >
-                    {BRCurrencyFormat(parseFloat(item.valor))}
+                    {BRCurrencyFormat(item.valor)}
                   </Typography>
-                  <IconButton onClick={() => clickOnHistory(item.produto)}>
+                  <IconButton onClick={() => clickOnHistory(item.id!)}>
                     <History color="primary" fontSize="inherit" />
                   </IconButton>
                 </Stack>

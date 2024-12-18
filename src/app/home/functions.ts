@@ -1,6 +1,6 @@
+import { Price } from '@/server/models/price';
+import axios from 'axios';
 import { Dispatch, SetStateAction } from 'react';
-import { addTaxCoupon, getPrices } from '@/shared/server/actions';
-import { Price } from '@/shared/service/firebase';
 
 type AlertClose = {
   type: 'close';
@@ -51,21 +51,23 @@ export async function SendUrl(
     return;
   }
   setSendingUrl(true);
-  await addTaxCoupon(url).then((response) => {
-    if (response.status === 200)
+  await axios
+    .post(`/api/receipts?url=${url}`)
+    .then(() => {
       dispatchAlert({
         type: 'open',
         message: 'Obrigado pelo seu envio. Atualize a lista de preços.',
         severity: 'success',
       });
-    else
+    })
+    .catch((response) => {
       dispatchAlert({
         type: 'open',
-        message: response.data,
+        message: response.error,
         severity: 'error',
       });
-    setSendingUrl(false);
-  });
+    })
+    .finally(() => setSendingUrl(false));
 }
 
 export async function UpdateListPrices(
@@ -77,8 +79,9 @@ export async function UpdateListPrices(
   if (loading) return;
   setLoading(true);
   setOriginalPrices([]);
-  await getPrices().then((response) => {
-    if (response.status === 200) {
+  await axios
+    .get(`/api/prices`)
+    .then((response) => {
       const { data } = response;
       if (data.length === 0)
         dispatchAlert({
@@ -87,13 +90,13 @@ export async function UpdateListPrices(
           severity: 'error',
         });
       else setOriginalPrices(data);
-    } else {
+    })
+    .catch((response) => {
       dispatchAlert({
         type: 'open',
         message: response.data,
         severity: 'error',
       });
-    }
-  });
-  setLoading(false);
+    })
+    .finally(() => setLoading(false));
 }

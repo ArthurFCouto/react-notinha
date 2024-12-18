@@ -1,33 +1,27 @@
-import { getDocumentList, Price } from '@/shared/service/firebase';
-import { CustomGetTime } from '@/shared/util';
+import { PriceController } from '@/server/controller/price';
 import { NextResponse } from 'next/server';
 
-function RemoveDuplicatePrice(originalList: Price[]): Price[] {
-  if (originalList.length === 0) return originalList;
-  const map: {
-    [key: string]: Price;
-  } = {};
-
-  originalList.forEach((preco) => {
-    const { produto, data, mercado } = preco;
-    const key = produto + '_' + mercado;
-    if (map[key]) {
-      // The date has the format dd/mm/yyyy
-      const currentDate = CustomGetTime(data);
-      const listItemDate = CustomGetTime(map[key].data);
-      if (currentDate > listItemDate) map[key] = preco;
-    } else {
-      map[key] = preco;
-    }
-  });
-  return Object.values(map);
-}
-
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const list = await getDocumentList('precos');
-    return NextResponse.json({ data: RemoveDuplicatePrice(list) });
+    const { searchParams } = new URL(request.url);
+    const idMarket = searchParams.get('idMercado');
+    const productName = searchParams.get('nomeProduto');
+    if (idMarket && productName) {
+      const response = await PriceController.GetByNameAndMarket(
+        productName,
+        idMarket
+      );
+      return NextResponse.json({ data: response });
+    } else if (productName) {
+      const response = await PriceController.GetByName(productName);
+      return NextResponse.json({ data: response });
+    } else if (idMarket) {
+      const response = await PriceController.GetByMarket(idMarket);
+      return NextResponse.json({ data: response });
+    }
+    const response = await PriceController.GetAll();
+    return NextResponse.json({ data: response });
   } catch (error: any) {
-    return NextResponse.json({ error });
+    return NextResponse.json({ error }, { status: 500 });
   }
 }

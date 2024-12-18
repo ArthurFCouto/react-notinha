@@ -21,7 +21,6 @@ import {
   useTheme,
 } from '@mui/material';
 import { Clear, CloudUpload, Refresh } from '@mui/icons-material';
-import { Price } from '@/shared/service/firebase';
 import Footer from '@/shared/components/root/footer';
 import { HandleStateAlert, SendUrl, UpdateListPrices } from './functions';
 import ModalQrReader from '@/shared/components/home/ModalQrReader';
@@ -31,6 +30,7 @@ import CardItems, {
 } from '@/shared/components/home/CardItems';
 import NavBar from '@/shared/components/root/NavBar';
 import ButtonGoToTop from '@/shared/components/root/ButtonGoToTop';
+import { Price } from '@/server/models/price';
 
 export default function Home() {
   const [loading, setLoading] = useState(false);
@@ -55,9 +55,8 @@ export default function Home() {
     if (searchInput.trim().length === 0) return originalPrices;
     return originalPrices.filter(
       (price) =>
-        price.mercado.toLowerCase().includes(searchInput.toLowerCase()) ||
-        price.produto.toLowerCase().includes(searchInput.toLowerCase()) ||
-        price.data.toLowerCase().includes(searchInput.toLowerCase())
+        price.nomeMercado.toLowerCase().includes(searchInput.toLowerCase()) ||
+        price.nomeProduto.toLowerCase().includes(searchInput.toLowerCase())
     );
   }, [originalPrices, searchInput]);
 

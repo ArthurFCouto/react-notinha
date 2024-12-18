@@ -20,8 +20,8 @@ import Footer from '@/shared/components/root/footer';
 import NavBar from '@/shared/components/root/NavBar';
 import lottieNotinha from '@/shared/assets/notinha.json';
 import PriceHistoryChart from '@/shared/components/home/PriceHistoryChart';
-import { getPricesByName } from '@/shared/server/actions';
-import { Price } from '@/shared/service/firebase';
+import { Price } from '@/server/models/price';
+import axios from 'axios';
 
 export default function Home() {
   const theme = useTheme();
@@ -33,10 +33,14 @@ export default function Home() {
 
   useEffect(() => {
     const getPrices = async () => {
-      const response = await getPricesByName(
-        names[Math.floor(Math.random() * 3)].toUpperCase()
-      );
-      setChartData(response.data);
+      await axios
+        .get(`/api/prices?nomeProduto=${'MELANCIA KG'}`)
+        .then((response) => {
+          setChartData(response.data);
+        })
+        .catch((response) => {
+          console.error(response.error);
+        });
     };
     getPrices();
   }, []);
@@ -178,7 +182,8 @@ export default function Home() {
                   width="100%"
                   variant="h6"
                 >
-                  Evolução do preço da <strong>{chartData[0].produto}</strong>
+                  Evolução do preço da{' '}
+                  <strong>{chartData[0].nomeProduto}</strong>
                 </Typography>
                 <Typography
                   color="primary.dark"
@@ -186,7 +191,7 @@ export default function Home() {
                   width="100%"
                   variant="h6"
                 >
-                  {chartData[0].mercado}
+                  {chartData[0].nomeMercado}
                 </Typography>
                 <PriceHistoryChart height={300} prices={chartData} />
               </Paper>

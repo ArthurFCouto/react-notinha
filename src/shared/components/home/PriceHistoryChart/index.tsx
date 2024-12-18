@@ -1,5 +1,5 @@
+import { Price } from '@/server/models/price';
 import { Stack } from '@mui/material';
-import { Price } from '@/shared/service/firebase';
 import {
   Area,
   AreaChart,

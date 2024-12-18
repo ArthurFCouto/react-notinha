@@ -14,10 +14,10 @@ import {
 } from '@mui/material';
 import { Player } from '@lottiefiles/react-lottie-player';
 import { Close, History } from '@mui/icons-material';
-import { Price } from '@/shared/service/firebase';
 import lottieLoading from '@/shared/assets/loading-2.json';
 import PriceHistoryChart from '../PriceHistoryChart';
 import { UpdateChart } from './functions';
+import { Price } from '@/server/models/price';
 
 interface ModalPriceHistoryProps {
   close: () => void;
@@ -84,7 +84,7 @@ export default function ModalPriceHistory({
             width="100%"
             variant="h6"
           >
-            {prices[0].mercado}
+            {prices[0].nomeMercado}
           </Typography>
         )}
         <DialogContentText>

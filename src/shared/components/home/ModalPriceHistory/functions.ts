@@ -1,7 +1,6 @@
 import { Dispatch, SetStateAction } from 'react';
-import { Price } from '@/shared/service/firebase';
-import { getPricesByName } from '@/shared/server/actions';
-import { ConvertStringToNumber, CustomGetTime } from '@/shared/util';
+import axios from 'axios';
+import { Price } from '@/server/models/price';
 
 export async function UpdateChart(
   onError: Function,
@@ -10,21 +9,22 @@ export async function UpdateChart(
   setPrices: Dispatch<SetStateAction<Price[]>>,
   setVariation: Dispatch<SetStateAction<number>>
 ) {
-  await getPricesByName(query).then((response) => {
-    if (response.status === 200) {
+  await axios
+    .get(`/api/prices?idProduto=${query}`)
+    .then((response) => {
       setPrices(OrderByDate(response.data));
       setVariation(CalculateVariance(response.data));
-    } else {
-      onError(response.data);
+    })
+    .catch((response) => {
+      onError(response.error);
       close();
-    }
-  });
-  setLoading(false);
+    })
+    .finally(() => setLoading(false));
 }
 
 function OrderByDate(list: Price[]) {
   const newList = list.sort(
-    (prev, last) => CustomGetTime(prev.data) - CustomGetTime(last.data)
+    (prev, last) => prev.dataInclusao - last.dataInclusao
   );
   const length = newList.length;
   if (length > 10) {
@@ -36,7 +36,7 @@ function OrderByDate(list: Price[]) {
 function CalculateVariance(list: Price[]) {
   if (list.length === 0 || list.length === 1) return 0;
   const length = list.length;
-  const prev = ConvertStringToNumber(list[0].valor);
-  const last = ConvertStringToNumber(list[length - 1].valor);
+  const prev = list[0].valor;
+  const last = list[length - 1].valor;
   return parseFloat((((last - prev) / prev) * 100).toFixed(2));
 }

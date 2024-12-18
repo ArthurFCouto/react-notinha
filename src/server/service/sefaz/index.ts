@@ -22,14 +22,15 @@ class SefazServiceImplements {
   /**
    * Verifica se a url informada é referente a uma NF de MG
    */
-  IsValidUrl(url: string): boolean {
+  private IsValidUrl(url: string): boolean {
     const regex =
       /portalsped\.fazenda\.mg\.gov\.br\/portalnfce\/sistema\/qrcode\.xhtml\?p=/;
     return regex.test(url);
   }
 
   /**
-   * Cria um document virtual para tratar os dados da página html da SEFAZ
+   * Cria um document virtual para tratar os dados da página html da SEFAZ.
+   * Faz-se necessário para acesar as outras funções.
    */
   async CreateVirtualDocument(url: string): Promise<Document> {
     if (!this.IsValidUrl(url))
@@ -50,7 +51,8 @@ class SefazServiceImplements {
   }
 
   /**
-   * Cria o mercado no banco de dados e retorna o Id
+   * Cria o mercado no banco de dados e retorna o Id.
+   * É necessário que já tenha sido criado o virtualDocument.
    */
   async CreateMarket(doc: Document): Promise<Market> {
     axios.defaults.timeout = 30000;
@@ -87,6 +89,10 @@ class SefazServiceImplements {
     return MarketService.Create(market);
   }
 
+  /**
+   * Cria o objeto referente a nota fiscal.
+   * É necessário que já tenham sido criados o virtualDocument e o mercado.
+   */
   async CreateReceiptObject(
     doc: Document,
     url: string,
@@ -128,7 +134,8 @@ class SefazServiceImplements {
   }
 
   /**
-   * Retorna uma lista com os itens da Nota Fiscal (sem repetição)
+   * Retorna uma lista com os itens da Nota Fiscal (sem repetição).
+   * É necessário que já tenham sido criados o virtualDocument, o mercado e a nota fiscal.
    */
   CreateItemList(doc: Document, market: Market, receipt: Receipt): Price[] {
     try {
