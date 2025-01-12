@@ -34,12 +34,12 @@ export default function Home() {
   useEffect(() => {
     const getPrices = async () => {
       await axios
-        .get(`/api/prices?nomeProduto=${'MELANCIA KG'}`)
+        .get(`/api/prices?nomeProduto=${'ABACAXI UND'}`)
         .then((response) => {
           setChartData(response.data);
         })
-        .catch((response) => {
-          console.error(response.error);
+        .catch((error) => {
+          console.error(error.response);
         });
     };
     getPrices();

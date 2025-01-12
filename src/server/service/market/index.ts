@@ -3,19 +3,17 @@ import {
   addDoc,
   collection,
   doc,
-  Firestore,
   getFirestore,
   writeBatch,
-  WriteBatch,
 } from 'firebase/firestore';
 import firebase from '@/server/configs/firebase';
-import SharedService from '../../shared';
+import { LogsService } from '../logs';
 import { MarketRepository } from '@/server/repository/market';
 import { Market } from '@/server/models/market';
 
 class MarketServiceImplements {
-  private batch: WriteBatch;
-  private database: Firestore;
+  private batch;
+  private database;
   private path = 'mercado';
 
   constructor() {
@@ -27,7 +25,9 @@ class MarketServiceImplements {
     const exist = await MarketRepository.CheckIfDoesExist(market.cnpj);
     if (exist.id) {
       market.id = exist.id;
-      return this.Update(market);
+      return market.dataAtualizacao > exist.dataAtualizacao
+        ? this.Update(market)
+        : exist;
     }
 
     delete market.id;
@@ -39,7 +39,7 @@ class MarketServiceImplements {
         };
       })
       .catch((error: FirebaseError) => {
-        SharedService.CreateErrorLog(error);
+        LogsService.Create(error);
         throw `Erro ao cadastrar ${this.path}. ${error.message}`;
       });
   }
@@ -61,7 +61,7 @@ class MarketServiceImplements {
 
     this.batch.update(reference, newMarket);
     await this.batch.commit().catch((error: FirebaseError) => {
-      SharedService.CreateErrorLog(error);
+      LogsService.Create(error);
       throw `Erro ao atualizar lista de preços. ${error.message}`;
     });
 

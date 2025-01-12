@@ -2,7 +2,6 @@ import { FirebaseError } from 'firebase/app';
 import {
   collection,
   doc,
-  Firestore,
   getDoc,
   getDocs,
   getFirestore,
@@ -12,10 +11,10 @@ import {
 } from 'firebase/firestore';
 import firebase from '@/server/configs/firebase';
 import { EmptyMarket, Market } from '@/server/models/market';
-import SharedRepository from '../../shared';
+import { LogsService } from '@/server/service/logs';
 
 class MarketRepositoryImplements {
-  private database: Firestore;
+  private database;
   private path = 'mercado';
 
   constructor() {
@@ -40,7 +39,7 @@ class MarketRepositoryImplements {
         }) as Market[];
       })
       .catch((error: FirebaseError) => {
-        SharedRepository.CreateErrorLog(error);
+        LogsService.Create(error);
         throw `Erro ao buscar a lista de ${this.path}. ${error.message}`;
       });
   }
@@ -48,7 +47,7 @@ class MarketRepositoryImplements {
   async CheckIfDoesExist(cnpj: string): Promise<Market> {
     const reference = doc(this.database, this.path, cnpj);
     const snap = await getDoc(reference).catch((error: FirebaseError) => {
-      SharedRepository.CreateErrorLog(error);
+      LogsService.Create(error);
       throw `Erro ao verificar se ${this.path} já está cadastrado(a). ${error.message}`;
     });
 
@@ -80,7 +79,7 @@ class MarketRepositoryImplements {
         return list.length > 0 ? (list[0] as Market) : EmptyMarket;
       })
       .catch((error: FirebaseError) => {
-        SharedRepository.CreateErrorLog(error);
+        LogsService.Create(error);
         throw `Erro ao verificar se ${this.path} já está cadastrado(a). ${error.message}`;
       });
   }

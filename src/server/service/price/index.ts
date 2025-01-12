@@ -1,22 +1,15 @@
 import { FirebaseError } from 'firebase/app';
-import {
-  collection,
-  doc,
-  Firestore,
-  getFirestore,
-  WriteBatch,
-  writeBatch,
-} from 'firebase/firestore';
+import { collection, doc, getFirestore, writeBatch } from 'firebase/firestore';
 import firebase from '@/server/configs/firebase';
-import SharedService from '../../shared';
+import { LogsService } from '../logs';
 import { Price } from '@/server/models/price';
 import { PriceRepository } from '@/server/repository/price';
 import { PriceHistory } from '@/server/models/priceHistory';
 import { PriceHistoryService } from '../priceHistory';
 
 class PriceServiceImplements {
-  private batch: WriteBatch;
-  private database: Firestore;
+  private batch;
+  private database;
   private path = 'precos';
 
   constructor() {
@@ -39,8 +32,8 @@ class PriceServiceImplements {
     );
 
     prices.forEach((price) => {
-      const keyDate = `${price.nomeProduto}_${price.idMercado}_${price.dataInclusao}`;
-      if (keysDataActualPrices.includes(keyDate)) return;
+      const keyData = `${price.nomeProduto}_${price.idMercado}_${price.dataInclusao}`;
+      if (keysDataActualPrices.includes(keyData)) return;
 
       const keyMarket = `${price.nomeProduto}_${price.idMercado}`;
       if (keysMarketActualPrices.includes(keyMarket)) {
@@ -65,7 +58,7 @@ class PriceServiceImplements {
     });
 
     await this.batch.commit().catch((error: FirebaseError) => {
-      SharedService.CreateErrorLog(error);
+      LogsService.Create(error);
       throw `Erro ao cadastrar lista de preços. ${error.message}`;
     });
 
@@ -86,7 +79,7 @@ class PriceServiceImplements {
     });
 
     await this.batch.commit().catch((error: FirebaseError) => {
-      SharedService.CreateErrorLog(error);
+      LogsService.Create(error);
       throw `Erro ao atualizar lista de preços. ${error.message}`;
     });
   }

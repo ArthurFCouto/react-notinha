@@ -2,22 +2,22 @@ import firebase from '@/server/configs/firebase';
 import { FirebaseError } from 'firebase/app';
 import { addDoc, collection, getFirestore } from 'firebase/firestore';
 
-class SharedService {
-  private path = '';
+class LogsServiceImplements {
+  private path = 'logs';
   private database;
 
   constructor() {
     this.database = getFirestore(firebase);
   }
 
-  async CreateErrorLog(log: any): Promise<void> {
+  async Create(log: any): Promise<void> {
     const data = {
       date: Date.now(),
-      code: log.code || 'Not specified',
+      code: String(log.code),
       message: String(log.message),
-      request: log.request,
-      stack: log.stack || 'Not specified',
-      status: String(log.status) || 'Not specified',
+      request: String(log.request),
+      stack: String(log.stack),
+      status: String(log.status),
     };
 
     await addDoc(collection(this.database, this.path), data).catch(
@@ -28,4 +28,4 @@ class SharedService {
   }
 }
 
-export default new SharedService();
+export const LogsService = new LogsServiceImplements();

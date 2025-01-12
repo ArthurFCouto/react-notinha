@@ -1,25 +1,21 @@
 import {
   addDoc,
   collection,
-  Firestore,
   getFirestore,
   writeBatch,
-  WriteBatch,
 } from 'firebase/firestore';
 import firebase from '@/server/configs/firebase';
-import SharedService from '../../shared';
+import { LogsService } from '../logs';
 import { Receipt } from '@/server/models/receipt';
 import { ReceiptRepository } from '@/server/repository/receipt';
 import { FirebaseError } from 'firebase/app';
 
 class ReceiptServiceImplements {
-  private batch: WriteBatch;
-  private database: Firestore;
+  private database;
   private path = 'notaFiscal';
 
   constructor() {
     this.database = getFirestore(firebase);
-    this.batch = writeBatch(this.database);
   }
 
   async Create(receipt: Receipt): Promise<Receipt> {
@@ -37,7 +33,7 @@ class ReceiptServiceImplements {
         };
       })
       .catch((error: FirebaseError) => {
-        SharedService.CreateErrorLog(error);
+        LogsService.Create(error);
         throw `Erro ao cadastrar ${this.path}. ${error.message}`;
       });
   }

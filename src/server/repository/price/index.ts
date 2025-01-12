@@ -2,7 +2,6 @@ import { FirebaseError } from 'firebase/app';
 import {
   and,
   collection,
-  Firestore,
   getDocs,
   getFirestore,
   limit,
@@ -13,11 +12,11 @@ import {
   where,
 } from 'firebase/firestore';
 import firebase from '@/server/configs/firebase';
-import SharedRepository from '../../shared';
+import { LogsService } from '@/server/service/logs';
 import { Price } from '@/server/models/price';
 
 class PriceRepositoryImplements {
-  private database: Firestore;
+  private database;
   private path = 'precos';
 
   constructor() {
@@ -95,8 +94,8 @@ class PriceRepositoryImplements {
         }) as Price[];
       })
       .catch((error: FirebaseError) => {
-        SharedRepository.CreateErrorLog(error);
-        throw `Erro ao buscar os preços. ${error.message}`;
+        LogsService.Create(error);
+        throw `Erro ao buscar os preços. ${error.message || String(error)}`;
       });
   }
 }

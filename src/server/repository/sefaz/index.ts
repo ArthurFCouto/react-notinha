@@ -1,8 +1,9 @@
-import SharedRepository from '../../shared';
+import { LogsService } from '@/server/service/logs';
 
 class SefazRepositoryImplements {
   /**
    * Retorna a chave de acesso da Nota Fiscal (somente números)
+   * É necessário que já tenha sido criado o virtualDocument.
    */
   GetReceiptKey(doc: Document) {
     try {
@@ -12,13 +13,14 @@ class SefazRepositoryImplements {
       )?.textContent;
       return String(key).replace(/[^\d]/g, '');
     } catch (error: any) {
-      SharedRepository.CreateErrorLog(error);
+      LogsService.Create(error);
       throw `Erro interno - ${error.message}`;
     }
   }
 
   /**
    * Retorna o CNPJ do emissor da Nota Fiscal (somente números)
+   * É necessário que já tenha sido criado o virtualDocument.
    */
   GetReceiptCNPJ(doc: Document) {
     try {
@@ -27,7 +29,7 @@ class SefazRepositoryImplements {
       const limiter = allText.indexOf(',');
       return allText.slice(0, limiter).replace(/[^\d]/g, '');
     } catch (error: any) {
-      SharedRepository.CreateErrorLog(error);
+      LogsService.Create(error);
       throw `Erro interno - ${error.message}`;
     }
   }

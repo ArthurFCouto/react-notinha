@@ -1,7 +1,6 @@
 import {
   collection,
   doc,
-  Firestore,
   getDoc,
   getDocs,
   getFirestore,
@@ -9,12 +8,12 @@ import {
   query,
 } from 'firebase/firestore';
 import firebase from '@/server/configs/firebase';
-import SharedRepository from '../../shared';
+import { LogsService } from '@/server/service/logs';
 import { EmptyReceipt, Receipt } from '@/server/models/receipt';
 import { FirebaseError } from 'firebase/app';
 
 class ReceiptRepositoryImplements {
-  private database: Firestore;
+  private database;
   private path = 'notaFiscal';
 
   constructor() {
@@ -39,7 +38,7 @@ class ReceiptRepositoryImplements {
         }) as Receipt[];
       })
       .catch((error: FirebaseError) => {
-        SharedRepository.CreateErrorLog(error);
+        LogsService.Create(error);
         throw `Erro ao buscar a lista de ${this.path}. ${error.message}`;
       });
   }
@@ -47,7 +46,7 @@ class ReceiptRepositoryImplements {
   async CheckIfDoesExist(chave: string): Promise<Receipt> {
     const reference = doc(this.database, this.path, chave);
     const snap = await getDoc(reference).catch((error: FirebaseError) => {
-      SharedRepository.CreateErrorLog(error);
+      LogsService.Create(error);
       throw `Erro ao verificar se ${this.path} já está cadastrado(a). ${error.message}`;
     });
 

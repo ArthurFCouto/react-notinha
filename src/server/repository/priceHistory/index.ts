@@ -2,7 +2,6 @@ import { FirebaseError } from 'firebase/app';
 import {
   and,
   collection,
-  Firestore,
   getDocs,
   getFirestore,
   Query,
@@ -10,11 +9,11 @@ import {
   where,
 } from 'firebase/firestore';
 import firebase from '@/server/configs/firebase';
-import SharedRepository from '../../shared';
+import { LogsService } from '@/server/service/logs';
 import { PriceHistory } from '@/server/models/priceHistory';
 
 class PriceHistoryRespositoryImplements {
-  private database: Firestore;
+  private database;
   private path = 'historicoDePrecos';
 
   constructor() {
@@ -35,11 +34,11 @@ class PriceHistoryRespositoryImplements {
     const fieldId = 'idMercado';
     const fieldData = 'dataInclusao';
     const reference = data
-      ? query(collection(this.database, this.path), where(fieldId, '==', id))
-      : query(
+      ? query(
           collection(this.database, this.path),
           and(where(fieldId, '==', id), where(fieldData, '==', data))
-        );
+        )
+      : query(collection(this.database, this.path), where(fieldId, '==', id));
 
     return this.GetDocsReturnPricesHistory(reference);
   }
@@ -58,7 +57,7 @@ class PriceHistoryRespositoryImplements {
         }) as PriceHistory[];
       })
       .catch((error: FirebaseError) => {
-        SharedRepository.CreateErrorLog(error);
+        LogsService.Create(error);
         throw `Erro ao buscar histórico de preços. ${error.message}`;
       });
   }

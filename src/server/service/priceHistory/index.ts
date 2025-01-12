@@ -1,20 +1,13 @@
 import { FirebaseError } from 'firebase/app';
-import {
-  collection,
-  doc,
-  Firestore,
-  getFirestore,
-  WriteBatch,
-  writeBatch,
-} from 'firebase/firestore';
+import { collection, doc, getFirestore, writeBatch } from 'firebase/firestore';
 import firebase from '@/server/configs/firebase';
-import SharedService from '../../shared';
+import { LogsService } from '../logs';
 import { PriceHistory } from '@/server/models/priceHistory';
 import { PriceHistoryRepository } from '@/server/repository/priceHistory';
 
 class PriceHistoryImplements {
-  private batch: WriteBatch;
-  private database: Firestore;
+  private batch;
+  private database;
   private path = 'historicoDePrecos';
 
   constructor() {
@@ -36,18 +29,18 @@ class PriceHistoryImplements {
     );
 
     prices.forEach((price) => {
-      delete price.id;
       if (
         keysHistoryPrices.includes(`${price.idMercado}_${price.dataInclusao}`)
       )
         return;
 
+      delete price.id;
       const reference = doc(collection(this.database, this.path));
       this.batch.set(reference, price);
     });
 
     return await this.batch.commit().catch((error: FirebaseError) => {
-      SharedService.CreateErrorLog(error);
+      LogsService.Create(error);
       throw `Erro ao cadastrar histórico de preços. ${error.message}`;
     });
   }

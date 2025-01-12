@@ -1,9 +1,8 @@
 import axios, { AxiosError } from 'axios';
 import jsdom from 'jsdom';
-import SharedService from '../../shared';
+import { LogsService } from '../logs';
 import { Market } from '@/server/models/market';
 import { SefazRepository } from '@/server/repository/sefaz';
-import { MarketRepository } from '@/server/repository/market';
 import { Receipt } from '@/server/models/receipt';
 import { ReceiptRepository } from '@/server/repository/receipt';
 import { MarketService } from '../market';
@@ -19,6 +18,11 @@ interface PricesWork {
 }
 
 class SefazServiceImplements {
+  private dateNow = new Date();
+
+  constructor() {
+    this.dateNow.setHours(0, 0, 0, 0);
+  }
   /**
    * Verifica se a url informada é referente a uma NF de MG
    */
@@ -30,7 +34,6 @@ class SefazServiceImplements {
 
   /**
    * Cria um document virtual para tratar os dados da página html da SEFAZ.
-   * Faz-se necessário para acesar as outras funções.
    */
   async CreateVirtualDocument(url: string): Promise<Document> {
     if (!this.IsValidUrl(url))
@@ -45,7 +48,7 @@ class SefazServiceImplements {
         return virtualDocument.window.document;
       })
       .catch((error: AxiosError) => {
-        SharedService.CreateErrorLog(error);
+        LogsService.Create(error);
         throw `Erro interno - ${error.message}`;
       });
   }
@@ -77,12 +80,12 @@ class SefazServiceImplements {
           endereco: data.logradouro,
           numero: data.numero,
           bairro: data.bairro,
-          dataInclusao: new Date().getTime(),
-          dataAtualizacao: new Date().getTime(),
+          dataInclusao: this.dateNow.getTime(),
+          dataAtualizacao: this.dateNow.getTime(),
         } as Market;
       })
       .catch((error: AxiosError) => {
-        SharedService.CreateErrorLog(error);
+        LogsService.Create(error);
         throw `Erro interno - ${error.message}`;
       });
 
@@ -125,10 +128,10 @@ class SefazServiceImplements {
         idUsuario: '',
         idMercado: market.id!,
         dataEmissao: issueDate,
-        dataInclusao: new Date().getTime(),
+        dataInclusao: this.dateNow.getTime(),
       };
     } catch (error: any) {
-      SharedService.CreateErrorLog(error);
+      LogsService.Create(error);
       throw `Erro interno - ${error.message}`;
     }
   }
@@ -183,7 +186,7 @@ class SefazServiceImplements {
       });
       return Object.values(items);
     } catch (error: any) {
-      SharedService.CreateErrorLog(error);
+      LogsService.Create(error);
       throw `Erro interno - ${error.message}`;
     }
   }
