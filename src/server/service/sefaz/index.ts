@@ -7,6 +7,7 @@ import { Receipt } from '@/server/models/receipt';
 import { ReceiptRepository } from '@/server/repository/receipt';
 import { MarketService } from '../market';
 import { Price } from '@/server/models/price';
+import { MarketRepository } from '@/server/repository/market';
 
 const mainActivity = {
   code: '47.11-3-02',
@@ -19,6 +20,8 @@ interface PricesWork {
 
 class SefazServiceImplements {
   private dateNow = new Date();
+  private url =
+    'https://portalsped.fazenda.mg.gov.br/portalnfce/sistema/qrcode.xhtml?p=';
 
   constructor() {
     this.dateNow.setHours(0, 0, 0, 0);
@@ -26,30 +29,32 @@ class SefazServiceImplements {
   /**
    * Verifica se a url informada é referente a uma NF de MG
    */
-  private IsValidUrl(url: string): boolean {
-    const regex =
-      /portalsped\.fazenda\.mg\.gov\.br\/portalnfce\/sistema\/qrcode\.xhtml\?p=/;
-    return regex.test(url);
+  private IsValidUrl(qrCode: string): boolean {
+    const regex = /^\d{44}\|/;
+    return regex.test(qrCode);
   }
 
   /**
    * Cria um document virtual para tratar os dados da página html da SEFAZ.
    */
-  async CreateVirtualDocument(url: string): Promise<Document> {
-    if (!this.IsValidUrl(url))
-      throw `Este QR Code não é válido para nosso sistema.`;
+  async CreateVirtualDocument(qrCode: string): Promise<Document> {
+    if (!this.IsValidUrl(qrCode))
+      throw `400 - Este QR Code não é válido para nosso sistema.`;
 
     const { JSDOM } = jsdom;
     return await axios
-      .get(url)
+      .get(this.url + qrCode)
       .then((response) => {
         const { data } = response;
         const virtualDocument = new JSDOM(data);
         return virtualDocument.window.document;
       })
       .catch((error: AxiosError) => {
+        if (typeof error != 'string') {
+          error.stack = error.stack ?? 'CreateVirtualDocument (Sefaz)';
+        }
         LogsService.Create(error);
-        throw `Erro interno - ${error.message}`;
+        throw `${error.message ?? error}`;
       });
   }
 
@@ -58,11 +63,14 @@ class SefazServiceImplements {
    * É necessário que já tenha sido criado o virtualDocument.
    */
   async CreateMarket(doc: Document): Promise<Market> {
+    const cnpj = SefazRepository.GetReceiptCNPJ(doc);
+    const exist = await MarketRepository.CheckIfDoesExist(cnpj);
+    if (exist.id) return exist;
+
     axios.defaults.timeout = 30000;
     axios.defaults.timeoutErrorMessage =
       'CNPJ - Tempo de espera de resposta do servidor encerrado.';
 
-    const cnpj = SefazRepository.GetReceiptCNPJ(doc);
     const market = await axios
       .get(`https://receitaws.com.br/v1/cnpj/${cnpj}`)
       .then((response) => {
@@ -80,13 +88,16 @@ class SefazServiceImplements {
           endereco: data.logradouro,
           numero: data.numero,
           bairro: data.bairro,
-          dataInclusao: this.dateNow.getTime(),
-          dataAtualizacao: this.dateNow.getTime(),
+          dataInclusao: this.GetIssueDate(doc),
+          dataAtualizacao: this.GetIssueDate(doc),
         } as Market;
       })
       .catch((error: AxiosError) => {
+        if (typeof error != 'string') {
+          error.stack = error.stack ?? 'CreateMarket (Sefaz)';
+        }
         LogsService.Create(error);
-        throw `Erro interno - ${error.message}`;
+        throw `${error.message ?? error}`;
       });
 
     return MarketService.Create(market);
@@ -98,41 +109,40 @@ class SefazServiceImplements {
    */
   async CreateReceiptObject(
     doc: Document,
-    url: string,
+    qrCode: string,
     market: Market
   ): Promise<Receipt> {
+    if (!this.IsValidUrl(qrCode))
+      throw `400 - Este QR Code não é válido para nosso sistema.`;
+
     const key = SefazRepository.GetReceiptKey(doc);
     const exist = await ReceiptRepository.CheckIfDoesExist(key);
-    if (exist) throw 'Este cupom já está cadastrado.';
+    if (exist.id) throw '400 - Este cupom já está cadastrado.';
 
     try {
       const element = doc.getElementById('collapse4') as HTMLElement;
-      const table = element.querySelector('table:nth-child(8)') as Element;
-      const line = table.querySelector('tbody tr') as Element;
-      const columns = line.querySelectorAll('td');
-      const issueDate = this.GenerateTimestamp(String(columns[3].textContent));
+      const issueDate = this.GetIssueDate(doc);
       const tableTwo = element.querySelector('table:nth-child(10)') as Element;
       const lineTwo = tableTwo.querySelector('tbody tr') as Element;
       const column = lineTwo.querySelector('td');
-      const totalPrice = String(column?.textContent)
-        .slice(3)
-        .replace(/[^\d.,]/g, '')
-        .replace('.', '')
-        .replace(',', '.');
+      const totalPrice = String(column?.textContent);
 
       return {
-        cnpj: SefazRepository.GetReceiptCNPJ(doc),
-        chave: SefazRepository.GetReceiptKey(doc),
-        url,
-        valorTotal: parseFloat(totalPrice),
+        cnpj: market.cnpj,
+        chave: key,
+        url: this.url + qrCode,
+        valorTotal: this.ConfigureNumber(totalPrice, 2),
         idUsuario: '',
         idMercado: market.id!,
         dataEmissao: issueDate,
         dataInclusao: this.dateNow.getTime(),
       };
     } catch (error: any) {
+      if (typeof error != 'string') {
+        error.stack = error.stack ?? 'CreateReceiptObject (Sefaz)';
+      }
       LogsService.Create(error);
-      throw `Erro interno - ${error.message}`;
+      throw `${error.message ?? error}`;
     }
   }
 
@@ -149,6 +159,7 @@ class SefazServiceImplements {
       lines.forEach((line) => {
         const columnData: string[] = [];
         const columns = line.querySelectorAll('td');
+
         columns.forEach((column, index) => {
           if (index == 0) {
             columnData[index] = String(
@@ -159,36 +170,45 @@ class SefazServiceImplements {
           columnData[index] = String(column.textContent?.trim());
         });
 
-        const amount = parseFloat(
-          columnData[1].replace(/[^\d.,]/g, '').replace('.', ',')
-        ).toFixed(3);
-
-        const totalPrice = parseFloat(
-          columnData[3]
-            .replace(/[^\d.,]/g, '')
-            .replace('.', '')
-            .replace(',', '.')
-        ).toFixed(2);
-
+        const amount = this.ConfigureNumber(columnData[1], 3);
+        const totalPrice = this.ConfigureNumber(columnData[3], 2);
         const key = columnData[0];
+        const price = (parseFloat(totalPrice) / parseFloat(amount)).toString();
 
         if (!items[key]) {
           items[key] = {
             nomeMercado: market.nomeFantasia,
             nomeProduto: columnData[0],
             unidadeMedida: columnData[2].slice(4),
-            valor: parseFloat(totalPrice) / parseFloat(amount),
+            valor: this.ConfigureNumber(price, 4),
             idMercado: market.id!,
             idNotaFiscal: receipt.id!,
             dataInclusao: receipt.dataInclusao,
           };
         }
       });
+
       return Object.values(items);
     } catch (error: any) {
+      if (typeof error != 'string') {
+        error.stack = error.stack ?? 'CreateItemList (Sefaz)';
+      }
       LogsService.Create(error);
-      throw `Erro interno - ${error.message}`;
+      throw `${error.message ?? error}`;
     }
+  }
+
+  /**
+   * Retorna a data de emissão do cumpom fiscal
+   * @returns Uma string no formato 01/01/2000 23:59:59
+   */
+  private GetIssueDate(doc: Document): number {
+    const element = doc.getElementById('collapse4') as HTMLElement;
+    const table = element.querySelector('table:nth-child(8)') as Element;
+    const line = table.querySelector('tbody tr') as Element;
+    const columns = line.querySelectorAll('td');
+
+    return this.GenerateTimestamp(String(columns[3].textContent));
   }
 
   /**
@@ -198,11 +218,30 @@ class SefazServiceImplements {
    */
   private GenerateTimestamp(date: string): number {
     const currentDate = date.split('/');
+
     const newDate = new Date(
       `${currentDate[1]}/${currentDate[0]}/${currentDate[2]}`
     );
     newDate.setHours(0, 0, 0, 0);
+
     return newDate.getTime();
+  }
+
+  /**
+   * Gera um número com casas decimais pré-definidas
+   * @returns Uma string com o número com a quantidade de casas decimais informada
+   */
+  private ConfigureNumber(value: string, toFixed: number): string {
+    let sanitized = value.replace(/[^\d.,]/g, '');
+
+    if (sanitized.includes(',') && sanitized.includes('.')) {
+      sanitized = sanitized.replace(/\./g, '');
+      sanitized = sanitized.replace(',', '.');
+    } else if (sanitized.includes(',')) {
+      sanitized = sanitized.replace(',', '.');
+    }
+
+    return parseFloat(sanitized).toFixed(toFixed);
   }
 }
 

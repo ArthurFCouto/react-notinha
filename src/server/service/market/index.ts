@@ -1,24 +1,18 @@
 import { FirebaseError } from 'firebase/app';
-import {
-  addDoc,
-  collection,
-  doc,
-  getFirestore,
-  writeBatch,
-} from 'firebase/firestore';
-import firebase from '@/server/configs/firebase';
+import { addDoc, collection, doc, writeBatch } from 'firebase/firestore';
+import { database } from '@/server/configs/firebase';
 import { LogsService } from '../logs';
 import { MarketRepository } from '@/server/repository/market';
 import { Market } from '@/server/models/market';
 
 class MarketServiceImplements {
   private batch;
-  private database;
-  private path = 'mercado';
+  private path;
 
   constructor() {
-    this.database = getFirestore(firebase);
-    this.batch = writeBatch(this.database);
+    this.batch = writeBatch(database);
+    this.path =
+      process.env.NODE_ENV === 'development' ? 'mercadoDev' : 'mercado';
   }
 
   async Create(market: Market): Promise<Market> {
@@ -31,7 +25,7 @@ class MarketServiceImplements {
     }
 
     delete market.id;
-    return await addDoc(collection(this.database, this.path), market)
+    return await addDoc(collection(database, this.path), market)
       .then((response) => {
         return {
           id: response.id,
@@ -39,13 +33,16 @@ class MarketServiceImplements {
         };
       })
       .catch((error: FirebaseError) => {
+        if (typeof error != 'string') {
+          error.stack = error.stack ?? `Create ${this.path}`;
+        }
         LogsService.Create(error);
-        throw `Erro ao cadastrar ${this.path}. ${error.message}`;
+        throw `Erro ao cadastrar ${this.path}. ${error.message ?? error}`;
       });
   }
 
   async Update(market: Market): Promise<Market> {
-    const reference = doc(this.database, this.path, market.id!);
+    const reference = doc(database, this.path, market.id!);
     const newMarket = {
       nomeFantasia: market.nomeFantasia,
       razaoSocial: market.razaoSocial,
@@ -61,8 +58,11 @@ class MarketServiceImplements {
 
     this.batch.update(reference, newMarket);
     await this.batch.commit().catch((error: FirebaseError) => {
+      if (typeof error != 'string') {
+        error.stack = error.stack ?? `Update ${this.path}`;
+      }
       LogsService.Create(error);
-      throw `Erro ao atualizar lista de preços. ${error.message}`;
+      throw `Erro ao atualizar ${this.path}. ${error.message ?? error}`;
     });
 
     return {

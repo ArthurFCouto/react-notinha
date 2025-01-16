@@ -1,47 +1,54 @@
 import { FirebaseError } from 'firebase/app';
-import { collection, doc, getFirestore, writeBatch } from 'firebase/firestore';
-import firebase from '@/server/configs/firebase';
+import { collection, doc, writeBatch } from 'firebase/firestore';
+import { database } from '@/server/configs/firebase';
 import { LogsService } from '../logs';
 import { PriceHistory } from '@/server/models/priceHistory';
 import { PriceHistoryRepository } from '@/server/repository/priceHistory';
 
 class PriceHistoryImplements {
   private batch;
-  private database;
-  private path = 'historicoDePrecos';
+  private path;
 
   constructor() {
-    this.database = getFirestore(firebase);
-    this.batch = writeBatch(this.database);
+    this.batch = writeBatch(database);
+    this.path =
+      process.env.NODE_ENV === 'development'
+        ? 'historicoDePrecosDev'
+        : 'historicoDePrecos';
   }
 
   async CreateList(prices: PriceHistory[]): Promise<void> {
-    if (prices.length === 0) return;
+    if (prices.length == 0) return;
 
-    const idMercado = prices[0].id!;
+    const idMercado = prices[0].idMercado;
     const dataInclusao = prices[0].dataInclusao;
-    const listHistoryPrices = await PriceHistoryRepository.GetAllByMarket(
+    const savedPrices = await PriceHistoryRepository.GetAllByMarket(
       idMercado,
       dataInclusao
     );
-    const keysHistoryPrices = listHistoryPrices.map(
-      (price) => `${price.idMercado}_${price.dataInclusao}`
+    const keysSavedPrices = savedPrices.map(
+      (price) => `${price.idMercado}_${price.dataInclusao}_${price.idPreco}`
     );
 
     prices.forEach((price) => {
       if (
-        keysHistoryPrices.includes(`${price.idMercado}_${price.dataInclusao}`)
+        keysSavedPrices.includes(
+          `${price.idMercado}_${price.dataInclusao}_${price.idPreco}`
+        )
       )
         return;
 
       delete price.id;
-      const reference = doc(collection(this.database, this.path));
+      const reference = doc(collection(database, this.path));
       this.batch.set(reference, price);
     });
 
-    return await this.batch.commit().catch((error: FirebaseError) => {
+    await this.batch.commit().catch((error: FirebaseError) => {
+      if (typeof error != 'string') {
+        error.stack = error.stack ?? `CreateList ${this.path}`;
+      }
       LogsService.Create(error);
-      throw `Erro ao cadastrar histórico de preços. ${error.message}`;
+      throw `Erro ao cadastrar histórico de preços. ${error.message ?? error}`;
     });
   }
 }

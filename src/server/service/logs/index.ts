@@ -1,26 +1,24 @@
-import firebase from '@/server/configs/firebase';
+import { database } from '@/server/configs/firebase';
 import { FirebaseError } from 'firebase/app';
 import { addDoc, collection, getFirestore } from 'firebase/firestore';
 
 class LogsServiceImplements {
-  private path = 'logs';
-  private database;
+  private path;
 
   constructor() {
-    this.database = getFirestore(firebase);
+    this.path = process.env.NODE_ENV === 'development' ? 'logsDev' : 'logs';
   }
 
   async Create(log: any): Promise<void> {
     const data = {
       date: Date.now(),
-      code: String(log.code),
-      message: String(log.message),
-      request: String(log.request),
-      stack: String(log.stack),
-      status: String(log.status),
+      code: String(log.code ?? 'Unspecified'),
+      message: String(log.message ?? log),
+      stack: String(log.stack ?? 'Unspecified'),
+      status: String(log.status ?? 'Unspecified'),
     };
 
-    await addDoc(collection(this.database, this.path), data).catch(
+    await addDoc(collection(database, this.path), data).catch(
       (error: FirebaseError) => {
         console.log('Erro ao armazenar log de erro.', error);
       }

@@ -3,7 +3,7 @@ export type Price = {
   nomeMercado: string;
   nomeProduto: string;
   unidadeMedida: string;
-  valor: number;
+  valor: string;
   idMercado: string;
   idNotaFiscal: string;
   dataInclusao: number;

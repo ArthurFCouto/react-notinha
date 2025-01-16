@@ -29,20 +29,65 @@ export default function Home() {
   const sizeImage = mdDownScreen ? 250 : 375;
   const route = useRouter();
   const [chartData, setChartData] = useState<Price[]>([]);
-  const goToHome = () => route.push('home');
+  //const goToHome = () => route.push('home');
+  const goToHome = async () => {
+    const urls = [
+      'https://portalsped.fazenda.mg.gov.br/portalnfce/sistema/qrcode.xhtml?p=31250102274225000161650040003625001183628929|2|1|1|ef43e400a0528f69be73223669f3586b98624659',
+      'https://portalsped.fazenda.mg.gov.br/portalnfce/sistema/qrcode.xhtml?p=31240602274225000161650060002747181165600338|2|1|1|ea6e9d4439c984c04ec04ff9b598c3424263c509',
+      'https://portalsped.fazenda.mg.gov.br/portalnfce/sistema/qrcode.xhtml?p=31240802274225000161650040003355351808952174|2|1|1|29f6b60dddcf9939eece88c0914ac8f75b9ba7a0',
+      'https://portalsped.fazenda.mg.gov.br/portalnfce/sistema/qrcode.xhtml?p=31240821560153000163650060000707221242875474|2|1|1|383D2AB50C874EDCBEC294CBB4B2BD93695057EB',
+      'https://portalsped.fazenda.mg.gov.br/portalnfce/sistema/qrcode.xhtml?p=31240803111258000153650170001407011736533020|2|1|1|A8581E86072238F1B05BC2B6C9DBF395DE5386E2',
+      'https://portalsped.fazenda.mg.gov.br/portalnfce/sistema/qrcode.xhtml?p=31241003111258000153650120001390961163565667|2|1|1|0A138586E26567433ACF9111BFD84D10AE9290B1',
+      'https://portalsped.fazenda.mg.gov.br/portalnfce/sistema/qrcode.xhtml?p=31241003111258000153650120001390971778649169|2|1|1|A2B7F850B24A782FCB223835E0FFA3CF267C4894',
+      'https://portalsped.fazenda.mg.gov.br/portalnfce/sistema/qrcode.xhtml?p=31241102274225000161650050002556351376442199|2|1|1|50e6199a09d5cc228354ddd05c30c1f3aff71a4c',
+      'https://portalsped.fazenda.mg.gov.br/portalnfce/sistema/qrcode.xhtml?p=31241121560153000163650020001802571696827498|2|1|1|F8B036BF4C1B6A98555B1E50D2BF23661AA70D11',
+      'https://portalsped.fazenda.mg.gov.br/portalnfce/sistema/qrcode.xhtml?p=31241221560153000163650030001757681198084310|2|1|1|C17BF63814409E10FC3C12FB085994820A657A7C',
+      'https://portalsped.fazenda.mg.gov.br/portalnfce/sistema/qrcode.xhtml?p=31240502274225000161650060002663641256820902|2|1|1|e36cdc053b3b2922eb81e63e4cb09cd09271cc20',
+      'https://portalsped.fazenda.mg.gov.br/portalnfce/sistema/qrcode.xhtml?p=31240603111258000153650120001159851664826624|2|1|1|2CA10AE634E7016B4ECA5484653B1ABCFAB36527',
+    ];
+    urls.forEach(async (url, index) => {
+      if (index > 3) return;
+      console.time(`Tempo do envio ${index}`);
+      await axios
+        .post(`/api/receipts?url=${url}`)
+        .then((response) => {
+          console.log('Response', response.data);
+        })
+        .catch((error) => {
+          console.error('Error', error.response);
+          console.error(error.response);
+        });
+      console.timeEnd(`Tempo do envio ${index}`);
+    });
+
+    return;
+    await axios
+      .delete(`/api/prices`, {
+        params: {
+          id: 'BldWRXx6Tcej6vgmXyjY;MKmpYdvgZfMpJdFSbCkV;TolBM5b0ls1GqKy6irqF',
+        },
+      })
+      .then((response) => {
+        console.log('Response', response);
+      })
+      .catch((error) => {
+        console.error(error.response);
+      });
+  };
 
   useEffect(() => {
     const getPrices = async () => {
       await axios
         .get(`/api/prices?nomeProduto=${'ABACAXI UND'}`)
         .then((response) => {
+          console.log('Response', response.data);
           setChartData(response.data);
         })
         .catch((error) => {
           console.error(error.response);
         });
     };
-    getPrices();
+    // getPrices();
   }, []);
 
   return (

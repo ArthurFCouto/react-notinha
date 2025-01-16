@@ -11,10 +11,14 @@ class SefazRepositoryImplements {
       const key = element.querySelector(
         'table tbody tr:first-of-type td'
       )?.textContent;
-      return String(key).replace(/[^\d]/g, '');
+
+      return String(key).replace(/[^\d]/g, '').trim();
     } catch (error: any) {
+      if (typeof error != 'string') {
+        error.stack = error.stack ?? 'GetReceiptKey (Sefaz)';
+      }
       LogsService.Create(error);
-      throw `Erro interno - ${error.message}`;
+      throw `${error.message}`;
     }
   }
 
@@ -27,10 +31,14 @@ class SefazRepositoryImplements {
       const element = doc.querySelector('tbody tr:first-of-type td') as Element;
       const allText = String(element.textContent);
       const limiter = allText.indexOf(',');
-      return allText.slice(0, limiter).replace(/[^\d]/g, '');
+
+      return allText.slice(0, limiter).replace(/[^\d]/g, '').trim();
     } catch (error: any) {
+      if (typeof error != 'string') {
+        error.stack = error.stack ?? 'GetReceiptCNPJ (Sefaz)';
+      }
       LogsService.Create(error);
-      throw `Erro interno - ${error.message}`;
+      throw `${error.message}`;
     }
   }
 }

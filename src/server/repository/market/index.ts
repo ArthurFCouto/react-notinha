@@ -1,30 +1,21 @@
 import { FirebaseError } from 'firebase/app';
-import {
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-  getFirestore,
-  orderBy,
-  query,
-  where,
-} from 'firebase/firestore';
-import firebase from '@/server/configs/firebase';
+import { collection, getDocs, orderBy, query, where } from 'firebase/firestore';
+import { database } from '@/server/configs/firebase';
 import { EmptyMarket, Market } from '@/server/models/market';
 import { LogsService } from '@/server/service/logs';
 
 class MarketRepositoryImplements {
-  private database;
-  private path = 'mercado';
+  private path;
 
   constructor() {
-    this.database = getFirestore(firebase);
+    this.path =
+      process.env.NODE_ENV === 'development' ? 'mercadoDev' : 'mercado';
   }
 
   async GetAll(): Promise<Market[]> {
     const columnOrdem = 'nomeFantasia';
     const reference = query(
-      collection(this.database, this.path),
+      collection(database, this.path),
       orderBy(columnOrdem)
     );
 
@@ -39,49 +30,42 @@ class MarketRepositoryImplements {
         }) as Market[];
       })
       .catch((error: FirebaseError) => {
+        if (typeof error != 'string') {
+          error.stack = error.stack ?? 'CheckIfDoesExist (Market)';
+        }
         LogsService.Create(error);
         throw `Erro ao buscar a lista de ${this.path}. ${error.message}`;
       });
   }
 
   async CheckIfDoesExist(cnpj: string): Promise<Market> {
-    const reference = doc(this.database, this.path, cnpj);
-    const snap = await getDoc(reference).catch((error: FirebaseError) => {
-      LogsService.Create(error);
-      throw `Erro ao verificar se ${this.path} já está cadastrado(a). ${error.message}`;
-    });
-
-    if (snap.exists()) {
-      const market = snap.data();
-      return {
-        id: snap.id,
-        ...market,
-      } as Market;
-    }
-
-    return EmptyMarket;
-
-    const field = 'cnpj';
-    const reference1 = query(
-      collection(this.database, this.path),
+    // TO DO - Alterar após unificação
+    const field = process.env.NODE_ENV === 'development' ? 'cnpj' : 'CNPJ';
+    const reference = query(
+      collection(database, this.path),
       where(field, '==', cnpj)
     );
 
-    return await getDocs(reference1)
-      .then((response) => {
-        const list = response.docs.map((doc) => {
-          const object = doc.data();
-          return {
-            id: doc.id,
-            ...object,
-          };
-        });
-        return list.length > 0 ? (list[0] as Market) : EmptyMarket;
-      })
-      .catch((error: FirebaseError) => {
-        LogsService.Create(error);
-        throw `Erro ao verificar se ${this.path} já está cadastrado(a). ${error.message}`;
-      });
+    try {
+      const snapshot = await getDocs(reference);
+      if (snapshot.empty) {
+        return EmptyMarket;
+      }
+
+      const object = snapshot.docs[0];
+      const receipt = object.data();
+
+      return {
+        id: object.id,
+        ...receipt,
+      } as Market;
+    } catch (error: any) {
+      if (typeof error != 'string') {
+        error.stack = error.stack ?? 'CheckIfDoesExist (Market)';
+      }
+      LogsService.Create(error);
+      throw `Erro ao verificar se ${this.path} já está cadastrado(a). ${error.message ?? error}`;
+    }
   }
 }
 

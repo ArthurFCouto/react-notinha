@@ -1,76 +1,100 @@
-import { FirebaseError } from 'firebase/app';
-import { collection, doc, getFirestore, writeBatch } from 'firebase/firestore';
-import firebase from '@/server/configs/firebase';
+import { collection, doc, writeBatch } from 'firebase/firestore';
+import { database } from '@/server/configs/firebase';
 import { LogsService } from '../logs';
 import { Price } from '@/server/models/price';
 import { PriceRepository } from '@/server/repository/price';
 import { PriceHistory } from '@/server/models/priceHistory';
 import { PriceHistoryService } from '../priceHistory';
+import { FirebaseError } from 'firebase/app';
 
 class PriceServiceImplements {
   private batch;
-  private database;
-  private path = 'precos';
+  private path;
 
   constructor() {
-    this.database = getFirestore(firebase);
-    this.batch = writeBatch(this.database);
+    this.batch = writeBatch(database);
+    this.path = process.env.NODE_ENV === 'development' ? 'precosDev' : 'precos';
   }
 
   async CreateList(prices: Price[]): Promise<void> {
     if (prices.length === 0) return;
 
-    const pricesToBeUpdated: Price[] = [];
-    const historyPrices: PriceHistory[] = [];
-    const actualPrices = await PriceRepository.GetAll();
+    const savedPrices = await PriceRepository.GetAll();
 
-    const keysDataActualPrices = actualPrices.map(
+    const pricesToBeUpdated: Price[] = [];
+    const pricesToGoToHistoric: PriceHistory[] = [];
+
+    const keysDataSavedPrices = savedPrices.map(
       (price) => `${price.nomeProduto}_${price.idMercado}_${price.dataInclusao}`
     );
-    const keysMarketActualPrices = actualPrices.map(
+    const keysMarketSavedPrices = savedPrices.map(
       (price) => `${price.nomeProduto}_${price.idMercado}`
     );
 
     prices.forEach((price) => {
       const keyData = `${price.nomeProduto}_${price.idMercado}_${price.dataInclusao}`;
-      if (keysDataActualPrices.includes(keyData)) return;
+      if (keysDataSavedPrices.includes(keyData)) return;
 
       const keyMarket = `${price.nomeProduto}_${price.idMercado}`;
-      if (keysMarketActualPrices.includes(keyMarket)) {
-        const priceAtual = actualPrices.find(
-          (actualPrice) =>
-            actualPrice.nomeProduto == price.nomeProduto &&
-            actualPrice.idMercado == price.idMercado
-        );
-        if (priceAtual!.dataInclusao < price.dataInclusao) {
-          historyPrices.push(this.CreateHistoryPriceObject(priceAtual!));
-          pricesToBeUpdated.push(this.CreatePriceToBeUpdated(price));
-        } else {
-          historyPrices.push(this.CreateHistoryPriceObject(price));
-          pricesToBeUpdated.push(this.CreatePriceToBeUpdated(priceAtual!));
-        }
+      if (!keysMarketSavedPrices.includes(keyMarket)) {
+        delete price.id;
+        const reference = doc(collection(database, this.path));
+        this.batch.set(reference, price);
         return;
       }
 
-      delete price.id;
-      const reference = doc(collection(this.database, this.path));
-      this.batch.set(reference, price);
+      const savedPrice = savedPrices.find(
+        (actualPrice) =>
+          actualPrice.nomeProduto == price.nomeProduto &&
+          actualPrice.idMercado == price.idMercado
+      );
+      if (savedPrice!.dataInclusao < price.dataInclusao) {
+        price.id = savedPrice!.id;
+        pricesToGoToHistoric.push(this.priceMapping(savedPrice!));
+        pricesToBeUpdated.push(this.priceToUpdateMapping(price));
+        return;
+      }
+
+      pricesToGoToHistoric.push(this.priceMapping(price));
     });
 
     await this.batch.commit().catch((error: FirebaseError) => {
+      if (typeof error != 'string') {
+        error.stack = error.stack ?? `CreateList ${this.path}`;
+      }
       LogsService.Create(error);
-      throw `Erro ao cadastrar lista de preços. ${error.message}`;
+      throw `Erro ao cadastrar lista de preços. ${error.message ?? error}`;
     });
 
     await Promise.all([
       this.UpdateList(pricesToBeUpdated),
-      PriceHistoryService.CreateList(historyPrices),
+      PriceHistoryService.CreateList(pricesToGoToHistoric),
     ]);
   }
 
+  async DeleteList(prices: Price[]): Promise<void> {
+    if (prices.length == 0) return;
+
+    const ids = prices.map((price) => price.id);
+
+    ids.forEach((id) => {
+      this.batch.delete(doc(collection(database, this.path), id));
+    });
+
+    await this.batch.commit().catch((error: FirebaseError) => {
+      if (typeof error != 'string') {
+        error.stack = error.stack ?? `Delete ${this.path}`;
+      }
+      LogsService.Create(error);
+      throw `Erro ao deletar lista de preços. ${error.message ?? error}`;
+    });
+  }
+
   async UpdateList(prices: Price[]): Promise<void> {
+    if (prices.length == 0) return;
+
     prices.forEach((price) => {
-      const reference = doc(this.database, this.path, price.id!);
+      const reference = doc(collection(database, this.path), price.id);
       this.batch.update(reference, {
         valor: price.valor,
         idNotaFiscal: price.idNotaFiscal,
@@ -79,12 +103,15 @@ class PriceServiceImplements {
     });
 
     await this.batch.commit().catch((error: FirebaseError) => {
+      if (typeof error != 'string') {
+        error.stack = error.stack ?? `Update ${this.path}`;
+      }
       LogsService.Create(error);
-      throw `Erro ao atualizar lista de preços. ${error.message}`;
+      throw `Erro ao atualizar lista de preços. ${error.message ?? error}`;
     });
   }
 
-  private CreateHistoryPriceObject = (price: Price): PriceHistory => {
+  private priceMapping = (price: Price): PriceHistory => {
     return {
       idPreco: String(price.id),
       idMercado: price.idMercado,
@@ -94,7 +121,7 @@ class PriceServiceImplements {
     };
   };
 
-  private CreatePriceToBeUpdated = (price: Price): Price => {
+  private priceToUpdateMapping = (price: Price): Price => {
     return {
       id: price.id,
       nomeProduto: price.nomeProduto,

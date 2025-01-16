@@ -3,7 +3,6 @@ import {
   and,
   collection,
   getDocs,
-  getFirestore,
   limit,
   orderBy,
   Query,
@@ -11,78 +10,114 @@ import {
   startAt,
   where,
 } from 'firebase/firestore';
-import firebase from '@/server/configs/firebase';
+import { database } from '@/server/configs/firebase';
 import { LogsService } from '@/server/service/logs';
 import { Price } from '@/server/models/price';
 
 class PriceRepositoryImplements {
-  private database;
-  private path = 'precos';
+  private path;
 
   constructor() {
-    this.database = getFirestore(firebase);
+    this.path = process.env.NODE_ENV === 'development' ? 'precosDev' : 'precos';
   }
 
   async GetAll(offSet?: number, amount?: number): Promise<Price[]> {
-    const field = 'nomeProduto';
+    // TO DO - Alterar após unificação
+    const field =
+      process.env.NODE_ENV === 'development' ? 'nomeProduto' : 'produto';
     const reference =
       offSet && amount
         ? query(
-            collection(this.database, this.path),
+            collection(database, this.path),
             orderBy(field),
             startAt(offSet),
             limit(amount)
           )
-        : query(collection(this.database, this.path), orderBy(field));
+        : query(collection(database, this.path), orderBy(field));
 
-    return this.GetDocsReturnPrices(reference);
+    return this.GetDocsReturnPrices(reference, 'GetAll');
   }
 
   async GetAllByName(name: string): Promise<Price[]> {
-    const field = 'nomeProduto';
+    // TO DO - Alterar após unificação
+    const field =
+      process.env.NODE_ENV === 'development' ? 'nomeProduto' : 'produto';
     const reference = query(
-      collection(this.database, this.path),
+      collection(database, this.path),
       where(field, '==', name)
     );
 
-    return this.GetDocsReturnPrices(reference);
+    return this.GetDocsReturnPrices(reference, 'GetAllByName');
   }
 
   async GetAllByMarket(idMarket: string): Promise<Price[]> {
-    const fieldMercado = 'idMercado';
+    const fieldIdMarket = 'idMercado';
     const reference = query(
-      collection(this.database, this.path),
-      where(fieldMercado, '==', idMarket)
+      collection(database, this.path),
+      where(fieldIdMarket, '==', idMarket)
     );
 
-    return this.GetDocsReturnPrices(reference);
+    return this.GetDocsReturnPrices(reference, 'GetAllByMarket');
   }
 
   async GetAllByNameAndMarket(
     name: string,
     idMarket: string
   ): Promise<Price[]> {
-    const fieldProduto = 'nomeProduto';
-    const fieldMercado = 'idMercado';
+    // TO DO - Alterar após unificação
+    const fieldProduct =
+      process.env.NODE_ENV === 'development' ? 'nomeProduto' : 'produto';
+    const fieldIdMarket = 'idMercado';
     const reference = query(
-      collection(this.database, this.path),
-      and(where(fieldProduto, '==', name), where(fieldMercado, '==', idMarket))
+      collection(database, this.path),
+      and(where(fieldProduct, '==', name), where(fieldIdMarket, '==', idMarket))
     );
 
-    return this.GetDocsReturnPrices(reference);
+    return this.GetDocsReturnPrices(reference, 'GetAllByNameAndMarket');
   }
 
   async GetAllByDate(date: number): Promise<Price[]> {
-    const field = 'dataInclusao';
+    // TO DO - Alterar após unificação
+    const field =
+      process.env.NODE_ENV === 'development' ? 'dataInclusao' : 'data';
     const reference = query(
-      collection(this.database, this.path),
+      collection(database, this.path),
       where(field, '==', date)
     );
 
-    return this.GetDocsReturnPrices(reference);
+    return this.GetDocsReturnPrices(reference, 'GetAllByDate');
   }
 
-  private async GetDocsReturnPrices(reference: Query): Promise<Price[]> {
+  async GetByIdList(ids: Array<string>): Promise<Price[]> {
+    const reference = query(collection(database, this.path));
+    const prices: Array<Price> = [];
+
+    await getDocs(reference)
+      .then((response) => {
+        return response.docs.map((doc) => {
+          const object = doc.data();
+          const price = {
+            id: doc.id,
+            ...object,
+          } as Price;
+          if (ids.includes(doc.id)) prices.push(price);
+        });
+      })
+      .catch((error: FirebaseError) => {
+        if (typeof error != 'string') {
+          error.stack = error.stack ?? `GetByIdList ${this.path}`;
+        }
+        LogsService.Create(error);
+        throw `Erro ao buscar lista de preços por ID. ${error.message ?? error}`;
+      });
+
+    return prices;
+  }
+
+  private async GetDocsReturnPrices(
+    reference: Query,
+    stack: string
+  ): Promise<Price[]> {
     return await getDocs(reference)
       .then((response) => {
         return response.docs.map((doc) => {
@@ -94,8 +129,11 @@ class PriceRepositoryImplements {
         }) as Price[];
       })
       .catch((error: FirebaseError) => {
+        if (typeof error != 'string') {
+          error.stack = error.stack ?? `${stack} ${this.path}`;
+        }
         LogsService.Create(error);
-        throw `Erro ao buscar os preços. ${error.message || String(error)}`;
+        throw `Erro ao buscar os preços. ${error.message ?? String(error)}`;
       });
   }
 }

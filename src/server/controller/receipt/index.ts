@@ -1,28 +1,30 @@
+import { Receipt } from '@/server/models/receipt';
 import { ReceiptRepository } from '@/server/repository/receipt';
-import { SefazRepository } from '@/server/repository/sefaz';
 import { PriceService } from '@/server/service/price';
 import { ReceiptService } from '@/server/service/receipt';
 import { SefazService } from '@/server/service/sefaz';
 
 class ReceiptImplements {
-  async CreateReceipt(url: string) {
-    const document = await SefazService.CreateVirtualDocument(url);
-    const receiptKey = SefazRepository.GetReceiptKey(document);
-    const receiptDoesExist =
-      await ReceiptRepository.CheckIfDoesExist(receiptKey);
-    if (receiptDoesExist.id)
-      throw `Erro ao cadastrar cupom fiscal. Este cupom já está cadastrado.`;
-
+  async CreateReceipt(url: string): Promise<void> {
+    const qrCode = url.split('?p=')[1];
+    const document = await SefazService.CreateVirtualDocument(qrCode);
     const market = await SefazService.CreateMarket(document);
-    const receipt = await SefazService.CreateReceiptObject(
+    const receiptObject = await SefazService.CreateReceiptObject(
       document,
-      url,
+      qrCode,
       market
     );
+    const receipt = await ReceiptService.Create(receiptObject);
     const items = SefazService.CreateItemList(document, market, receipt);
-
-    await ReceiptService.Create(receipt);
     await PriceService.CreateList(items);
+  }
+
+  async GetAllReceipt(): Promise<Array<Receipt>> {
+    return await ReceiptRepository.GetAll();
+  }
+
+  async GetTotalAmount(): Promise<number> {
+    return await ReceiptRepository.GetTotalAmount();
   }
 }
 

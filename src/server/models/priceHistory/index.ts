@@ -1,6 +1,6 @@
 export type PriceHistory = {
   id?: string;
-  valor: number;
+  valor: string;
   idMercado: string;
   idNotaFiscal: string;
   idPreco: string;

@@ -2,6 +2,7 @@ import { Price } from '@/server/models/price';
 import { PriceHistory } from '@/server/models/priceHistory';
 import { PriceRepository } from '@/server/repository/price';
 import { PriceHistoryRepository } from '@/server/repository/priceHistory';
+import { PriceService } from '@/server/service/price';
 
 class PriceControllerImprements {
   async GetAll(): Promise<Array<Price>> {
@@ -23,8 +24,20 @@ class PriceControllerImprements {
     return PriceRepository.GetAllByMarket(idMarket);
   }
 
-  async GetHistory(idProduto: string): Promise<Array<PriceHistory>> {
-    return PriceHistoryRepository.GetAllByProduto(idProduto);
+  async GetHistory(idPreco: string): Promise<Array<PriceHistory>> {
+    return PriceHistoryRepository.GetAllByProduto(idPreco);
+  }
+
+  async DeleteById(ids: Array<string>): Promise<void> {
+    const prices = await PriceRepository.GetByIdList(ids);
+    if (prices.length == 0)
+      throw `401 - Não foram encontrados preços com os Ids informados, favor conferir. ${ids.join(';')}`;
+    await PriceService.DeleteList(prices);
+  }
+
+  async DeleteAll(): Promise<void> {
+    const prices = await PriceRepository.GetAll();
+    await PriceService.DeleteList(prices);
   }
 }
 

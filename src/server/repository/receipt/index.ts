@@ -1,29 +1,30 @@
 import {
   collection,
-  doc,
-  getDoc,
+  getCountFromServer,
   getDocs,
-  getFirestore,
   orderBy,
   query,
+  where,
 } from 'firebase/firestore';
-import firebase from '@/server/configs/firebase';
+import { database } from '@/server/configs/firebase';
 import { LogsService } from '@/server/service/logs';
 import { EmptyReceipt, Receipt } from '@/server/models/receipt';
 import { FirebaseError } from 'firebase/app';
 
 class ReceiptRepositoryImplements {
-  private database;
-  private path = 'notaFiscal';
+  private path;
 
   constructor() {
-    this.database = getFirestore(firebase);
+    this.path =
+      process.env.NODE_ENV === 'development' ? 'notaFiscalDev' : 'notaFiscal';
   }
 
   async GetAll(): Promise<Receipt[]> {
-    const columnOrdem = 'dataInclusao';
+    // TO DO - Alterar após unificação
+    const columnOrdem =
+      process.env.NODE_ENV === 'development' ? 'dataInclusao' : 'data';
     const reference = query(
-      collection(this.database, this.path),
+      collection(database, this.path),
       orderBy(columnOrdem)
     );
 
@@ -38,27 +39,61 @@ class ReceiptRepositoryImplements {
         }) as Receipt[];
       })
       .catch((error: FirebaseError) => {
+        if (typeof error != 'string') {
+          error.stack = error.stack ?? 'GetAll (Receipt)';
+        }
         LogsService.Create(error);
-        throw `Erro ao buscar a lista de ${this.path}. ${error.message}`;
+        throw `Erro ao buscar a lista de ${this.path}. ${error.message ?? error}`;
       });
   }
 
-  async CheckIfDoesExist(chave: string): Promise<Receipt> {
-    const reference = doc(this.database, this.path, chave);
-    const snap = await getDoc(reference).catch((error: FirebaseError) => {
+  async GetTotalAmount(): Promise<number> {
+    // TO DO - Alterar após unificação
+    const columnOrdem =
+      process.env.NODE_ENV === 'development' ? 'dataInclusao' : 'data';
+    const reference = query(
+      collection(database, this.path),
+      orderBy(columnOrdem)
+    );
+    try {
+      const snapshot = await getCountFromServer(reference);
+      return snapshot.data().count;
+    } catch (error: any) {
+      if (typeof error != 'string') {
+        error.stack = error.stack ?? 'GetTotalAmount (Receipt)';
+      }
       LogsService.Create(error);
-      throw `Erro ao verificar se ${this.path} já está cadastrado(a). ${error.message}`;
-    });
-
-    if (snap.exists()) {
-      const market = snap.data();
-      return {
-        id: snap.id,
-        ...market,
-      } as Receipt;
+      throw `Erro ao buscar a lista de ${this.path}. ${error.message ?? error}`;
     }
+  }
 
-    return EmptyReceipt;
+  async CheckIfDoesExist(chave: string): Promise<Receipt> {
+    const field = 'chave';
+    const reference = query(
+      collection(database, this.path),
+      where(field, '==', chave)
+    );
+
+    try {
+      const snapshot = await getDocs(reference);
+      if (snapshot.empty) {
+        return EmptyReceipt;
+      }
+
+      const object = snapshot.docs[0];
+      const receipt = object.data();
+
+      return {
+        id: object.id,
+        ...receipt,
+      } as Receipt;
+    } catch (error: any) {
+      if (typeof error != 'string') {
+        error.stack = error.stack ?? 'CheckIfDoesExist (Receipt)';
+      }
+      LogsService.Create(error);
+      throw `Erro ao verificar se ${this.path} já está cadastrado(a). ${error.message ?? error}`;
+    }
   }
 }
 

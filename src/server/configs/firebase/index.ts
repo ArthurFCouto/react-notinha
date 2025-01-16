@@ -1,4 +1,5 @@
 import { initializeApp } from 'firebase/app';
+import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_API_KEY,
@@ -10,7 +11,11 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_MEASUREMENTID,
 };
 
-export const Error = (message: string) => {
+const app = initializeApp(firebaseConfig);
+
+export const database = getFirestore(app);
+
+export const LoginErrorMapping = (message: string) => {
   let response = 'Houve um erro inesperado, tente mais tarde.';
   const errorsMap = {
     'auth/invalid-login-credentials': 'Usuário/Senha incorreta',

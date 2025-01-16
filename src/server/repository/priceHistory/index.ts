@@ -3,48 +3,59 @@ import {
   and,
   collection,
   getDocs,
-  getFirestore,
   Query,
   query,
   where,
 } from 'firebase/firestore';
-import firebase from '@/server/configs/firebase';
+import { database } from '@/server/configs/firebase';
 import { LogsService } from '@/server/service/logs';
 import { PriceHistory } from '@/server/models/priceHistory';
 
 class PriceHistoryRespositoryImplements {
-  private database;
-  private path = 'historicoDePrecos';
+  private path;
 
   constructor() {
-    this.database = getFirestore(firebase);
+    this.path =
+      process.env.NODE_ENV === 'development'
+        ? 'historicoDePrecosDev'
+        : 'historicoDePrecos';
   }
 
   async GetAllByProduto(id: string): Promise<PriceHistory[]> {
     const field = 'idProduto';
     const reference = query(
-      collection(this.database, this.path),
+      collection(database, this.path),
       where(field, '==', id)
     );
 
-    return this.GetDocsReturnPricesHistory(reference);
+    return this.GetDocsReturnPricesHistory(reference, 'GetAllByProduto');
   }
 
-  async GetAllByMarket(id: string, data?: number): Promise<PriceHistory[]> {
-    const fieldId = 'idMercado';
-    const fieldData = 'dataInclusao';
-    const reference = data
+  async GetAllByMarket(
+    idMarket: string,
+    date?: number
+  ): Promise<PriceHistory[]> {
+    const fieldIdMarket = 'idMercado';
+    const fieldDate = 'dataInclusao';
+    const reference = date
       ? query(
-          collection(this.database, this.path),
-          and(where(fieldId, '==', id), where(fieldData, '==', data))
+          collection(database, this.path),
+          and(
+            where(fieldIdMarket, '==', idMarket),
+            where(fieldDate, '==', date)
+          )
         )
-      : query(collection(this.database, this.path), where(fieldId, '==', id));
+      : query(
+          collection(database, this.path),
+          where(fieldIdMarket, '==', idMarket)
+        );
 
-    return this.GetDocsReturnPricesHistory(reference);
+    return this.GetDocsReturnPricesHistory(reference, 'GetAllByMarket');
   }
 
   private async GetDocsReturnPricesHistory(
-    reference: Query
+    reference: Query,
+    stack: String
   ): Promise<PriceHistory[]> {
     return await getDocs(reference)
       .then((response) => {
@@ -57,6 +68,9 @@ class PriceHistoryRespositoryImplements {
         }) as PriceHistory[];
       })
       .catch((error: FirebaseError) => {
+        if (typeof error != 'string') {
+          error.stack = error.stack ?? `${stack} ${this.path}`;
+        }
         LogsService.Create(error);
         throw `Erro ao buscar histórico de preços. ${error.message}`;
       });

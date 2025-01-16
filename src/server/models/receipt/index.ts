@@ -3,7 +3,7 @@ export type Receipt = {
   cnpj: string;
   chave: string;
   url: string;
-  valorTotal: number;
+  valorTotal: string;
   idUsuario: string;
   idMercado: string;
   dataEmissao: number;
@@ -14,7 +14,7 @@ export const EmptyReceipt: Receipt = {
   cnpj: '',
   chave: '',
   url: '',
-  valorTotal: 0,
+  valorTotal: '0',
   idUsuario: '',
   idMercado: '',
   dataEmissao: 0,
