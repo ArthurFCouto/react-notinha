@@ -95,6 +95,32 @@ class ReceiptRepositoryImplements {
       throw `Erro ao verificar se ${this.path} já está cadastrado(a). ${error.message ?? error}`;
     }
   }
+
+  async GetListById(ids: Array<string>): Promise<Receipt[]> {
+    const reference = query(collection(database, this.path));
+    const prices: Array<Receipt> = [];
+
+    await getDocs(reference)
+      .then((response) => {
+        return response.docs.map((doc) => {
+          const object = doc.data();
+          const price = {
+            id: doc.id,
+            ...object,
+          } as Receipt;
+          if (ids.includes(doc.id)) prices.push(price);
+        });
+      })
+      .catch((error: FirebaseError) => {
+        if (typeof error != 'string') {
+          error.stack = error.stack ?? `GetListById ${this.path}`;
+        }
+        LogsService.Create(error);
+        throw `Erro ao buscar lista de ${this.path} por ID. ${error.message ?? error}`;
+      });
+
+    return prices;
+  }
 }
 
 export const ReceiptRepository = new ReceiptRepositoryImplements();

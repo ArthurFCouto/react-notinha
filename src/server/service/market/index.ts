@@ -41,6 +41,24 @@ class MarketServiceImplements {
       });
   }
 
+  async DeleteList(markets: Market[]): Promise<void> {
+    if (markets.length == 0) return;
+
+    const ids = markets.map((market) => market.id);
+
+    ids.forEach((id) => {
+      this.batch.delete(doc(collection(database, this.path), id));
+    });
+
+    await this.batch.commit().catch((error: FirebaseError) => {
+      if (typeof error != 'string') {
+        error.stack = error.stack ?? `Delete ${this.path}`;
+      }
+      LogsService.Create(error);
+      throw `Erro ao deletar lista de ${this.path}. ${error.message ?? error}`;
+    });
+  }
+
   async Update(market: Market): Promise<Market> {
     const reference = doc(database, this.path, market.id!);
     const newMarket = {

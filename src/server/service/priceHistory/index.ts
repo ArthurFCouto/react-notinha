@@ -48,7 +48,25 @@ class PriceHistoryImplements {
         error.stack = error.stack ?? `CreateList ${this.path}`;
       }
       LogsService.Create(error);
-      throw `Erro ao cadastrar histórico de preços. ${error.message ?? error}`;
+      throw `Erro ao cadastrar histórico de ${this.path}. ${error.message ?? error}`;
+    });
+  }
+
+  async DeleteList(prices: PriceHistory[]): Promise<void> {
+    if (prices.length == 0) return;
+
+    const ids = prices.map((price) => price.id);
+
+    ids.forEach((id) => {
+      this.batch.delete(doc(collection(database, this.path), id));
+    });
+
+    await this.batch.commit().catch((error: FirebaseError) => {
+      if (typeof error != 'string') {
+        error.stack = error.stack ?? `Delete ${this.path}`;
+      }
+      LogsService.Create(error);
+      throw `Erro ao deletar lista de ${this.path}. ${error.message ?? error}`;
     });
   }
 }

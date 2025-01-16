@@ -63,7 +63,7 @@ class PriceServiceImplements {
         error.stack = error.stack ?? `CreateList ${this.path}`;
       }
       LogsService.Create(error);
-      throw `Erro ao cadastrar lista de preços. ${error.message ?? error}`;
+      throw `Erro ao cadastrar lista de ${this.path}. ${error.message ?? error}`;
     });
 
     await Promise.all([
@@ -86,7 +86,7 @@ class PriceServiceImplements {
         error.stack = error.stack ?? `Delete ${this.path}`;
       }
       LogsService.Create(error);
-      throw `Erro ao deletar lista de preços. ${error.message ?? error}`;
+      throw `Erro ao deletar lista de ${this.path}. ${error.message ?? error}`;
     });
   }
 
@@ -107,7 +107,7 @@ class PriceServiceImplements {
         error.stack = error.stack ?? `Update ${this.path}`;
       }
       LogsService.Create(error);
-      throw `Erro ao atualizar lista de preços. ${error.message ?? error}`;
+      throw `Erro ao atualizar lista de ${this.path}. ${error.message ?? error}`;
     });
   }
 

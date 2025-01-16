@@ -13,6 +13,7 @@ import {
 import { database } from '@/server/configs/firebase';
 import { LogsService } from '@/server/service/logs';
 import { Price } from '@/server/models/price';
+import { PriceHistoryRepository } from '../priceHistory';
 
 class PriceRepositoryImplements {
   private path;
@@ -38,7 +39,7 @@ class PriceRepositoryImplements {
     return this.GetDocsReturnPrices(reference, 'GetAll');
   }
 
-  async GetAllByName(name: string): Promise<Price[]> {
+  async GetListByName(name: string): Promise<Price[]> {
     // TO DO - Alterar após unificação
     const field =
       process.env.NODE_ENV === 'development' ? 'nomeProduto' : 'produto';
@@ -47,22 +48,22 @@ class PriceRepositoryImplements {
       where(field, '==', name)
     );
 
-    return this.GetDocsReturnPrices(reference, 'GetAllByName');
+    return this.GetDocsReturnPrices(reference, 'GetListByName');
   }
 
-  async GetAllByMarket(idMarket: string): Promise<Price[]> {
+  async GetListByMarket(marketId: string): Promise<Price[]> {
     const fieldIdMarket = 'idMercado';
     const reference = query(
       collection(database, this.path),
-      where(fieldIdMarket, '==', idMarket)
+      where(fieldIdMarket, '==', marketId)
     );
 
-    return this.GetDocsReturnPrices(reference, 'GetAllByMarket');
+    return this.GetDocsReturnPrices(reference, 'GetListByMarket');
   }
 
-  async GetAllByNameAndMarket(
+  async GetListByNameAndMarket(
     name: string,
-    idMarket: string
+    marketId: string
   ): Promise<Price[]> {
     // TO DO - Alterar após unificação
     const fieldProduct =
@@ -70,13 +71,13 @@ class PriceRepositoryImplements {
     const fieldIdMarket = 'idMercado';
     const reference = query(
       collection(database, this.path),
-      and(where(fieldProduct, '==', name), where(fieldIdMarket, '==', idMarket))
+      and(where(fieldProduct, '==', name), where(fieldIdMarket, '==', marketId))
     );
 
-    return this.GetDocsReturnPrices(reference, 'GetAllByNameAndMarket');
+    return this.GetDocsReturnPrices(reference, 'GetListByNameAndMarket');
   }
 
-  async GetAllByDate(date: number): Promise<Price[]> {
+  async GetListByDate(date: number): Promise<Price[]> {
     // TO DO - Alterar após unificação
     const field =
       process.env.NODE_ENV === 'development' ? 'dataInclusao' : 'data';
@@ -85,10 +86,36 @@ class PriceRepositoryImplements {
       where(field, '==', date)
     );
 
-    return this.GetDocsReturnPrices(reference, 'GetAllByDate');
+    return this.GetDocsReturnPrices(reference, 'GetListByDate');
   }
 
-  async GetByIdList(ids: Array<string>): Promise<Price[]> {
+  async GetListByReceipt(receiptIds: Array<string>): Promise<Price[]> {
+    const reference = query(collection(database, this.path));
+    const prices: Array<Price> = [];
+
+    await getDocs(reference)
+      .then((response) => {
+        return response.docs.map((doc) => {
+          const object = doc.data();
+          const price = {
+            id: doc.id,
+            ...object,
+          } as Price;
+          if (receiptIds.includes(price.idNotaFiscal)) prices.push(price);
+        });
+      })
+      .catch((error: FirebaseError) => {
+        if (typeof error != 'string') {
+          error.stack = error.stack ?? `GetListByReceipt ${this.path}`;
+        }
+        LogsService.Create(error);
+        throw `Erro ao buscar lista de ${this.path} por IdNotaFiscal. ${error.message ?? error}`;
+      });
+
+    return prices;
+  }
+
+  async GetListById(ids: Array<string>): Promise<Price[]> {
     const reference = query(collection(database, this.path));
     const prices: Array<Price> = [];
 
@@ -105,10 +132,40 @@ class PriceRepositoryImplements {
       })
       .catch((error: FirebaseError) => {
         if (typeof error != 'string') {
-          error.stack = error.stack ?? `GetByIdList ${this.path}`;
+          error.stack = error.stack ?? `GetListById ${this.path}`;
         }
         LogsService.Create(error);
-        throw `Erro ao buscar lista de preços por ID. ${error.message ?? error}`;
+        throw `Erro ao buscar lista de ${this.path} por ID. ${error.message ?? error}`;
+      });
+
+    return prices;
+  }
+
+  async GetOnlyWithHistoric(): Promise<Price[]> {
+    const pricesHistory = await PriceHistoryRepository.GetAll();
+    const idsPricesHistory = Array.from(
+      new Set(pricesHistory.map((priceHistory) => priceHistory.idPreco))
+    );
+    const reference = query(collection(database, this.path));
+    const prices: Array<Price> = [];
+
+    await getDocs(reference)
+      .then((response) => {
+        return response.docs.map((doc) => {
+          const object = doc.data();
+          const price = {
+            id: doc.id,
+            ...object,
+          } as Price;
+          if (idsPricesHistory.includes(doc.id)) prices.push(price);
+        });
+      })
+      .catch((error: FirebaseError) => {
+        if (typeof error != 'string') {
+          error.stack = error.stack ?? `GetOnlyWithHistoric ${this.path}`;
+        }
+        LogsService.Create(error);
+        throw `Erro ao buscar lista de ${this.path} que possuem histórico. ${error.message ?? error}`;
       });
 
     return prices;
@@ -133,7 +190,7 @@ class PriceRepositoryImplements {
           error.stack = error.stack ?? `${stack} ${this.path}`;
         }
         LogsService.Create(error);
-        throw `Erro ao buscar os preços. ${error.message ?? String(error)}`;
+        throw `Erro ao buscar os ${this.path}. ${error.message ?? String(error)}`;
       });
   }
 }

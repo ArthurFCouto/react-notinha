@@ -1,4 +1,4 @@
-import { addDoc, collection } from 'firebase/firestore';
+import { addDoc, collection, doc, writeBatch } from 'firebase/firestore';
 import { database } from '@/server/configs/firebase';
 import { LogsService } from '../logs';
 import { Receipt } from '@/server/models/receipt';
@@ -7,8 +7,10 @@ import { FirebaseError } from 'firebase/app';
 
 class ReceiptServiceImplements {
   private path;
+  private batch;
 
   constructor() {
+    this.batch = writeBatch(database);
     this.path =
       process.env.NODE_ENV === 'development' ? 'notaFiscalDev' : 'notaFiscal';
   }
@@ -34,6 +36,24 @@ class ReceiptServiceImplements {
         LogsService.Create(error);
         throw `Erro ao cadastrar ${this.path}. ${error.message ?? error}`;
       });
+  }
+
+  async DeleteList(receipts: Receipt[]): Promise<void> {
+    if (receipts.length == 0) return;
+
+    const ids = receipts.map((receipt) => receipt.id);
+
+    ids.forEach((id) => {
+      this.batch.delete(doc(collection(database, this.path), id));
+    });
+
+    await this.batch.commit().catch((error: FirebaseError) => {
+      if (typeof error != 'string') {
+        error.stack = error.stack ?? `Delete ${this.path}`;
+      }
+      LogsService.Create(error);
+      throw `Erro ao deletar lista de ${this.path}. ${error.message ?? error}`;
+    });
   }
 }
 
