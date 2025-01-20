@@ -22,13 +22,15 @@ import lottieNotinha from '@/shared/assets/notinha.json';
 import PriceHistoryChart from '@/shared/components/home/PriceHistoryChart';
 import { Price } from '@/server/models/price';
 import axios from 'axios';
+import { PriceHistory } from '@/server/models/priceHistory';
 
 export default function Home() {
   const theme = useTheme();
   const mdDownScreen = useMediaQuery(theme.breakpoints.down('md'));
   const sizeImage = mdDownScreen ? 250 : 375;
   const route = useRouter();
-  const [chartData, setChartData] = useState<Price[]>([]);
+  const [chartData, setChartData] = useState<PriceHistory[]>([]);
+  const [product, setproduct] = useState<Price>();
   //const goToHome = () => route.push('home');
   const goToHome = async () => {
     const urls = [
@@ -47,24 +49,21 @@ export default function Home() {
     ];
     urls.forEach(async (url, index) => {
       if (index > 3) return;
-      console.time(`Tempo do envio ${index}`);
       await axios
-        .post(`/api/receipts?url=${url}`)
+        .post(`/api/receipts?url=${url}`, { name: 'Arthur' })
         .then((response) => {
           console.log('Response', response.data);
         })
         .catch((error) => {
           console.error('Error', error.response);
-          console.error(error.response);
         });
-      console.timeEnd(`Tempo do envio ${index}`);
     });
 
     return;
     await axios
-      .delete(`/api/prices`, {
+      .delete(`/api/receipts`, {
         params: {
-          id: 'BldWRXx6Tcej6vgmXyjY;MKmpYdvgZfMpJdFSbCkV;TolBM5b0ls1GqKy6irqF',
+          keys: '31250102274225000161650040003625001183628929;31240602274225000161650060002747181165600338;31240802274225000161650040003355351808952174;31240821560153000163650060000707221242875474',
         },
       })
       .then((response) => {
@@ -78,16 +77,23 @@ export default function Home() {
   useEffect(() => {
     const getPrices = async () => {
       await axios
-        .get(`/api/prices?nomeProduto=${'ABACAXI UND'}`)
-        .then((response) => {
-          console.log('Response', response.data);
-          setChartData(response.data);
+        .get(`/api/prices?nomeProduto=BOLACHA DE QUEIJO`)
+        .then(async (response) => {
+          setproduct(response.data.data[0]);
+          await axios
+            .get(`api/prices/history?idPreco=${response.data.data[0].id}`)
+            .then((response) => {
+              setChartData(response.data.data);
+            })
+            .catch((error) => {
+              console.error(error.response);
+            });
         })
         .catch((error) => {
           console.error(error.response);
         });
     };
-    // getPrices();
+    getPrices();
   }, []);
 
   return (
@@ -227,8 +233,7 @@ export default function Home() {
                   width="100%"
                   variant="h6"
                 >
-                  Evolução do preço da{' '}
-                  <strong>{chartData[0].nomeProduto}</strong>
+                  Evolução do preço da <strong>{product?.nomeProduto}</strong>
                 </Typography>
                 <Typography
                   color="primary.dark"
@@ -236,7 +241,7 @@ export default function Home() {
                   width="100%"
                   variant="h6"
                 >
-                  {chartData[0].nomeMercado}
+                  {product?.nomeMercado}
                 </Typography>
                 <PriceHistoryChart height={300} prices={chartData} />
               </Paper>

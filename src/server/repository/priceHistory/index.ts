@@ -50,6 +50,32 @@ class PriceHistoryRespositoryImplements {
     return this.GetDocsReturnPricesHistory(reference, 'GetListByPrice');
   }
 
+  async GetListByListPriceId(priceIds: Array<string>): Promise<PriceHistory[]> {
+    const reference = query(collection(database, this.path));
+    const prices: Array<PriceHistory> = [];
+
+    await getDocs(reference)
+      .then((response) => {
+        response.docs.map((doc) => {
+          const object = doc.data();
+          const price = {
+            id: doc.id,
+            ...object,
+          } as PriceHistory;
+          if (priceIds.includes(price.idPreco)) prices.push(price);
+        });
+      })
+      .catch((error: FirebaseError) => {
+        if (typeof error != 'string') {
+          error.stack = error.stack ?? `GetListByListPriceId ${this.path}`;
+        }
+        LogsService.Create(error);
+        throw `Erro ao buscar ${this.path} por lista de preços. ${error.message}`;
+      });
+
+    return prices;
+  }
+
   async GetListByMarket(
     marketId: string,
     date?: number
@@ -88,7 +114,7 @@ class PriceHistoryRespositoryImplements {
       })
       .catch((error: FirebaseError) => {
         if (typeof error != 'string') {
-          error.stack = error.stack ?? `${stack} ${this.path}`;
+          error.stack = error.stack ?? `${stack} (${this.path})`;
         }
         LogsService.Create(error);
         throw `Erro ao buscar ${this.path}. ${error.message}`;

@@ -95,7 +95,7 @@ class PriceRepositoryImplements {
 
     await getDocs(reference)
       .then((response) => {
-        return response.docs.map((doc) => {
+        response.docs.map((doc) => {
           const object = doc.data();
           const price = {
             id: doc.id,
@@ -106,7 +106,7 @@ class PriceRepositoryImplements {
       })
       .catch((error: FirebaseError) => {
         if (typeof error != 'string') {
-          error.stack = error.stack ?? `GetListByReceipt ${this.path}`;
+          error.stack = error.stack ?? `GetListByReceipt (${this.path})`;
         }
         LogsService.Create(error);
         throw `Erro ao buscar lista de ${this.path} por IdNotaFiscal. ${error.message ?? error}`;
@@ -121,7 +121,7 @@ class PriceRepositoryImplements {
 
     await getDocs(reference)
       .then((response) => {
-        return response.docs.map((doc) => {
+        response.docs.map((doc) => {
           const object = doc.data();
           const price = {
             id: doc.id,
@@ -132,7 +132,7 @@ class PriceRepositoryImplements {
       })
       .catch((error: FirebaseError) => {
         if (typeof error != 'string') {
-          error.stack = error.stack ?? `GetListById ${this.path}`;
+          error.stack = error.stack ?? `GetListById (${this.path})`;
         }
         LogsService.Create(error);
         throw `Erro ao buscar lista de ${this.path} por ID. ${error.message ?? error}`;
@@ -151,7 +151,7 @@ class PriceRepositoryImplements {
 
     await getDocs(reference)
       .then((response) => {
-        return response.docs.map((doc) => {
+        response.docs.map((doc) => {
           const object = doc.data();
           const price = {
             id: doc.id,
@@ -162,7 +162,7 @@ class PriceRepositoryImplements {
       })
       .catch((error: FirebaseError) => {
         if (typeof error != 'string') {
-          error.stack = error.stack ?? `GetOnlyWithHistoric ${this.path}`;
+          error.stack = error.stack ?? `GetOnlyWithHistoric (${this.path})`;
         }
         LogsService.Create(error);
         throw `Erro ao buscar lista de ${this.path} que possuem histórico. ${error.message ?? error}`;
@@ -187,7 +187,7 @@ class PriceRepositoryImplements {
       })
       .catch((error: FirebaseError) => {
         if (typeof error != 'string') {
-          error.stack = error.stack ?? `${stack} ${this.path}`;
+          error.stack = error.stack ?? `${stack} (${this.path})`;
         }
         LogsService.Create(error);
         throw `Erro ao buscar os ${this.path}. ${error.message ?? String(error)}`;

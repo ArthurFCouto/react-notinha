@@ -40,7 +40,7 @@ class ReceiptRepositoryImplements {
       })
       .catch((error: FirebaseError) => {
         if (typeof error != 'string') {
-          error.stack = error.stack ?? 'GetAll (Receipt)';
+          error.stack = error.stack ?? `GetAll (${this.path})`;
         }
         LogsService.Create(error);
         throw `Erro ao buscar a lista de ${this.path}. ${error.message ?? error}`;
@@ -60,7 +60,7 @@ class ReceiptRepositoryImplements {
       return snapshot.data().count;
     } catch (error: any) {
       if (typeof error != 'string') {
-        error.stack = error.stack ?? 'GetTotalAmount (Receipt)';
+        error.stack = error.stack ?? `GetTotalAmount (${this.path})`;
       }
       LogsService.Create(error);
       throw `Erro ao buscar a lista de ${this.path}. ${error.message ?? error}`;
@@ -89,7 +89,7 @@ class ReceiptRepositoryImplements {
       } as Receipt;
     } catch (error: any) {
       if (typeof error != 'string') {
-        error.stack = error.stack ?? 'CheckIfDoesExist (Receipt)';
+        error.stack = error.stack ?? `CheckIfDoesExist (${this.path})`;
       }
       LogsService.Create(error);
       throw `Erro ao verificar se ${this.path} já está cadastrado(a). ${error.message ?? error}`;
@@ -120,6 +120,40 @@ class ReceiptRepositoryImplements {
       });
 
     return prices;
+  }
+
+  async GetByKey(key: string): Promise<Receipt> {
+    const field = 'chave';
+    const reference = query(
+      collection(database, this.path),
+      where(field, '==', key)
+    );
+
+    try {
+      const snapshot = await getDocs(reference);
+      if (snapshot.empty) {
+        return EmptyReceipt;
+      }
+
+      const object = snapshot.docs[0];
+      const receipt = object.data();
+
+      return {
+        id: object.id,
+        ...receipt,
+      } as Receipt;
+    } catch (error: any) {
+      if (typeof error != 'string') {
+        error.stack = error.stack ?? `GetByKey (${this.path})`;
+      }
+      LogsService.Create(error);
+      throw `Erro ao buscar ${this.path} por chave. ${error.message ?? error}`;
+    }
+  }
+
+  private IsValidKey(qrCode: string): boolean {
+    const regex = /^\d{44}\|/;
+    return regex.test(qrCode);
   }
 }
 

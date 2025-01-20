@@ -6,11 +6,9 @@ import { PriceHistory } from '@/server/models/priceHistory';
 import { PriceHistoryRepository } from '@/server/repository/priceHistory';
 
 class PriceHistoryImplements {
-  private batch;
   private path;
 
   constructor() {
-    this.batch = writeBatch(database);
     this.path =
       process.env.NODE_ENV === 'development'
         ? 'historicoDePrecosDev'
@@ -20,9 +18,11 @@ class PriceHistoryImplements {
   async CreateList(prices: PriceHistory[]): Promise<void> {
     if (prices.length == 0) return;
 
+    const batch = writeBatch(database);
+
     const idMercado = prices[0].idMercado;
     const dataInclusao = prices[0].dataInclusao;
-    const savedPrices = await PriceHistoryRepository.GetAllByMarket(
+    const savedPrices = await PriceHistoryRepository.GetListByMarket(
       idMercado,
       dataInclusao
     );
@@ -40,10 +40,10 @@ class PriceHistoryImplements {
 
       delete price.id;
       const reference = doc(collection(database, this.path));
-      this.batch.set(reference, price);
+      batch.set(reference, price);
     });
 
-    await this.batch.commit().catch((error: FirebaseError) => {
+    await batch.commit().catch((error: FirebaseError) => {
       if (typeof error != 'string') {
         error.stack = error.stack ?? `CreateList ${this.path}`;
       }
@@ -55,13 +55,15 @@ class PriceHistoryImplements {
   async DeleteList(prices: PriceHistory[]): Promise<void> {
     if (prices.length == 0) return;
 
+    const batch = writeBatch(database);
+
     const ids = prices.map((price) => price.id);
 
     ids.forEach((id) => {
-      this.batch.delete(doc(collection(database, this.path), id));
+      batch.delete(doc(collection(database, this.path), id));
     });
 
-    await this.batch.commit().catch((error: FirebaseError) => {
+    await batch.commit().catch((error: FirebaseError) => {
       if (typeof error != 'string') {
         error.stack = error.stack ?? `Delete ${this.path}`;
       }

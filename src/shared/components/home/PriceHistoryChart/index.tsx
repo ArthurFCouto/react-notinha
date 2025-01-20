@@ -1,4 +1,5 @@
 import { Price } from '@/server/models/price';
+import { PriceHistory } from '@/server/models/priceHistory';
 import { Stack } from '@mui/material';
 import {
   Area,
@@ -12,7 +13,7 @@ import {
 
 interface PriceHistoryChartProps {
   height: number;
-  prices: Price[];
+  prices: PriceHistory[];
 }
 
 interface CustomizedProps {
@@ -26,6 +27,13 @@ export default function PriceHistoryChart({
   prices,
 }: PriceHistoryChartProps) {
   const CustomizedAxisTick = ({ x, y, payload }: CustomizedProps) => {
+    function formatTimestampToDate(timestamp: number) {
+      console.log('Valor', timestamp);
+      const date = new Date(timestamp);
+      const day = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, '0'); // getMonth retorna 0 para janeiro
+      return `${day}/${month}`;
+    }
     return (
       <g transform={`translate(${x},${y})`}>
         <text
@@ -37,7 +45,7 @@ export default function PriceHistoryChart({
           x={5}
           y={5}
         >
-          {String(payload.value).slice(0, 5)}
+          {formatTimestampToDate(payload.value)}
         </text>
       </g>
     );
@@ -52,7 +60,7 @@ export default function PriceHistoryChart({
         >
           <CartesianGrid fill="#efefef" strokeDasharray="3 3" />
           <XAxis
-            dataKey="data"
+            dataKey="dataInclusao"
             tick={(props) => <CustomizedAxisTick {...props} />}
           />
           <YAxis

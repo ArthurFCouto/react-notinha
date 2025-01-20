@@ -8,16 +8,16 @@ import { PriceHistoryService } from '../priceHistory';
 import { FirebaseError } from 'firebase/app';
 
 class PriceServiceImplements {
-  private batch;
   private path;
 
   constructor() {
-    this.batch = writeBatch(database);
     this.path = process.env.NODE_ENV === 'development' ? 'precosDev' : 'precos';
   }
 
   async CreateList(prices: Price[]): Promise<void> {
     if (prices.length === 0) return;
+
+    const batch = writeBatch(database);
 
     const savedPrices = await PriceRepository.GetAll();
 
@@ -39,7 +39,7 @@ class PriceServiceImplements {
       if (!keysMarketSavedPrices.includes(keyMarket)) {
         delete price.id;
         const reference = doc(collection(database, this.path));
-        this.batch.set(reference, price);
+        batch.set(reference, price);
         return;
       }
 
@@ -58,7 +58,9 @@ class PriceServiceImplements {
       pricesToGoToHistoric.push(this.priceMapping(price));
     });
 
-    await this.batch.commit().catch((error: FirebaseError) => {
+    this.UpdateList(pricesToBeUpdated);
+
+    await batch.commit().catch((error: FirebaseError) => {
       if (typeof error != 'string') {
         error.stack = error.stack ?? `CreateList ${this.path}`;
       }
@@ -66,22 +68,21 @@ class PriceServiceImplements {
       throw `Erro ao cadastrar lista de ${this.path}. ${error.message ?? error}`;
     });
 
-    await Promise.all([
-      this.UpdateList(pricesToBeUpdated),
-      PriceHistoryService.CreateList(pricesToGoToHistoric),
-    ]);
+    await PriceHistoryService.CreateList(pricesToGoToHistoric);
   }
 
   async DeleteList(prices: Price[]): Promise<void> {
     if (prices.length == 0) return;
 
+    const batch = writeBatch(database);
+
     const ids = prices.map((price) => price.id);
 
     ids.forEach((id) => {
-      this.batch.delete(doc(collection(database, this.path), id));
+      batch.delete(doc(collection(database, this.path), id));
     });
 
-    await this.batch.commit().catch((error: FirebaseError) => {
+    await batch.commit().catch((error: FirebaseError) => {
       if (typeof error != 'string') {
         error.stack = error.stack ?? `Delete ${this.path}`;
       }
@@ -90,19 +91,21 @@ class PriceServiceImplements {
     });
   }
 
-  async UpdateList(prices: Price[]): Promise<void> {
+  private async UpdateList(prices: Price[]): Promise<void> {
     if (prices.length == 0) return;
+
+    const batch = writeBatch(database);
 
     prices.forEach((price) => {
       const reference = doc(collection(database, this.path), price.id);
-      this.batch.update(reference, {
+      batch.update(reference, {
         valor: price.valor,
         idNotaFiscal: price.idNotaFiscal,
         dataInclusao: price.dataInclusao,
       });
     });
 
-    await this.batch.commit().catch((error: FirebaseError) => {
+    await batch.commit().catch((error: FirebaseError) => {
       if (typeof error != 'string') {
         error.stack = error.stack ?? `Update ${this.path}`;
       }

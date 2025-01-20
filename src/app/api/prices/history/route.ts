@@ -9,7 +9,7 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const idPreco = searchParams.get('idPreco');
     if (idPreco) {
-      const response = await PriceController.GetHistory(idPreco);
+      const response = await PriceController.GetHistory([idPreco]);
       return NextResponse.json({ data: response });
     }
 

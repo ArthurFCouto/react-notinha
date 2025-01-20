@@ -13,23 +13,23 @@ class PriceControllerImprements {
     name: string,
     idMarket: string
   ): Promise<Array<Price>> {
-    return PriceRepository.GetAllByNameAndMarket(name, idMarket);
+    return PriceRepository.GetListByNameAndMarket(name, idMarket);
   }
 
   async GetByName(name: string): Promise<Array<Price>> {
-    return PriceRepository.GetAllByName(name);
+    return PriceRepository.GetListByName(name);
   }
 
   async GetByMarket(idMarket: string): Promise<Array<Price>> {
-    return PriceRepository.GetAllByMarket(idMarket);
+    return PriceRepository.GetListByMarket(idMarket);
   }
 
-  async GetHistory(idPreco: string): Promise<Array<PriceHistory>> {
-    return PriceHistoryRepository.GetAllByProduto(idPreco);
+  async GetHistory(idPreco: Array<string>): Promise<Array<PriceHistory>> {
+    return PriceHistoryRepository.GetListByListPriceId(idPreco);
   }
 
   async DeleteById(ids: Array<string>): Promise<void> {
-    const prices = await PriceRepository.GetByIdList(ids);
+    const prices = await PriceRepository.GetListById(ids);
     if (prices.length == 0)
       throw `401 - Não foram encontrados preços com os Ids informados, favor conferir. ${ids.join(';')}`;
     await PriceService.DeleteList(prices);
