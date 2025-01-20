@@ -17,7 +17,7 @@ import { Close, History } from '@mui/icons-material';
 import lottieLoading from '@/shared/assets/loading-2.json';
 import PriceHistoryChart from '../PriceHistoryChart';
 import { UpdateChart } from './functions';
-import { Price } from '@/server/models/price';
+import { Price } from '@/server/entities/price';
 
 interface ModalPriceHistoryProps {
   close: () => void;

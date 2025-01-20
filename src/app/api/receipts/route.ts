@@ -1,4 +1,4 @@
-import { ReceiptController } from '@/server/controller/receipt';
+import { ReceiptController } from '@/server/controllers/receipt';
 import { NextResponse } from 'next/server';
 
 /*

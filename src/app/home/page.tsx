@@ -30,7 +30,7 @@ import CardItems, {
 } from '@/shared/components/home/CardItems';
 import NavBar from '@/shared/components/root/NavBar';
 import ButtonGoToTop from '@/shared/components/root/ButtonGoToTop';
-import { Price } from '@/server/models/price';
+import { Price } from '@/server/entities/price';
 
 export default function Home() {
   const [loading, setLoading] = useState(false);

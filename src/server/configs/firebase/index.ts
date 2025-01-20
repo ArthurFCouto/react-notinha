@@ -15,8 +15,9 @@ const app = initializeApp(firebaseConfig);
 
 export const database = getFirestore(app);
 
-export const LoginErrorMapping = (message: string) => {
-  let response = 'Houve um erro inesperado, tente mais tarde.';
+export const ErrorMappingLogin = (message: string) => {
+  let response =
+    'Houve um erro inesperado, entre em contato com nosso suporte ou tente mais tarde.';
   const errorsMap = {
     'auth/invalid-login-credentials': 'Usuário/Senha incorreta',
     'auth/invalid-email': 'Favor informar um email válido.',

@@ -1,6 +1,6 @@
 import { Dispatch, SetStateAction } from 'react';
 import axios from 'axios';
-import { Price } from '@/server/models/price';
+import { Price } from '@/server/entities/price';
 
 export async function UpdateChart(
   onError: Function,

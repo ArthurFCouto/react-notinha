@@ -20,9 +20,9 @@ import Footer from '@/shared/components/root/footer';
 import NavBar from '@/shared/components/root/NavBar';
 import lottieNotinha from '@/shared/assets/notinha.json';
 import PriceHistoryChart from '@/shared/components/home/PriceHistoryChart';
-import { Price } from '@/server/models/price';
+import { Price } from '@/server/entities/price';
 import axios from 'axios';
-import { PriceHistory } from '@/server/models/priceHistory';
+import { PriceHistory } from '@/server/entities/priceHistory';
 
 export default function Home() {
   const theme = useTheme();

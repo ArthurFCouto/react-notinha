@@ -22,7 +22,7 @@ import {
   useTheme,
 } from '@mui/material';
 import { BRCurrencyFormat } from '@/shared/util';
-import { Price } from '@/server/models/price';
+import { Price } from '@/server/entities/price';
 
 const monts = [
   'JAN',

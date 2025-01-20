@@ -1,4 +1,4 @@
-import { Price } from '@/server/models/price';
+import { Price } from '@/server/entities/price';
 import axios from 'axios';
 import { Dispatch, SetStateAction } from 'react';
 

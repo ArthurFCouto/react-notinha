@@ -1,5 +1,5 @@
-import { Price } from '@/server/models/price';
-import { PriceHistory } from '@/server/models/priceHistory';
+import { Price } from '@/server/entities/price';
+import { PriceHistory } from '@/server/entities/priceHistory';
 import { Stack } from '@mui/material';
 import {
   Area,
@@ -28,12 +28,12 @@ export default function PriceHistoryChart({
 }: PriceHistoryChartProps) {
   const CustomizedAxisTick = ({ x, y, payload }: CustomizedProps) => {
     function formatTimestampToDate(timestamp: number) {
-      console.log('Valor', timestamp);
       const date = new Date(timestamp);
       const day = String(date.getDate()).padStart(2, '0');
-      const month = String(date.getMonth() + 1).padStart(2, '0'); // getMonth retorna 0 para janeiro
+      const month = String(date.getMonth() + 1).padStart(2, '0');
       return `${day}/${month}`;
     }
+
     return (
       <g transform={`translate(${x},${y})`}>
         <text

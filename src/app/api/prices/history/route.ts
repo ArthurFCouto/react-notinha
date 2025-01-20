@@ -1,4 +1,4 @@
-import { PriceController } from '@/server/controller/price';
+import { PriceController } from '@/server/controllers/price';
 import { NextResponse } from 'next/server';
 
 /*
