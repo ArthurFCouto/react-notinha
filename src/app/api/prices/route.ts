@@ -2,48 +2,49 @@ import { PriceController } from '@/server/controllers/price';
 import { NextResponse } from 'next/server';
 
 /*
- * api/prices?idMercado=test&nomeProduto=test
+ * api/prices?idMercado=test&nomeProduto=test&comHistorico=true&pagina=0&quantidadePorPagina
  */
 export async function GET(request: Request) {
+  // TO DO - Melhorar essa rota de API
   try {
     const { searchParams } = new URL(request.url);
     const idMarket = searchParams.get('idMercado');
     const productName = searchParams.get('nomeProduto');
+    const withHistory = searchParams.get('comHistorico');
+    const page = searchParams.get('pagina')
+      ? parseInt(String(searchParams.get('pagina')))
+      : 1;
+    const perPage = searchParams.get('quantidadePorPagina')
+      ? parseInt(String(searchParams.get('quantidadePorPagina')))
+      : 20;
     if (idMarket && productName) {
       const response = await PriceController.GetByNameAndMarket(
         productName,
-        idMarket
+        idMarket,
+        page,
+        perPage
       );
-      return NextResponse.json({ data: response });
+      return NextResponse.json({ response });
     } else if (productName) {
-      const response = await PriceController.GetByName(productName);
-      return NextResponse.json({ data: response });
+      const response = await PriceController.GetByName(
+        productName,
+        page,
+        perPage
+      );
+      return NextResponse.json({ response });
     } else if (idMarket) {
-      const response = await PriceController.GetByMarket(idMarket);
-      return NextResponse.json({ data: response });
+      const response = await PriceController.GetByMarket(
+        idMarket,
+        page,
+        perPage
+      );
+      return NextResponse.json({ response });
+    } else if (withHistory) {
+      const response = await PriceController.GetOnlyWithHistory(page, perPage);
+      return NextResponse.json({ response });
     }
-    const response = await PriceController.GetAll();
-    return NextResponse.json({ data: response });
-  } catch (error: any) {
-    return ErrorMapping(error);
-  }
-}
-
-/*
- * api/prices?deleteAll=false&ids=test;test
- */
-export async function DELETE(request: Request) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const id = searchParams.get('id');
-    const deleteAll = searchParams.get('deleteAll');
-    if (id) {
-      const ids = id.split(';');
-      await PriceController.DeleteById(ids);
-    } else if (deleteAll) {
-      await PriceController.DeleteAll();
-    }
-    return NextResponse.json({});
+    const response = await PriceController.GetAll(page, perPage);
+    return NextResponse.json({ response });
   } catch (error: any) {
     return ErrorMapping(error);
   }

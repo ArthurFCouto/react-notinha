@@ -22,46 +22,92 @@ class PriceControllerImprements {
 
   async GetByNameAndMarket(
     product: string,
-    marketId: string
+    marketId: string,
+    page: number,
+    amountByPage: number
   ): Promise<RecordSet<Price>> {
+    const offset = (page - 1) * amountByPage;
     const prices = await PriceRepository.GetListByNameAndMarket(
       product,
-      marketId
+      marketId,
+      offset,
+      amountByPage
     );
     const amount = await PriceRepository.GetTotalAmount({ marketId, product });
 
     const response = {
       totalDeRegistros: amount,
-      pagina: 1,
-      quantidadePorPagina: amount,
+      pagina: page,
+      quantidadePorPagina: amountByPage,
       resultados: prices,
     };
 
     return RecordSet.Mapping<Price>(response);
   }
 
-  async GetByName(product: string): Promise<RecordSet<Price>> {
-    const prices = await PriceRepository.GetListByName(product);
+  async GetByName(
+    product: string,
+    page: number,
+    amountByPage: number
+  ): Promise<RecordSet<Price>> {
+    const offset = (page - 1) * amountByPage;
+    const prices = await PriceRepository.GetListByName(
+      product,
+      offset,
+      amountByPage
+    );
     const amount = await PriceRepository.GetTotalAmount({ product });
 
     const response = {
       totalDeRegistros: amount,
-      pagina: 1,
-      quantidadePorPagina: amount,
+      pagina: page,
+      quantidadePorPagina: amountByPage,
       resultados: prices,
     };
 
     return RecordSet.Mapping<Price>(response);
   }
 
-  async GetByMarket(marketId: string): Promise<RecordSet<Price>> {
-    const prices = await PriceRepository.GetListByMarket(marketId);
+  async GetByMarket(
+    marketId: string,
+    page: number,
+    amountByPage: number
+  ): Promise<RecordSet<Price>> {
+    const offset = (page - 1) * amountByPage;
+    const prices = await PriceRepository.GetListByMarket(
+      marketId,
+      offset,
+      amountByPage
+    );
     const amount = await PriceRepository.GetTotalAmount({ marketId });
 
     const response = {
       totalDeRegistros: amount,
-      pagina: 1,
-      quantidadePorPagina: amount,
+      pagina: page,
+      quantidadePorPagina: amountByPage,
+      resultados: prices,
+    };
+
+    return RecordSet.Mapping<Price>(response);
+  }
+
+  async GetOnlyWithHistory(
+    page: number,
+    amountByPage: number
+  ): Promise<RecordSet<Price>> {
+    const offset = (page - 1) * amountByPage;
+    const prices = await PriceRepository.GetOnlyWithHistoric(
+      offset,
+      amountByPage
+    );
+    const amount = await PriceRepository.GetTotalAmount({
+      onlyWithHistoric: true,
+    });
+
+    const response = {
+      totalDeRegistros: amount,
+      pagina: page,
+      quantidadePorPagina: amountByPage,
       resultados: prices,
     };
 

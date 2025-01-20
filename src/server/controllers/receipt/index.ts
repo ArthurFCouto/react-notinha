@@ -9,22 +9,29 @@ import { ReceiptService } from '@/server/services/receipt';
 import { SefazService } from '@/server/services/sefaz';
 
 class ReceiptImplements {
-  async CreateReceipt(url: string): Promise<string> {
+  async CreateReceipt(url: string): Promise<RecordSet<Receipt>> {
     const qrCode = url.split('?p=')[1];
     const document = await SefazService.CreateVirtualDocument(qrCode);
     const market = await SefazService.CreateMarket(document);
-    const receiptObject = await SefazService.CreateReceiptObject(
+    const receipt = await SefazService.CreateReceiptObject(
       document,
       qrCode,
       market
     );
-    const receipt = await ReceiptService.Create(receiptObject);
     const items = SefazService.CreateItemList(document, market, receipt);
     await PriceService.CreateList(items);
-    return receipt.id!;
+    const response = {
+      totalDeRegistros: items.length,
+      pagina: 1,
+      quantidadePorPagina: items.length,
+      resultados: [receipt],
+      mensagemDeSucesso: 'Nota fiscal cadastrada com sucesso.',
+    };
+
+    return RecordSet.Mapping<Receipt>(response);
   }
 
-  async GetAllReceipt(): Promise<RecordSet<Receipt>> {
+  async GetAllReceipts(): Promise<RecordSet<Receipt>> {
     const receipts = await ReceiptRepository.GetAll();
     const amount = await ReceiptRepository.GetTotalAmount();
 

@@ -6,56 +6,49 @@ import { NextResponse } from 'next/server';
  */
 export async function POST(request: Request) {
   try {
-    const { searchParams } = new URL(request.url);
     const body = await request.json();
-    console.log('Nome', body);
-    const url = searchParams.get('url');
+    const url = body.url;
     if (!url)
       return NextResponse.json(
         { error: 'Favor enviar o parametro [url]' },
         { status: 400 }
       );
-    await ReceiptController.CreateReceipt(url);
-    return NextResponse.json({});
+    const response = await ReceiptController.CreateReceipt(url);
+    return NextResponse.json(response);
   } catch (error: any) {
     return ErrorMapping(error);
   }
 }
 
 /*
- * api/receipts?getTotalAmount=true
+ * api/receipts
  */
 export async function GET(request: Request) {
   try {
-    const { searchParams } = new URL(request.url);
-    const getTotalAmount = searchParams.get('getTotalAmount');
-    if (getTotalAmount) {
-      const amount = await ReceiptController.GetTotalAmount();
-      return NextResponse.json({ data: amount });
-    }
-    const receipts = await ReceiptController.GetAllReceipt();
-    return NextResponse.json({ data: receipts });
+    const response = await ReceiptController.GetAllReceipts();
+    return NextResponse.json({ response });
   } catch (error) {
     return ErrorMapping(error);
   }
 }
 
 /*
- * api/receipts?keys=string;string
+ * api/receipts?chaves=string;string
  */
 export async function DELETE(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const keys = searchParams.get('keys');
+    const keys = searchParams.get('chaves');
     if (keys) {
-      const chaves = keys.split(';');
-      chaves.forEach(
-        async (chave) => await ReceiptController.DeleteListByKey(chave)
+      const response = await ReceiptController.DeleteListByKeyList(
+        keys.split(';')
       );
-      return NextResponse.json({ data: keys.split(';') });
+      return NextResponse.json({ response });
     }
-    const receipts = await ReceiptController.GetAllReceipt();
-    return NextResponse.json({ data: receipts });
+    return NextResponse.json(
+      { error: 'Favor enviar o parametro [keys]' },
+      { status: 400 }
+    );
   } catch (error) {
     return ErrorMapping(error);
   }
