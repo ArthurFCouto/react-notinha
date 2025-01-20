@@ -49,7 +49,7 @@ class PriceHistoryRespositoryImplements {
     return this.GetDocsReturnPricesHistory(reference, 'GetListByPrice');
   }
 
-  async GetListByListPriceId(
+  async GetListByPriceIdList(
     priceIds: Array<string>
   ): Promise<Array<PriceHistory>> {
     const reference = query(

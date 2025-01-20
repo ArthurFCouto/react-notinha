@@ -7,10 +7,8 @@ import { FirebaseError } from 'firebase/app';
 
 class ReceiptServiceImplements {
   private path;
-  private batch;
 
   constructor() {
-    this.batch = writeBatch(database);
     this.path =
       process.env.NODE_ENV === 'development' ? 'notaFiscalDev' : 'notaFiscal';
   }
@@ -34,25 +32,31 @@ class ReceiptServiceImplements {
           error.stack = error.stack ?? `Create ${this.path}`;
         }
         LogsService.Create(error);
-        throw `Erro ao cadastrar ${this.path}. ${error.message ?? error}`;
+        throw `Não foi possível concluir o cadastro da nota fiscal (${receipt.chave}). ${error.message ?? error}`;
       });
   }
 
   async DeleteList(receipts: Receipt[]): Promise<void> {
     if (receipts.length == 0) return;
 
-    const ids = receipts.map((receipt) => receipt.id);
+    const pricesWhitoutId = receipts.filter((receipt) => receipt.id);
+    if (pricesWhitoutId.length > 0) {
+      throw `400 - Não foi possível concluir a exclusão pois, todos os preços da lista devem possuir a propriedade ID, confira novamente a lista enviada.`;
+    }
 
+    const batch = writeBatch(database);
+
+    const ids = receipts.map((receipt) => receipt.id);
     ids.forEach((id) => {
-      this.batch.delete(doc(collection(database, this.path), id));
+      batch.delete(doc(collection(database, this.path), id));
     });
 
-    await this.batch.commit().catch((error: FirebaseError) => {
+    await batch.commit().catch((error: FirebaseError) => {
       if (typeof error != 'string') {
         error.stack = error.stack ?? `Delete ${this.path}`;
       }
       LogsService.Create(error);
-      throw `Erro ao deletar lista de ${this.path}. ${error.message ?? error}`;
+      throw `Não foi possível concluir a exclusão da lista de notas fiscais. ${error.message ?? error}`;
     });
   }
 }

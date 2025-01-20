@@ -6,6 +6,6 @@ export type Price = {
   valor: string;
   idMercado: string;
   idNotaFiscal: string;
-  dataInclusao: number;
   possuiHistorico: boolean;
+  dataInclusao: number;
 };

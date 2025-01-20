@@ -85,7 +85,7 @@ class ReceiptRepositoryImplements {
 
   async CheckIfDoesExist(key: string): Promise<Receipt> {
     if (!this.IsValidKey(key)) {
-      throw `401 - A chave informada (${key}) é inválida para nosso sistema.`;
+      throw `400 - A chave informada (${key}) é inválida para nosso sistema.`;
     }
 
     const reference = query(

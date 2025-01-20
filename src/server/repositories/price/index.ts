@@ -2,6 +2,7 @@ import { FirebaseError } from 'firebase/app';
 import {
   and,
   collection,
+  getCountFromServer,
   getDocs,
   limit,
   or,
@@ -14,6 +15,14 @@ import {
 import { database } from '@/server/configs/firebase';
 import { LogsService } from '@/server/services/logs';
 import { Price } from '@/server/entities/price';
+
+interface GetTotalAmountProps {
+  product?: string;
+  marketId?: string;
+  startDate?: number;
+  endDate?: number;
+  onlyWithHistoric?: boolean;
+}
 
 class PriceRepositoryImplements {
   private path;
@@ -136,7 +145,7 @@ class PriceRepositoryImplements {
   ): Promise<Array<Price>> {
     const dateIsValid = this.DatesAreValid(startDate, endDate);
     if (!dateIsValid) {
-      throw `401 - As datas enviadas não estão dentro do período esperado. Data inicial informada ${startDate} - Data final informada ${endDate}.`;
+      throw `400 - Favor checar os valores informados para as datas. Data inicial informada ${startDate} - Data final informada ${endDate}.`;
     }
 
     const reference =
@@ -165,7 +174,9 @@ class PriceRepositoryImplements {
     return this.GetDocsReturnPrices(reference, 'GetListByDate');
   }
 
-  async GetListByReceipt(receiptIds: Array<string>): Promise<Array<Price>> {
+  async GetListByReceiptIdList(
+    receiptIds: Array<string>
+  ): Promise<Array<Price>> {
     const reference = query(
       collection(database, this.path),
       where(this.fieldIdReceipt, 'in', receiptIds),
@@ -176,7 +187,7 @@ class PriceRepositoryImplements {
     return this.GetDocsReturnPrices(reference, 'GetListByReceipt');
   }
 
-  async GetListById(ids: Array<string>): Promise<Array<Price>> {
+  async GetListByIdList(ids: Array<string>): Promise<Array<Price>> {
     const reference = query(collection(database, this.path));
     const prices: Array<Price> = [];
 
@@ -230,6 +241,37 @@ class PriceRepositoryImplements {
           );
 
     return this.GetDocsReturnPrices(reference, 'GetOnlyWithHistoric');
+  }
+
+  async GetTotalAmount(props: GetTotalAmountProps): Promise<number> {
+    const { product, marketId, startDate, endDate, onlyWithHistoric } = props;
+    const queryConstraints = [];
+
+    product && queryConstraints.push(where(this.fieldProduct, '==', product));
+    marketId &&
+      queryConstraints.push(where(this.fieldIdMarket, '==', marketId));
+    startDate && queryConstraints.push(where(this.fieldDate, '>=', startDate));
+    endDate && queryConstraints.push(where(this.fieldDate, '<=', endDate));
+    onlyWithHistoric &&
+      queryConstraints.push(
+        where(this.fieldHasHistoric, '==', true),
+        where(this.fieldHasHistoric, '==', 'true')
+      );
+
+    const reference = query(
+      collection(database, this.path),
+      and(...queryConstraints)
+    );
+    try {
+      const snapshot = await getCountFromServer(reference);
+      return snapshot.data().count;
+    } catch (error: any) {
+      if (typeof error != 'string') {
+        error.stack = error.stack ?? `GetTotalAmount (${this.path})`;
+      }
+      LogsService.Create(error);
+      throw `Erro ao buscar a quantidade total de produtos. ${error.message ?? error}`;
+    }
   }
 
   private DatesAreValid(startDate: number, endDate: number): boolean {

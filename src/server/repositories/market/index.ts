@@ -6,11 +6,13 @@ import { LogsService } from '@/server/services/logs';
 
 class MarketRepositoryImplements {
   private path;
+  private fieldMarket;
   private emptyMarket: Market;
 
   constructor() {
     this.path =
       process.env.NODE_ENV === 'development' ? 'mercadoDev' : 'mercado';
+    this.fieldMarket = process.env.NODE_ENV === 'development' ? 'cnpj' : 'CNPJ'; // TO DO - Alterar após unificação
     this.emptyMarket = {
       nomeFantasia: '',
       razaoSocial: '',
@@ -52,10 +54,9 @@ class MarketRepositoryImplements {
   }
 
   async CheckIfDoesExist(cnpj: string): Promise<Market> {
-    const field = process.env.NODE_ENV === 'development' ? 'cnpj' : 'CNPJ'; // TO DO - Alterar após unificação
     const reference = query(
       collection(database, this.path),
-      where(field, '==', cnpj)
+      where(this.fieldMarket, '==', cnpj)
     );
 
     try {

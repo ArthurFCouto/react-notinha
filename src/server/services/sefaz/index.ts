@@ -8,7 +8,9 @@ import { ReceiptRepository } from '@/server/repositories/receipt';
 import { MarketService } from '../market';
 import { Price } from '@/server/entities/price';
 import { MarketRepository } from '@/server/repositories/market';
+import { ReceiptService } from '../receipt';
 
+// TO DO Configurar para que sejam aceitos apenas cupons de mercado, ou começar a trabalhar com categorias
 const mainActivity = {
   code: '47.11-3-02',
   text: 'Comércio varejista de mercadorias em geral, com predominância de produtos alimentícios - supermercados',
@@ -20,14 +22,15 @@ interface PricesWork {
 
 class SefazServiceImplements {
   private dateNow = new Date();
-  private url =
-    'https://portalsped.fazenda.mg.gov.br/portalnfce/sistema/qrcode.xhtml?p=';
+  private url;
 
   constructor() {
     this.dateNow.setHours(0, 0, 0, 0);
+    this.url =
+      'https://portalsped.fazenda.mg.gov.br/portalnfce/sistema/qrcode.xhtml?p=';
   }
   /**
-   * Verifica se a url informada é referente a uma NF de MG
+   * Verifica se a url informada é referente a uma chave de NF
    */
   private IsValidUrl(qrCode: string): boolean {
     const regex = /^\d{44}\|/;
@@ -35,7 +38,8 @@ class SefazServiceImplements {
   }
 
   /**
-   * Cria um document virtual para tratar os dados da página html da SEFAZ.
+   * Cria um documento virtual (virtualDocument) para tratar os dados da página html da SEFAZ.
+   * @param qrCode Uma string que é informada na url após o sinal de igualdade (...qrcode.xhtml?p=)
    */
   async CreateVirtualDocument(qrCode: string): Promise<Document> {
     if (!this.IsValidUrl(qrCode))
@@ -59,7 +63,7 @@ class SefazServiceImplements {
   }
 
   /**
-   * Cria o mercado no banco de dados e retorna o Id.
+   * Cria o mercado no banco de dados e retorna o objeto com Id.
    * É necessário que já tenha sido criado o virtualDocument.
    */
   async CreateMarket(doc: Document): Promise<Market> {
@@ -68,8 +72,7 @@ class SefazServiceImplements {
     if (exist.id) return exist;
 
     axios.defaults.timeout = 30000;
-    axios.defaults.timeoutErrorMessage =
-      'CNPJ - Tempo de espera de resposta do servidor encerrado.';
+    axios.defaults.timeoutErrorMessage = `Não conseguimos validar o os dados do mercado (${cnpj}). Tente novamente em instantes ou entre em contato com o suporte.`;
 
     const market = await axios
       .get(`https://receitaws.com.br/v1/cnpj/${cnpj}`)
@@ -104,7 +107,7 @@ class SefazServiceImplements {
   }
 
   /**
-   * Cria o objeto referente a nota fiscal.
+   * Cria a nota fiscal no banco de dados e retorna o objeto com Id.
    * É necessário que já tenham sido criados o virtualDocument e o mercado.
    */
   async CreateReceiptObject(
@@ -119,6 +122,8 @@ class SefazServiceImplements {
     const exist = await ReceiptRepository.CheckIfDoesExist(key);
     if (exist.id) throw '400 - Este cupom já está cadastrado.';
 
+    let receipt: Receipt;
+
     try {
       const element = doc.getElementById('collapse4') as HTMLElement;
       const issueDate = this.GetIssueDate(doc);
@@ -127,7 +132,7 @@ class SefazServiceImplements {
       const column = lineTwo.querySelector('td');
       const totalPrice = String(column?.textContent);
 
-      return {
+      receipt = {
         cnpj: market.cnpj,
         chave: key,
         url: this.url + qrCode,
@@ -144,10 +149,12 @@ class SefazServiceImplements {
       LogsService.Create(error);
       throw `${error.message ?? error}`;
     }
+
+    return ReceiptService.Create(receipt);
   }
 
   /**
-   * Retorna uma lista com os itens da Nota Fiscal (sem repetição).
+   * Retorna uma lista de objetos com os itens da Nota Fiscal (sem repetição).
    * É necessário que já tenham sido criados o virtualDocument, o mercado e a nota fiscal.
    */
   CreateItemList(doc: Document, market: Market, receipt: Receipt): Price[] {
@@ -183,6 +190,7 @@ class SefazServiceImplements {
             valor: this.ConfigureNumber(price, 4),
             idMercado: market.id!,
             idNotaFiscal: receipt.id!,
+            possuiHistorico: false,
             dataInclusao: receipt.dataInclusao,
           };
         }
@@ -200,7 +208,7 @@ class SefazServiceImplements {
 
   /**
    * Retorna a data de emissão do cumpom fiscal
-   * @returns Uma string no formato 01/01/2000 23:59:59
+   * @returns Uma string no formato DD/MM/AAAA hh:mm:ss
    */
   private GetIssueDate(doc: Document): number {
     const element = doc.getElementById('collapse4') as HTMLElement;
@@ -213,7 +221,7 @@ class SefazServiceImplements {
 
   /**
    * Recebe a data no formado informado no cumpom fiscal e retorna o timestamp da data na hora 00:00:00
-   * @param date - Deve estar no formato 01/01/2000 23:59:59
+   * @param date - Deve estar no formato DD/MM/AAAA hh:mm:ss
    * @returns O timestamp da data no horário 00:00:00
    */
   private GenerateTimestamp(date: string): number {

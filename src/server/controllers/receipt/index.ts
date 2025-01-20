@@ -1,4 +1,5 @@
 import { Receipt } from '@/server/entities/receipt';
+import RecordSet from '@/server/models/RecordSet';
 import { PriceRepository } from '@/server/repositories/price';
 import { PriceHistoryRepository } from '@/server/repositories/priceHistory';
 import { ReceiptRepository } from '@/server/repositories/receipt';
@@ -23,25 +24,52 @@ class ReceiptImplements {
     return receipt.id!;
   }
 
-  async GetAllReceipt(): Promise<Array<Receipt>> {
-    return await ReceiptRepository.GetAll();
+  async GetAllReceipt(): Promise<RecordSet<Receipt>> {
+    const receipts = await ReceiptRepository.GetAll();
+    const amount = await ReceiptRepository.GetTotalAmount();
+
+    const response = {
+      totalDeRegistros: amount,
+      pagina: 1,
+      quantidadePorPagina: amount,
+      resultado: receipts,
+    };
+
+    return RecordSet.Mapping<Receipt>(response);
   }
 
-  async GetTotalAmount(): Promise<number> {
-    return await ReceiptRepository.GetTotalAmount();
-  }
+  async DeleteListByKeyList(keys: Array<string>): Promise<RecordSet<string>> {
+    const receipts = await ReceiptRepository.GetListByKeyList(keys);
+    const receiptKeys = receipts.map((receipt) => receipt.chave);
+    const receiptIds = receipts.map((receipt) => receipt.id!);
+    const keysNotFound = keys.filter((key) => !receiptKeys.includes(key));
 
-  async DeleteListByKey(key: string): Promise<void> {
-    const receipt = await ReceiptRepository.GetByKey(key);
-    if (!receipt.id)
-      throw `400 - Não foi encontrado cupom fiscal salvo com a chave informada, favor conferir. ${key}`;
-    const prices = await PriceRepository.GetListByReceipt([receipt.id!]);
+    const prices = await PriceRepository.GetListByReceiptIdList(receiptIds);
     const priceIds = prices.map((price) => price.id!);
     const pricesHistory =
-      await PriceHistoryRepository.GetListByListPriceId(priceIds);
-    await ReceiptService.DeleteList([receipt]);
+      await PriceHistoryRepository.GetListByPriceIdList(priceIds);
+    await ReceiptService.DeleteList(receipts);
     await PriceService.DeleteList(prices);
     await PriceHistoryService.DeleteList(pricesHistory);
+
+    const amount = receipts.length + prices.length + pricesHistory.length;
+
+    const response = {
+      totalDeRegistros: amount,
+      pagina: 1,
+      quantidadePorPagina: amount,
+      resultado: keysNotFound.length > 0 ? keysNotFound : [],
+      mensagemDeSucesso:
+        keysNotFound.length > 0
+          ? undefined
+          : 'Todas as notas fiscais foram excluidas com sucesso',
+      mensagemDeErro:
+        keysNotFound.length > 0
+          ? 'As chaves retornadas não foram excluidas, favor conferir. As demais foram excluidas com sucesso.'
+          : undefined,
+    };
+
+    return RecordSet.Mapping<string>(response);
   }
 }
 

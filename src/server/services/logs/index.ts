@@ -1,6 +1,6 @@
 import { database } from '@/server/configs/firebase';
 import { FirebaseError } from 'firebase/app';
-import { addDoc, collection, getFirestore } from 'firebase/firestore';
+import { addDoc, collection } from 'firebase/firestore';
 
 class LogsServiceImplements {
   private path;
@@ -12,6 +12,7 @@ class LogsServiceImplements {
   async Create(log: any): Promise<void> {
     const data = {
       date: Date.now(),
+      customData: String(log.customData ?? 'Unspecified'),
       code: String(log.code ?? 'Unspecified'),
       message: String(log.message ?? log),
       stack: String(log.stack ?? 'Unspecified'),

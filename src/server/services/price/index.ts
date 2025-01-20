@@ -14,6 +14,7 @@ class PriceServiceImplements {
     this.path = process.env.NODE_ENV === 'development' ? 'precosDev' : 'precos';
   }
 
+  // TOd DO - Adicionar limite de itens no commit, verificar quantos são permitidos por vez
   async CreateList(prices: Price[]): Promise<void> {
     if (prices.length === 0) return;
 
@@ -27,59 +28,56 @@ class PriceServiceImplements {
     const keysDataSavedPrices = savedPrices.map(
       (price) => `${price.nomeProduto}_${price.idMercado}_${price.dataInclusao}`
     );
-    const keysMarketSavedPrices = savedPrices.map(
-      (price) => `${price.nomeProduto}_${price.idMercado}`
-    );
 
     prices.forEach((price) => {
       const keyData = `${price.nomeProduto}_${price.idMercado}_${price.dataInclusao}`;
       if (keysDataSavedPrices.includes(keyData)) return;
-
-      const keyMarket = `${price.nomeProduto}_${price.idMercado}`;
-      if (!keysMarketSavedPrices.includes(keyMarket)) {
-        delete price.id;
-        const reference = doc(collection(database, this.path));
-        batch.set(reference, price);
-        return;
-      }
 
       const savedPrice = savedPrices.find(
         (actualPrice) =>
           actualPrice.nomeProduto == price.nomeProduto &&
           actualPrice.idMercado == price.idMercado
       );
-      if (savedPrice!.dataInclusao < price.dataInclusao) {
-        price.id = savedPrice!.id;
-        pricesToGoToHistoric.push(this.priceMapping(savedPrice!));
-        pricesToBeUpdated.push(this.priceToUpdateMapping(price));
+      if (!savedPrice) {
+        delete price.id;
+        const reference = doc(collection(database, this.path));
+        batch.set(reference, price);
         return;
       }
 
-      pricesToGoToHistoric.push(this.priceMapping(price));
-    });
+      if (savedPrice!.dataInclusao < price.dataInclusao) {
+        price.id = savedPrice!.id;
+        pricesToGoToHistoric.push(this.MappingPriceToPriceHistory(savedPrice));
+        pricesToBeUpdated.push(this.MappingPriceToUpdate(price));
+        return;
+      }
 
-    this.UpdateList(pricesToBeUpdated);
+      pricesToGoToHistoric.push(this.MappingPriceToPriceHistory(price));
+    });
 
     await batch.commit().catch((error: FirebaseError) => {
       if (typeof error != 'string') {
-        error.stack = error.stack ?? `CreateList ${this.path}`;
+        error.stack = error.stack ?? `CreateList (${this.path})`;
       }
       LogsService.Create(error);
-      throw `Erro ao cadastrar lista de ${this.path}. ${error.message ?? error}`;
+      throw `Não foi possível concluir o cadastro da lista de produtos. ${error.message ?? error}`;
     });
 
+    await this.UpdateList(pricesToBeUpdated);
     await PriceHistoryService.CreateList(pricesToGoToHistoric);
   }
 
   async DeleteList(prices: Price[]): Promise<void> {
     if (prices.length == 0) return;
 
+    const pricesWhitoutId = prices.filter((price) => !price.id);
+    if (pricesWhitoutId.length > 0) {
+      throw `400 - Não foi possível concluir a exclusão pois, todos os preços da lista devem possuir a propriedade ID, confira os itens ${pricesWhitoutId.map((prices) => prices.nomeProduto).join(' ')}.`;
+    }
+
     const batch = writeBatch(database);
-
-    const ids = prices.map((price) => price.id);
-
-    ids.forEach((id) => {
-      batch.delete(doc(collection(database, this.path), id));
+    prices.forEach((price) => {
+      batch.delete(doc(collection(database, this.path), price.id));
     });
 
     await batch.commit().catch((error: FirebaseError) => {
@@ -87,15 +85,19 @@ class PriceServiceImplements {
         error.stack = error.stack ?? `Delete ${this.path}`;
       }
       LogsService.Create(error);
-      throw `Erro ao deletar lista de ${this.path}. ${error.message ?? error}`;
+      throw `Não foi possível concluir a exclusão da lista de produtos. ${error.message ?? error}`;
     });
   }
 
-  private async UpdateList(prices: Price[]): Promise<void> {
+  async UpdateList(prices: Price[]): Promise<void> {
     if (prices.length == 0) return;
 
-    const batch = writeBatch(database);
+    const pricesWhitoutId = prices.filter((price) => !price.id);
+    if (pricesWhitoutId.length > 0) {
+      throw `400 - Não foi possível concluir a atualização pois, todos os preços da lista devem possuir a propriedade ID, confira os itens ${pricesWhitoutId.map((prices) => prices.nomeProduto).join(' ')}.`;
+    }
 
+    const batch = writeBatch(database);
     prices.forEach((price) => {
       const reference = doc(collection(database, this.path), price.id);
       batch.update(reference, {
@@ -107,16 +109,16 @@ class PriceServiceImplements {
 
     await batch.commit().catch((error: FirebaseError) => {
       if (typeof error != 'string') {
-        error.stack = error.stack ?? `Update ${this.path}`;
+        error.stack = error.stack ?? `(Update ${this.path})`;
       }
       LogsService.Create(error);
-      throw `Erro ao atualizar lista de ${this.path}. ${error.message ?? error}`;
+      throw `Não foi possível concluir a atualização da lista de produtos. ${error.message ?? error}`;
     });
   }
 
-  private priceMapping = (price: Price): PriceHistory => {
+  private MappingPriceToPriceHistory = (price: Price): PriceHistory => {
     return {
-      idPreco: String(price.id),
+      idPreco: price.id!,
       idMercado: price.idMercado,
       idNotaFiscal: price.idNotaFiscal,
       valor: price.valor,
@@ -124,7 +126,7 @@ class PriceServiceImplements {
     };
   };
 
-  private priceToUpdateMapping = (price: Price): Price => {
+  private MappingPriceToUpdate = (price: Price): Price => {
     return {
       id: price.id,
       nomeProduto: price.nomeProduto,
@@ -133,6 +135,7 @@ class PriceServiceImplements {
       idMercado: price.idMercado,
       idNotaFiscal: price.idNotaFiscal,
       valor: price.valor,
+      possuiHistorico: true,
       dataInclusao: price.dataInclusao,
     };
   };

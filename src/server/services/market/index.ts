@@ -6,11 +6,9 @@ import { MarketRepository } from '@/server/repositories/market';
 import { Market } from '@/server/entities/market';
 
 class MarketServiceImplements {
-  private batch;
   private path;
 
   constructor() {
-    this.batch = writeBatch(database);
     this.path =
       process.env.NODE_ENV === 'development' ? 'mercadoDev' : 'mercado';
   }
@@ -34,32 +32,34 @@ class MarketServiceImplements {
       })
       .catch((error: FirebaseError) => {
         if (typeof error != 'string') {
-          error.stack = error.stack ?? `Create ${this.path}`;
+          error.stack = error.stack ?? `Create (${this.path})`;
         }
         LogsService.Create(error);
-        throw `Erro ao cadastrar ${this.path}. ${error.message ?? error}`;
+        throw `Não foi possível realizar o cadastro do mercado. ${error.message ?? error}`;
       });
   }
 
   async DeleteList(markets: Market[]): Promise<void> {
     if (markets.length == 0) return;
 
+    const batch = writeBatch(database);
     const ids = markets.map((market) => market.id);
 
     ids.forEach((id) => {
-      this.batch.delete(doc(collection(database, this.path), id));
+      batch.delete(doc(collection(database, this.path), id));
     });
 
-    await this.batch.commit().catch((error: FirebaseError) => {
+    await batch.commit().catch((error: FirebaseError) => {
       if (typeof error != 'string') {
-        error.stack = error.stack ?? `Delete ${this.path}`;
+        error.stack = error.stack ?? `Delete (${this.path})`;
       }
       LogsService.Create(error);
-      throw `Erro ao deletar lista de ${this.path}. ${error.message ?? error}`;
+      throw `Não foi possível completar a exclusão de mercados por id. ${error.message ?? error}`;
     });
   }
 
   async Update(market: Market): Promise<Market> {
+    const batch = writeBatch(database);
     const reference = doc(database, this.path, market.id!);
     const newMarket = {
       nomeFantasia: market.nomeFantasia,
@@ -74,13 +74,13 @@ class MarketServiceImplements {
       dataAtualizacao: new Date().getTime(),
     };
 
-    this.batch.update(reference, newMarket);
-    await this.batch.commit().catch((error: FirebaseError) => {
+    batch.update(reference, newMarket);
+    await batch.commit().catch((error: FirebaseError) => {
       if (typeof error != 'string') {
-        error.stack = error.stack ?? `Update ${this.path}`;
+        error.stack = error.stack ?? `Update (${this.path})`;
       }
       LogsService.Create(error);
-      throw `Erro ao atualizar ${this.path}. ${error.message ?? error}`;
+      throw `Não foi possível concluir a atualização do mercado. ${error.message ?? error}`;
     });
 
     return {
