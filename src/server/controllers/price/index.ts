@@ -1,43 +1,85 @@
 import { Price } from '@/server/entities/price';
 import { PriceHistory } from '@/server/entities/priceHistory';
+import RecordSet from '@/server/models/RecordSet';
 import { PriceRepository } from '@/server/repositories/price';
 import { PriceHistoryRepository } from '@/server/repositories/priceHistory';
-import { PriceService } from '@/server/services/price';
 
 class PriceControllerImprements {
-  async GetAll(): Promise<Array<Price>> {
-    return PriceRepository.GetAll();
+  async GetAll(page: number, amountByPage: number): Promise<RecordSet<Price>> {
+    const offset = (page - 1) * amountByPage;
+    const prices = await PriceRepository.GetAll(offset, amountByPage);
+    const amount = await PriceRepository.GetTotalAmount({});
+
+    const response = {
+      totalDeRegistros: amount,
+      pagina: page,
+      quantidadePorPagina: amountByPage,
+      resultados: prices,
+    };
+
+    return RecordSet.Mapping<Price>(response);
   }
 
   async GetByNameAndMarket(
-    name: string,
-    idMarket: string
-  ): Promise<Array<Price>> {
-    return PriceRepository.GetListByNameAndMarket(name, idMarket);
+    product: string,
+    marketId: string
+  ): Promise<RecordSet<Price>> {
+    const prices = await PriceRepository.GetListByNameAndMarket(
+      product,
+      marketId
+    );
+    const amount = await PriceRepository.GetTotalAmount({ marketId, product });
+
+    const response = {
+      totalDeRegistros: amount,
+      pagina: 1,
+      quantidadePorPagina: amount,
+      resultados: prices,
+    };
+
+    return RecordSet.Mapping<Price>(response);
   }
 
-  async GetByName(name: string): Promise<Array<Price>> {
-    return PriceRepository.GetListByName(name);
+  async GetByName(product: string): Promise<RecordSet<Price>> {
+    const prices = await PriceRepository.GetListByName(product);
+    const amount = await PriceRepository.GetTotalAmount({ product });
+
+    const response = {
+      totalDeRegistros: amount,
+      pagina: 1,
+      quantidadePorPagina: amount,
+      resultados: prices,
+    };
+
+    return RecordSet.Mapping<Price>(response);
   }
 
-  async GetByMarket(idMarket: string): Promise<Array<Price>> {
-    return PriceRepository.GetListByMarket(idMarket);
+  async GetByMarket(marketId: string): Promise<RecordSet<Price>> {
+    const prices = await PriceRepository.GetListByMarket(marketId);
+    const amount = await PriceRepository.GetTotalAmount({ marketId });
+
+    const response = {
+      totalDeRegistros: amount,
+      pagina: 1,
+      quantidadePorPagina: amount,
+      resultados: prices,
+    };
+
+    return RecordSet.Mapping<Price>(response);
   }
 
-  async GetHistory(idPreco: Array<string>): Promise<Array<PriceHistory>> {
-    return PriceHistoryRepository.GetListByListPriceId(idPreco);
-  }
+  async GetHistory(priceIds: Array<string>): Promise<RecordSet<PriceHistory>> {
+    const pricesHistory =
+      await PriceHistoryRepository.GetListByPriceIdList(priceIds);
 
-  async DeleteById(ids: Array<string>): Promise<void> {
-    const prices = await PriceRepository.GetListById(ids);
-    if (prices.length == 0)
-      throw `401 - Não foram encontrados preços com os Ids informados, favor conferir. ${ids.join(';')}`;
-    await PriceService.DeleteList(prices);
-  }
+    const response = {
+      totalDeRegistros: pricesHistory.length,
+      pagina: 1,
+      quantidadePorPagina: pricesHistory.length,
+      resultados: pricesHistory,
+    };
 
-  async DeleteAll(): Promise<void> {
-    const prices = await PriceRepository.GetAll();
-    await PriceService.DeleteList(prices);
+    return RecordSet.Mapping<PriceHistory>(response);
   }
 }
 

@@ -32,7 +32,7 @@ class ReceiptImplements {
       totalDeRegistros: amount,
       pagina: 1,
       quantidadePorPagina: amount,
-      resultado: receipts,
+      resultados: receipts,
     };
 
     return RecordSet.Mapping<Receipt>(response);
@@ -58,7 +58,7 @@ class ReceiptImplements {
       totalDeRegistros: amount,
       pagina: 1,
       quantidadePorPagina: amount,
-      resultado: keysNotFound.length > 0 ? keysNotFound : [],
+      resultados: keysNotFound.length > 0 ? keysNotFound : [],
       mensagemDeSucesso:
         keysNotFound.length > 0
           ? undefined
