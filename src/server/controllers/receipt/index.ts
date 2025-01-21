@@ -13,11 +13,7 @@ class ReceiptImplements {
     const qrCode = url.split('?p=')[1];
     const document = await SefazService.CreateVirtualDocument(qrCode);
     const market = await SefazService.CreateMarket(document);
-    const receipt = await SefazService.CreateReceiptObject(
-      document,
-      qrCode,
-      market
-    );
+    const receipt = await SefazService.CreateReceipt(document, qrCode, market);
     const items = SefazService.CreateItemList(document, market, receipt);
     await PriceService.CreateList(items);
     const response = {
@@ -45,12 +41,34 @@ class ReceiptImplements {
     return RecordSet.Mapping<Receipt>(response);
   }
 
+  // TO DO - Medida provisória para limitar a quantidade de ids no filtro de busca.
   async DeleteListByKeyList(keys: Array<string>): Promise<RecordSet<string>> {
+    const keysNotFound: Array<string> = [];
+    let amount: number = 0;
+
+    keys.forEach(async (key) => {
+      const receipts = await ReceiptRepository.GetListByKeyList([key]);
+      if (receipts.length == 0) {
+        keysNotFound.push(key);
+      }
+      const prices = await PriceRepository.GetListByReceiptIdList([
+        receipts[0].id!,
+      ]);
+      const priceIds = prices.map((price) => price.id!);
+      const pricesHistory =
+        await PriceHistoryRepository.GetListByPriceIdList(priceIds);
+      await ReceiptService.DeleteList(receipts);
+      await PriceService.DeleteList(prices);
+      await PriceHistoryService.DeleteList(pricesHistory);
+
+      amount = amount + receipts.length + prices.length + pricesHistory.length;
+    });
+
+    /*
     const receipts = await ReceiptRepository.GetListByKeyList(keys);
     const receiptKeys = receipts.map((receipt) => receipt.chave);
     const receiptIds = receipts.map((receipt) => receipt.id!);
     const keysNotFound = keys.filter((key) => !receiptKeys.includes(key));
-
     const prices = await PriceRepository.GetListByReceiptIdList(receiptIds);
     const priceIds = prices.map((price) => price.id!);
     const pricesHistory =
@@ -58,8 +76,8 @@ class ReceiptImplements {
     await ReceiptService.DeleteList(receipts);
     await PriceService.DeleteList(prices);
     await PriceHistoryService.DeleteList(pricesHistory);
-
     const amount = receipts.length + prices.length + pricesHistory.length;
+    */
 
     const response = {
       totalDeRegistros: amount,

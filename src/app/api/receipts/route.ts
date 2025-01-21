@@ -2,12 +2,12 @@ import { ReceiptController } from '@/server/controllers/receipt';
 import { NextResponse } from 'next/server';
 
 /*
- * api/receipts?url=test
+ * api/receipts {url: strings}
  */
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const url = body.url;
+    const body = await request.json().catch(() => undefined);
+    const url = body ? body.url : body;
     if (!url)
       return NextResponse.json(
         { error: 'Favor enviar o parametro [url]' },

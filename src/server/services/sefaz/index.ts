@@ -39,7 +39,7 @@ class SefazServiceImplements {
 
   /**
    * Cria um documento virtual (virtualDocument) para tratar os dados da página html da SEFAZ.
-   * @param qrCode Uma string que é informada na url após o sinal de igualdade (...qrcode.xhtml?p=)
+   * @param qrCode A parte da string que vem na url após o sinal de igualdade (...qrcode.xhtml?p=)
    */
   async CreateVirtualDocument(qrCode: string): Promise<Document> {
     if (!this.IsValidUrl(qrCode))
@@ -110,7 +110,7 @@ class SefazServiceImplements {
    * Cria a nota fiscal no banco de dados e retorna o objeto com Id.
    * É necessário que já tenham sido criados o virtualDocument e o mercado.
    */
-  async CreateReceiptObject(
+  async CreateReceipt(
     doc: Document,
     qrCode: string,
     market: Market

@@ -39,13 +39,12 @@ class ReceiptServiceImplements {
   async DeleteList(receipts: Receipt[]): Promise<void> {
     if (receipts.length == 0) return;
 
-    const pricesWhitoutId = receipts.filter((receipt) => receipt.id);
+    const pricesWhitoutId = receipts.filter((receipt) => !receipt.id);
     if (pricesWhitoutId.length > 0) {
-      throw `400 - Não foi possível concluir a exclusão pois, todos os preços da lista devem possuir a propriedade ID, confira novamente a lista enviada.`;
+      throw `400 - Não foi possível concluir a exclusão pois, todas as notas fiscais da lista devem possuir a propriedade ID, confira novamente a lista enviada.`;
     }
 
     const batch = writeBatch(database);
-
     const ids = receipts.map((receipt) => receipt.id);
     ids.forEach((id) => {
       batch.delete(doc(collection(database, this.path), id));

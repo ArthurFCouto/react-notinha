@@ -9,6 +9,7 @@ import {
   orderBy,
   Query,
   query,
+  startAfter,
   startAt,
   where,
 } from 'firebase/firestore';
@@ -174,6 +175,7 @@ class PriceRepositoryImplements {
     return this.GetDocsReturnPrices(reference, 'GetListByDate');
   }
 
+  // TO DO - Tratar o caso de quando receiptIds for uma quantidade superior a 30
   async GetListByReceiptIdList(
     receiptIds: Array<string>
   ): Promise<Array<Price>> {

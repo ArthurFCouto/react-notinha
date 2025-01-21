@@ -49,6 +49,7 @@ class PriceHistoryRespositoryImplements {
     return this.GetDocsReturnPricesHistory(reference, 'GetListByPrice');
   }
 
+  // TO DO - Tratar o caso de quando priceIds for uma quantidade superior a 30
   async GetListByPriceIdList(
     priceIds: Array<string>
   ): Promise<Array<PriceHistory>> {

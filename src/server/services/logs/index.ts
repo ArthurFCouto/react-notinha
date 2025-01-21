@@ -12,10 +12,10 @@ class LogsServiceImplements {
   async Create(log: any): Promise<void> {
     const data = {
       date: Date.now(),
-      customData: String(log.customData ?? 'Unspecified'),
+      customData: String(log.customData ?? log.cause ?? 'Unspecified'),
       code: String(log.code ?? 'Unspecified'),
       message: String(log.message ?? log),
-      stack: String(log.stack ?? 'Unspecified'),
+      stack: String(log.stack ?? log.name ?? 'Unspecified'),
       status: String(log.status ?? 'Unspecified'),
     };
 

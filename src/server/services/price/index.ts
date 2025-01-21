@@ -5,7 +5,6 @@ import { Price } from '@/server/entities/price';
 import { PriceRepository } from '@/server/repositories/price';
 import { PriceHistory } from '@/server/entities/priceHistory';
 import { PriceHistoryService } from '../priceHistory';
-import { FirebaseError } from 'firebase/app';
 
 class PriceServiceImplements {
   private path;
@@ -14,12 +13,11 @@ class PriceServiceImplements {
     this.path = process.env.NODE_ENV === 'development' ? 'precosDev' : 'precos';
   }
 
-  // TOd DO - Adicionar limite de itens no commit, verificar quantos são permitidos por vez
+  // TO DO - Adicionar limite de itens no commit, são permitidas 500 operações por vez
   async CreateList(prices: Price[]): Promise<void> {
     if (prices.length === 0) return;
 
     const batch = writeBatch(database);
-
     const savedPrices = await PriceRepository.GetAll();
 
     const pricesToBeUpdated: Price[] = [];
@@ -55,18 +53,21 @@ class PriceServiceImplements {
       pricesToGoToHistoric.push(this.MappingPriceToPriceHistory(price));
     });
 
-    await batch.commit().catch((error: FirebaseError) => {
+    try {
+      await batch.commit();
+    } catch (error: any) {
       if (typeof error != 'string') {
         error.stack = error.stack ?? `CreateList (${this.path})`;
       }
       LogsService.Create(error);
       throw `Não foi possível concluir o cadastro da lista de produtos. ${error.message ?? error}`;
-    });
+    }
 
     await this.UpdateList(pricesToBeUpdated);
     await PriceHistoryService.CreateList(pricesToGoToHistoric);
   }
 
+  // TO DO - Adicionar limite de itens no commit, são permitidas 500 operações por vez
   async DeleteList(prices: Price[]): Promise<void> {
     if (prices.length == 0) return;
 
@@ -80,15 +81,18 @@ class PriceServiceImplements {
       batch.delete(doc(collection(database, this.path), price.id));
     });
 
-    await batch.commit().catch((error: FirebaseError) => {
+    try {
+      await batch.commit();
+    } catch (error: any) {
       if (typeof error != 'string') {
         error.stack = error.stack ?? `Delete ${this.path}`;
       }
       LogsService.Create(error);
       throw `Não foi possível concluir a exclusão da lista de produtos. ${error.message ?? error}`;
-    });
+    }
   }
 
+  // TO DO - Adicionar limite de itens no commit, são permitidas 500 operações por vez
   async UpdateList(prices: Price[]): Promise<void> {
     if (prices.length == 0) return;
 
@@ -100,20 +104,18 @@ class PriceServiceImplements {
     const batch = writeBatch(database);
     prices.forEach((price) => {
       const reference = doc(collection(database, this.path), price.id);
-      batch.update(reference, {
-        valor: price.valor,
-        idNotaFiscal: price.idNotaFiscal,
-        dataInclusao: price.dataInclusao,
-      });
+      batch.update(reference, price);
     });
 
-    await batch.commit().catch((error: FirebaseError) => {
+    try {
+      await batch.commit();
+    } catch (error: any) {
       if (typeof error != 'string') {
         error.stack = error.stack ?? `(Update ${this.path})`;
       }
       LogsService.Create(error);
       throw `Não foi possível concluir a atualização da lista de produtos. ${error.message ?? error}`;
-    });
+    }
   }
 
   private MappingPriceToPriceHistory = (price: Price): PriceHistory => {

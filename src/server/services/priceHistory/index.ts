@@ -16,6 +16,7 @@ class PriceHistoryImplements {
   }
 
   // TO DO - Prepara o método para caso seja necessário cadastrar uma lista para mercados e datas diferentes
+  // TO DO - Adicionar limite de itens no commit, são permitidas 500 operações por vez
   async CreateList(prices: PriceHistory[]): Promise<void> {
     if (prices.length == 0) return;
 
@@ -39,21 +40,24 @@ class PriceHistoryImplements {
       batch.set(reference, price);
     });
 
-    await batch.commit().catch((error: FirebaseError) => {
+    try {
+      await batch.commit();
+    } catch (error: any) {
       if (typeof error != 'string') {
         error.stack = error.stack ?? `CreateList ${this.path}`;
       }
       LogsService.Create(error);
       throw `Não foi possível concluir o cadastro da lista com o histórico de preço dos produtos. ${error.message ?? error}`;
-    });
+    }
   }
 
+  // TO DO - Adicionar limite de itens no commit, são permitidas 500 operações por vez
   async DeleteList(prices: PriceHistory[]): Promise<void> {
     if (prices.length == 0) return;
 
     const pricesWhitoutId = prices.filter((price) => !price.id);
     if (pricesWhitoutId.length > 0) {
-      throw `400 - Não foi possível concluir a exclusão pois, todos os preços da lista devem possuir a propriedade ID, confira novamente a lista enviada.`;
+      throw `400 - Não foi possível concluir a exclusão pois, todos os preços da lista de histórico devem possuir a propriedade ID, confira novamente a lista enviada.`;
     }
 
     const batch = writeBatch(database);
@@ -62,13 +66,15 @@ class PriceHistoryImplements {
       batch.delete(doc(collection(database, this.path), id));
     });
 
-    await batch.commit().catch((error: FirebaseError) => {
+    try {
+      await batch.commit();
+    } catch (error: any) {
       if (typeof error != 'string') {
         error.stack = error.stack ?? `Delete ${this.path}`;
       }
       LogsService.Create(error);
       throw `Não foi possível concluir a exclusão da lista de histórico de preços dos produtos. ${error.message ?? error}`;
-    });
+    }
   }
 }
 

@@ -39,6 +39,7 @@ class MarketServiceImplements {
       });
   }
 
+  // TO DO - Adicionar limite de itens no commit, são permitidas 500 operações por vez
   async DeleteList(markets: Market[]): Promise<void> {
     if (markets.length == 0) return;
 
@@ -49,13 +50,15 @@ class MarketServiceImplements {
       batch.delete(doc(collection(database, this.path), id));
     });
 
-    await batch.commit().catch((error: FirebaseError) => {
+    try {
+      await batch.commit();
+    } catch (error: any) {
       if (typeof error != 'string') {
         error.stack = error.stack ?? `Delete (${this.path})`;
       }
       LogsService.Create(error);
       throw `Não foi possível completar a exclusão de mercados por id. ${error.message ?? error}`;
-    });
+    }
   }
 
   async Update(market: Market): Promise<Market> {
@@ -75,13 +78,15 @@ class MarketServiceImplements {
     };
 
     batch.update(reference, newMarket);
-    await batch.commit().catch((error: FirebaseError) => {
+    try {
+      await batch.commit();
+    } catch (error: any) {
       if (typeof error != 'string') {
         error.stack = error.stack ?? `Update (${this.path})`;
       }
       LogsService.Create(error);
       throw `Não foi possível concluir a atualização do mercado. ${error.message ?? error}`;
-    });
+    }
 
     return {
       id: market.id,

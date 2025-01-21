@@ -23,6 +23,7 @@ import PriceHistoryChart from '@/shared/components/home/PriceHistoryChart';
 import { Price } from '@/server/entities/price';
 import axios from 'axios';
 import { PriceHistory } from '@/server/entities/priceHistory';
+import { listaUrl } from './api/script';
 
 export default function Home() {
   const theme = useTheme();
@@ -33,24 +34,11 @@ export default function Home() {
   const [product, setproduct] = useState<Price>();
   //const goToHome = () => route.push('home');
   const goToHome = async () => {
-    const urls = [
-      'https://portalsped.fazenda.mg.gov.br/portalnfce/sistema/qrcode.xhtml?p=31250102274225000161650040003625001183628929|2|1|1|ef43e400a0528f69be73223669f3586b98624659',
-      'https://portalsped.fazenda.mg.gov.br/portalnfce/sistema/qrcode.xhtml?p=31240602274225000161650060002747181165600338|2|1|1|ea6e9d4439c984c04ec04ff9b598c3424263c509',
-      'https://portalsped.fazenda.mg.gov.br/portalnfce/sistema/qrcode.xhtml?p=31240802274225000161650040003355351808952174|2|1|1|29f6b60dddcf9939eece88c0914ac8f75b9ba7a0',
-      'https://portalsped.fazenda.mg.gov.br/portalnfce/sistema/qrcode.xhtml?p=31240821560153000163650060000707221242875474|2|1|1|383D2AB50C874EDCBEC294CBB4B2BD93695057EB',
-      'https://portalsped.fazenda.mg.gov.br/portalnfce/sistema/qrcode.xhtml?p=31240803111258000153650170001407011736533020|2|1|1|A8581E86072238F1B05BC2B6C9DBF395DE5386E2',
-      'https://portalsped.fazenda.mg.gov.br/portalnfce/sistema/qrcode.xhtml?p=31241003111258000153650120001390961163565667|2|1|1|0A138586E26567433ACF9111BFD84D10AE9290B1',
-      'https://portalsped.fazenda.mg.gov.br/portalnfce/sistema/qrcode.xhtml?p=31241003111258000153650120001390971778649169|2|1|1|A2B7F850B24A782FCB223835E0FFA3CF267C4894',
-      'https://portalsped.fazenda.mg.gov.br/portalnfce/sistema/qrcode.xhtml?p=31241102274225000161650050002556351376442199|2|1|1|50e6199a09d5cc228354ddd05c30c1f3aff71a4c',
-      'https://portalsped.fazenda.mg.gov.br/portalnfce/sistema/qrcode.xhtml?p=31241121560153000163650020001802571696827498|2|1|1|F8B036BF4C1B6A98555B1E50D2BF23661AA70D11',
-      'https://portalsped.fazenda.mg.gov.br/portalnfce/sistema/qrcode.xhtml?p=31241221560153000163650030001757681198084310|2|1|1|C17BF63814409E10FC3C12FB085994820A657A7C',
-      'https://portalsped.fazenda.mg.gov.br/portalnfce/sistema/qrcode.xhtml?p=31240502274225000161650060002663641256820902|2|1|1|e36cdc053b3b2922eb81e63e4cb09cd09271cc20',
-      'https://portalsped.fazenda.mg.gov.br/portalnfce/sistema/qrcode.xhtml?p=31240603111258000153650120001159851664826624|2|1|1|2CA10AE634E7016B4ECA5484653B1ABCFAB36527',
-    ];
+    const urls = listaUrl;
     urls.forEach(async (url, index) => {
-      if (index > 3) return;
+      if (index < 0 || index > 3) return;
       await axios
-        .post(`/api/receipts?url=${url}`, { name: 'Arthur' })
+        .post(`/api/receipts`, { url })
         .then((response) => {
           console.log('Response', response.data);
         })
@@ -58,36 +46,27 @@ export default function Home() {
           console.error('Error', error.response);
         });
     });
-
-    return;
-    await axios
-      .delete(`/api/receipts`, {
-        params: {
-          keys: '31250102274225000161650040003625001183628929;31240602274225000161650060002747181165600338;31240802274225000161650040003355351808952174;31240821560153000163650060000707221242875474',
-        },
-      })
-      .then((response) => {
-        console.log('Response', response);
-      })
-      .catch((error) => {
-        console.error(error.response);
-      });
   };
 
   useEffect(() => {
     const getPrices = async () => {
       await axios
-        .get(`/api/prices?nomeProduto=BOLACHA DE QUEIJO`)
+        .get(`/api/prices`, {
+          params: {
+            comHistorico: true,
+          },
+        })
         .then(async (response) => {
-          setproduct(response.data.data[0]);
-          await axios
-            .get(`api/prices/history?idPreco=${response.data.data[0].id}`)
+          //setproduct(response.data.resultados[0]);
+          console.log('result', response.data);
+          /*await axios
+            .get(`api/prices/history?idPreco=${response.data.resultados[0].id}`)
             .then((response) => {
-              setChartData(response.data.data);
+              setChartData(response.data.resultados);
             })
             .catch((error) => {
               console.error(error.response);
-            });
+            });*/
         })
         .catch((error) => {
           console.error(error.response);

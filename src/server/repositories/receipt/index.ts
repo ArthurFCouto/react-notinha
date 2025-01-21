@@ -85,7 +85,7 @@ class ReceiptRepositoryImplements {
 
   async CheckIfDoesExist(key: string): Promise<Receipt> {
     if (!this.IsValidKey(key)) {
-      throw `400 - A chave informada (${key}) é inválida para nosso sistema.`;
+      throw `400 - Erro ao conferir se a NF já está cadastrada, a chave informada (${key}) é inválida para nosso sistema.`;
     }
 
     const reference = query(
@@ -115,7 +115,7 @@ class ReceiptRepositoryImplements {
     }
   }
 
-  async GetListByListId(ids: Array<string>): Promise<Array<Receipt>> {
+  async GetListByIdList(ids: Array<string>): Promise<Array<Receipt>> {
     const reference = query(collection(database, this.path));
     const prices: Array<Receipt> = [];
 
@@ -141,6 +141,7 @@ class ReceiptRepositoryImplements {
     return prices;
   }
 
+  // TO DO - Tratar o caso de quando keys for uma quantidade superior a 30
   async GetListByKeyList(keys: Array<string>): Promise<Array<Receipt>> {
     const reference = query(
       collection(database, this.path),
@@ -166,9 +167,9 @@ class ReceiptRepositoryImplements {
       });
   }
 
-  private IsValidKey(qrCode: string): boolean {
-    const regex = /^\d{44}\|/;
-    return regex.test(qrCode);
+  private IsValidKey(key: string): boolean {
+    const regex = /^\d{44}$/;
+    return regex.test(key);
   }
 }
 

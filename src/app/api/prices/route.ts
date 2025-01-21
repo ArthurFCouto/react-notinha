@@ -24,27 +24,27 @@ export async function GET(request: Request) {
         page,
         perPage
       );
-      return NextResponse.json({ response });
+      return NextResponse.json(response);
     } else if (productName) {
       const response = await PriceController.GetByName(
         productName,
         page,
         perPage
       );
-      return NextResponse.json({ response });
+      return NextResponse.json(response);
     } else if (idMarket) {
       const response = await PriceController.GetByMarket(
         idMarket,
         page,
         perPage
       );
-      return NextResponse.json({ response });
+      return NextResponse.json(response);
     } else if (withHistory) {
       const response = await PriceController.GetOnlyWithHistory(page, perPage);
-      return NextResponse.json({ response });
+      return NextResponse.json(response);
     }
     const response = await PriceController.GetAll(page, perPage);
-    return NextResponse.json({ response });
+    return NextResponse.json(response);
   } catch (error: any) {
     return ErrorMapping(error);
   }
