@@ -173,11 +173,15 @@ export default function Home() {
         open={openQR}
       />
       <ModalPriceHistory
-        close={() => setShowPriceHistory(false)}
+        close={() => {
+          setPrice(undefined);
+          setQueryPriceHistory('');
+          setShowPriceHistory(false);
+        }}
         onError={(message) => {
           dispatchAlert({ type: 'open', message: message, severity: 'error' });
         }}
-        price={price!}
+        price={price}
         open={showPriceHistory}
         query={queryPriceHistory}
       />

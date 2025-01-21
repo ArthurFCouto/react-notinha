@@ -24,7 +24,7 @@ interface ModalPriceHistoryProps {
   close: () => void;
   onError: (message: string) => void;
   open: boolean;
-  price: Price;
+  price?: Price;
   query: string;
 }
 
@@ -61,7 +61,7 @@ export default function ModalPriceHistory({
       </DialogTitle>
       <DialogContent dividers>
         <Typography>
-          Preços registrados para <strong>{price.nomeProduto}</strong>.
+          Preços registrados para <strong>{price && price.nomeProduto}</strong>.
         </Typography>
         <Box display="flex" justifyContent="center" paddingY={2}>
           {loading ? (
@@ -87,7 +87,7 @@ export default function ModalPriceHistory({
             width="100%"
             variant="h6"
           >
-            {price.nomeMercado}
+            {price && price.nomeMercado}
           </Typography>
         )}
         <DialogContentText>
