@@ -43,17 +43,17 @@ class ReceiptImplements {
 
   // TO DO - Medida provisória para limitar a quantidade de ids no filtro de busca.
   async DeleteListByKeyList(keys: Array<string>): Promise<RecordSet<string>> {
-    const keysNotFound: Array<string> = [];
+    let keysNotFound: Array<string> = [];
     let amount: number = 0;
 
-    keys.forEach(async (key) => {
+    for (const key of keys) {
       const receipts = await ReceiptRepository.GetListByKeyList([key]);
       if (receipts.length == 0) {
         keysNotFound.push(key);
+        continue;
       }
-      const prices = await PriceRepository.GetListByReceiptIdList([
-        receipts[0].id!,
-      ]);
+      const receiptId = receipts[0].id!;
+      const prices = await PriceRepository.GetListByReceiptIdList([receiptId]);
       const priceIds = prices.map((price) => price.id!);
       const pricesHistory =
         await PriceHistoryRepository.GetListByPriceIdList(priceIds);
@@ -62,7 +62,7 @@ class ReceiptImplements {
       await PriceHistoryService.DeleteList(pricesHistory);
 
       amount = amount + receipts.length + prices.length + pricesHistory.length;
-    });
+    }
 
     /*
     const receipts = await ReceiptRepository.GetListByKeyList(keys);

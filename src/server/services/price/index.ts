@@ -27,31 +27,33 @@ class PriceServiceImplements {
       (price) => `${price.nomeProduto}_${price.idMercado}_${price.dataInclusao}`
     );
 
-    prices.forEach((price) => {
+    for (const price of prices) {
       const keyData = `${price.nomeProduto}_${price.idMercado}_${price.dataInclusao}`;
-      if (keysDataSavedPrices.includes(keyData)) return;
+      if (keysDataSavedPrices.includes(keyData)) continue;
 
       const savedPrice = savedPrices.find(
         (actualPrice) =>
           actualPrice.nomeProduto == price.nomeProduto &&
           actualPrice.idMercado == price.idMercado
       );
-      if (!savedPrice) {
+      if (savedPrice == undefined) {
         delete price.id;
         const reference = doc(collection(database, this.path));
         batch.set(reference, price);
-        return;
+        continue;
       }
 
-      if (savedPrice!.dataInclusao < price.dataInclusao) {
-        price.id = savedPrice!.id;
+      price.id = savedPrice.id;
+
+      if (savedPrice.dataInclusao < price.dataInclusao) {
         pricesToGoToHistoric.push(this.MappingPriceToPriceHistory(savedPrice));
         pricesToBeUpdated.push(this.MappingPriceToUpdate(price));
         return;
       }
-
+      savedPrice.possuiHistorico = true;
+      pricesToBeUpdated.push(this.MappingPriceToUpdate(savedPrice));
       pricesToGoToHistoric.push(this.MappingPriceToPriceHistory(price));
-    });
+    }
 
     try {
       await batch.commit();
@@ -104,6 +106,7 @@ class PriceServiceImplements {
     const batch = writeBatch(database);
     prices.forEach((price) => {
       const reference = doc(collection(database, this.path), price.id);
+      delete price.id;
       batch.update(reference, price);
     });
 

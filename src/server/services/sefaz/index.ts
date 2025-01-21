@@ -191,7 +191,7 @@ class SefazServiceImplements {
             idMercado: market.id!,
             idNotaFiscal: receipt.id!,
             possuiHistorico: false,
-            dataInclusao: receipt.dataInclusao,
+            dataInclusao: receipt.dataEmissao,
           };
         }
       });

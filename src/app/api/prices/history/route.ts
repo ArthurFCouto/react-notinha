@@ -10,7 +10,7 @@ export async function GET(request: Request) {
     const ids = searchParams.get('ids');
     if (ids) {
       const response = await PriceController.GetHistory(ids.split(';'));
-      return NextResponse.json({ data: response });
+      return NextResponse.json(response);
     }
     return NextResponse.json(
       { error: 'Favor enviar o parametro [ids]' },

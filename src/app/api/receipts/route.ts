@@ -46,7 +46,7 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ response });
     }
     return NextResponse.json(
-      { error: 'Favor enviar o parametro [keys]' },
+      { error: 'Favor enviar o parametro [chaves]' },
       { status: 400 }
     );
   } catch (error) {

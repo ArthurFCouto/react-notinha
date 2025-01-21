@@ -16,7 +16,7 @@ class ReceiptServiceImplements {
   async Create(receipt: Receipt): Promise<Receipt> {
     const exist = await ReceiptRepository.CheckIfDoesExist(receipt.chave);
     if (exist.id) {
-      throw `400 - Erro ao cadastrar ${this.path}. Este cupom já está cadastrado.`;
+      throw `400 - Não foi possível concluir o cadastro da nota fiscal (${receipt.chave}). Este cupom já está cadastrado.`;
     }
 
     delete receipt.id;

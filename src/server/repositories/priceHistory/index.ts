@@ -42,7 +42,6 @@ class PriceHistoryRespositoryImplements {
     const reference = query(
       collection(database, this.path),
       where(this.fieldProduct, '==', priceId),
-      orderBy(this.fieldProduct),
       orderBy(this.fieldOrder)
     );
 
@@ -53,9 +52,14 @@ class PriceHistoryRespositoryImplements {
   async GetListByPriceIdList(
     priceIds: Array<string>
   ): Promise<Array<PriceHistory>> {
+    if (priceIds.length == 0) {
+      return [];
+    }
+
     const reference = query(
       collection(database, this.path),
-      where(this.fieldProduct, 'in', priceIds)
+      where(this.fieldProduct, 'in', priceIds),
+      orderBy(this.fieldOrder)
     );
 
     return this.GetDocsReturnPricesHistory(reference, 'GetListByListPriceId');

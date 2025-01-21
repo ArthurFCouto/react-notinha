@@ -14,7 +14,7 @@ class PriceControllerImprements {
     const response = {
       totalDeRegistros: amount,
       pagina: page,
-      quantidadePorPagina: amountByPage,
+      quantidadePorPagina: amount, // amountByPage,
       resultados: prices,
     };
 
@@ -38,7 +38,7 @@ class PriceControllerImprements {
     const response = {
       totalDeRegistros: amount,
       pagina: page,
-      quantidadePorPagina: amountByPage,
+      quantidadePorPagina: amount, // amountByPage,
       resultados: prices,
     };
 
@@ -58,7 +58,7 @@ class PriceControllerImprements {
     const response = {
       totalDeRegistros: amount,
       pagina: page,
-      quantidadePorPagina: amountByPage,
+      quantidadePorPagina: amount, // amountByPage,
       resultados: prices,
     };
 
@@ -78,7 +78,7 @@ class PriceControllerImprements {
     const response = {
       totalDeRegistros: amount,
       pagina: page,
-      quantidadePorPagina: amountByPage,
+      quantidadePorPagina: amount, // amountByPage,
       resultados: prices,
     };
 
@@ -99,7 +99,7 @@ class PriceControllerImprements {
     const response = {
       totalDeRegistros: amount,
       pagina: page,
-      quantidadePorPagina: amountByPage,
+      quantidadePorPagina: amount, // amountByPage,
       resultados: prices,
     };
 

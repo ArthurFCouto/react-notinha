@@ -36,7 +36,7 @@ export default function Home() {
   const goToHome = async () => {
     const urls = listaUrl;
     urls.forEach(async (url, index) => {
-      if (index < 0 || index > 3) return;
+      if (index < 0 || index >= 10) return;
       await axios
         .post(`/api/receipts`, { url })
         .then((response) => {
@@ -57,16 +57,22 @@ export default function Home() {
           },
         })
         .then(async (response) => {
-          //setproduct(response.data.resultados[0]);
-          console.log('result', response.data);
-          /*await axios
-            .get(`api/prices/history?idPreco=${response.data.resultados[0].id}`)
-            .then((response) => {
-              setChartData(response.data.resultados);
-            })
-            .catch((error) => {
-              console.error(error.response);
-            });*/
+          const resultados = response.data.resultados;
+          if (resultados.length > 0) {
+            setproduct(resultados[4]);
+            await axios
+              .get(`api/prices/history`, {
+                params: {
+                  ids: resultados[4].id,
+                },
+              })
+              .then((response) => {
+                setChartData(response.data.resultados);
+              })
+              .catch((error) => {
+                console.error(error.response);
+              });
+          }
         })
         .catch((error) => {
           console.error(error.response);

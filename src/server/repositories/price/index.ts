@@ -179,6 +179,10 @@ class PriceRepositoryImplements {
   async GetListByReceiptIdList(
     receiptIds: Array<string>
   ): Promise<Array<Price>> {
+    if (receiptIds.length == 0) {
+      return [];
+    }
+
     const reference = query(
       collection(database, this.path),
       where(this.fieldIdReceipt, 'in', receiptIds),
