@@ -119,6 +119,30 @@ class PriceControllerImprements {
 
     return RecordSet.Mapping<PriceHistory>(response);
   }
+
+  async GetHistoryByIdPreco(priceId: string): Promise<RecordSet<PriceHistory>> {
+    const pricesHistory =
+      await PriceHistoryRepository.GetListByPriceId(priceId);
+    const price = await PriceRepository.GetListByIdList([priceId]);
+
+    const lastPrice = {
+      idPreco: price[0].id!,
+      idMercado: price[0].idMercado,
+      idNotaFiscal: price[0].idNotaFiscal,
+      valor: price[0].valor,
+      dataInclusao: price[0].dataInclusao,
+    };
+    pricesHistory.push(lastPrice);
+
+    const response = {
+      totalDeRegistros: pricesHistory.length,
+      pagina: 1,
+      quantidadePorPagina: pricesHistory.length,
+      resultados: pricesHistory,
+    };
+
+    return RecordSet.Mapping<PriceHistory>(response);
+  }
 }
 
 export const PriceController = new PriceControllerImprements();

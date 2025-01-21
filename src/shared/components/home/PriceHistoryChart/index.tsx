@@ -1,4 +1,3 @@
-import { Price } from '@/server/entities/price';
 import { PriceHistory } from '@/server/entities/priceHistory';
 import { Stack } from '@mui/material';
 import {
@@ -27,25 +26,18 @@ export default function PriceHistoryChart({
   prices,
 }: PriceHistoryChartProps) {
   const CustomizedAxisTick = ({ x, y, payload }: CustomizedProps) => {
-    function formatTimestampToDate(timestamp: number) {
-      const date = new Date(timestamp);
-      const day = String(date.getDate()).padStart(2, '0');
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      return `${day}/${month}`;
-    }
-
     return (
       <g transform={`translate(${x},${y})`}>
         <text
           dy={10}
           fill="#656565"
           fontSize={10}
-          transform="rotate(-45)"
+          //transform="rotate(-45)"
           textAnchor="end"
           x={5}
           y={5}
         >
-          {formatTimestampToDate(payload.value)}
+          {payload.value}
         </text>
       </g>
     );
@@ -56,9 +48,13 @@ export default function PriceHistoryChart({
       <ResponsiveContainer>
         <AreaChart
           data={prices}
-          margin={{ top: 5, right: 0, left: 5, bottom: 5 }}
+          margin={{ top: 5, right: 5, left: 5, bottom: 5 }}
         >
-          <CartesianGrid fill="#efefef" strokeDasharray="3 3" />
+          <CartesianGrid
+            fill="#efefef"
+            fillOpacity={0.5}
+            strokeDasharray="3 3"
+          />
           <XAxis
             dataKey="dataInclusao"
             tick={(props) => <CustomizedAxisTick {...props} />}

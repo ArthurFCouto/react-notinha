@@ -3,20 +3,33 @@ export function BRCurrencyFormat(value: number) {
 }
 
 export function ConvertStringToNumber(value: string) {
-  const num = value.replace(/[^\d.,]/g, '').replace(',', '.');
-  return parseFloat(num);
+  let sanitized = value.replace(/[^\d.,]/g, '');
+
+  if (sanitized.includes(',') && sanitized.includes('.')) {
+    sanitized = sanitized.replace(/\./g, '');
+    sanitized = sanitized.replace(',', '.');
+  } else if (sanitized.includes(',')) {
+    sanitized = sanitized.replace(',', '.');
+  }
+
+  return parseFloat(sanitized);
 }
 
 /**
- * Retorna uma string com a data no formato BR dd/mm/aaaa
- * @param date Date
- * @returns string
+ * Converte um timestamp em uma data no formado BR dd/mm/aaaa ou dd/mm
+ * @param timestamp Number representando o timestamp da data
+ * @returns Uma string no formato dd/mm/aaaa ou dd/mm
  */
-export function FormatDate(date: Date) {
+export function MappingTimestampToDate(
+  timestamp: number,
+  showYear: boolean = true
+) {
+  const date = new Date(timestamp);
   const day = String(date.getDate()).padStart(2, '0');
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const year = date.getFullYear();
-  return `${day}/${month}/${year}`;
+
+  return showYear ? `${day}/${month}/${year}` : `${day}/${month}`;
 }
 
 /**

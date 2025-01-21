@@ -17,12 +17,14 @@ import { Close, History } from '@mui/icons-material';
 import lottieLoading from '@/shared/assets/loading-2.json';
 import PriceHistoryChart from '../PriceHistoryChart';
 import { UpdateChart } from './functions';
+import { PriceHistory } from '@/server/entities/priceHistory';
 import { Price } from '@/server/entities/price';
 
 interface ModalPriceHistoryProps {
   close: () => void;
   onError: (message: string) => void;
   open: boolean;
+  price: Price;
   query: string;
 }
 
@@ -30,9 +32,10 @@ export default function ModalPriceHistory({
   close,
   open,
   onError,
+  price,
   query,
 }: ModalPriceHistoryProps) {
-  const [prices, setPrices] = useState<Price[]>([]);
+  const [prices, setPrices] = useState<PriceHistory[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [variation, setVariation] = useState(0);
 
@@ -58,7 +61,7 @@ export default function ModalPriceHistory({
       </DialogTitle>
       <DialogContent dividers>
         <Typography>
-          Preços registrados para <strong>{query}</strong>.
+          Preços registrados para <strong>{price.nomeProduto}</strong>.
         </Typography>
         <Box display="flex" justifyContent="center" paddingY={2}>
           {loading ? (
@@ -84,7 +87,7 @@ export default function ModalPriceHistory({
             width="100%"
             variant="h6"
           >
-            {prices[0].nomeMercado}
+            {price.nomeMercado}
           </Typography>
         )}
         <DialogContentText>

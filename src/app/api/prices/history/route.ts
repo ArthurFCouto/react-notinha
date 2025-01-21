@@ -2,18 +2,23 @@ import { PriceController } from '@/server/controllers/price';
 import { NextResponse } from 'next/server';
 
 /*
- * api/prices/history?ids=test
+ * api/prices/history?ids=test&idPreco=test
  */
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const ids = searchParams.get('ids');
+    const idPreco = searchParams.get('idPreco');
     if (ids) {
       const response = await PriceController.GetHistory(ids.split(';'));
       return NextResponse.json(response);
     }
+    if (idPreco) {
+      const response = await PriceController.GetHistoryByIdPreco(idPreco);
+      return NextResponse.json(response);
+    }
     return NextResponse.json(
-      { error: 'Favor enviar o parametro [ids]' },
+      { error: 'Favor enviar um dos parametros [ids, idPreco]' },
       { status: 400 }
     );
   } catch (error: any) {

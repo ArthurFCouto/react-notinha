@@ -39,6 +39,7 @@ export default function Home() {
   const [originalPrices, setOriginalPrices] = useState<Price[]>([]);
   const [showPriceHistory, setShowPriceHistory] = useState(false);
   const [queryPriceHistory, setQueryPriceHistory] = useState('');
+  const [price, setPrice] = useState<Price>();
   const [searchInput, setSearchInput] = useState('');
   const [isPending, startTransition] = useTransition();
   const filterRef = useRef<HTMLInputElement>(null);
@@ -85,8 +86,9 @@ export default function Home() {
     </Snackbar>
   );
 
-  const handleHistory = (query: string) => {
-    setQueryPriceHistory(query);
+  const handleHistory = (item: Price) => {
+    setQueryPriceHistory(item.id!);
+    setPrice(item);
     setShowPriceHistory(true);
   };
 
@@ -175,6 +177,7 @@ export default function Home() {
         onError={(message) => {
           dispatchAlert({ type: 'open', message: message, severity: 'error' });
         }}
+        price={price!}
         open={showPriceHistory}
         query={queryPriceHistory}
       />

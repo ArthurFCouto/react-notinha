@@ -52,7 +52,7 @@ export async function SendUrl(
   }
   setSendingUrl(true);
   await axios
-    .post(`/api/receipts?url=${url}`)
+    .post(`/api/receipts`, { url })
     .then(() => {
       dispatchAlert({
         type: 'open',
@@ -82,14 +82,14 @@ export async function UpdateListPrices(
   await axios
     .get(`/api/prices`)
     .then((response) => {
-      const { data } = response;
-      if (data.length === 0)
+      const { resultados } = response.data;
+      if (resultados.length === 0)
         dispatchAlert({
           type: 'open',
           message: 'Não há preços cadastrados no momento.',
           severity: 'error',
         });
-      else setOriginalPrices(data);
+      else setOriginalPrices(resultados);
     })
     .catch((response) => {
       dispatchAlert({

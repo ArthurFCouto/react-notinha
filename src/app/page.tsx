@@ -24,6 +24,7 @@ import { Price } from '@/server/entities/price';
 import axios from 'axios';
 import { PriceHistory } from '@/server/entities/priceHistory';
 import { listaUrl } from './api/script';
+import { BRCurrencyFormat, MappingTimestampToDate } from '@/shared/util';
 
 export default function Home() {
   const theme = useTheme();
@@ -32,8 +33,9 @@ export default function Home() {
   const route = useRouter();
   const [chartData, setChartData] = useState<PriceHistory[]>([]);
   const [product, setproduct] = useState<Price>();
-  //const goToHome = () => route.push('home');
-  const goToHome = async () => {
+  const goToHome = () => route.push('home');
+
+  const ScriptDB = async () => {
     const urls = listaUrl;
     urls.forEach(async (url, index) => {
       if (index < 0 || index >= 10) return;
@@ -49,6 +51,37 @@ export default function Home() {
   };
 
   useEffect(() => {
+    const getPriceHistory = async (id: string) => {
+      await axios
+        .get(`api/prices/history`, {
+          params: {
+            idPreco: id,
+          },
+        })
+        .then((response) => {
+          const { resultados } = response.data;
+          const prices = resultados.map((price: PriceHistory) => {
+            const valor = BRCurrencyFormat(parseFloat(price.valor))
+              .replace(',', '.')
+              .slice(3);
+            const dataInclusao = MappingTimestampToDate(
+              price.dataInclusao,
+              false
+            );
+
+            return {
+              ...price,
+              valor,
+              dataInclusao,
+            };
+          });
+          setChartData(prices);
+        })
+        .catch((error) => {
+          console.error(error.response);
+        });
+    };
+
     const getPrices = async () => {
       await axios
         .get(`/api/prices`, {
@@ -60,24 +93,14 @@ export default function Home() {
           const resultados = response.data.resultados;
           if (resultados.length > 0) {
             setproduct(resultados[4]);
-            await axios
-              .get(`api/prices/history`, {
-                params: {
-                  ids: resultados[4].id,
-                },
-              })
-              .then((response) => {
-                setChartData(response.data.resultados);
-              })
-              .catch((error) => {
-                console.error(error.response);
-              });
+            getPriceHistory(resultados[4].id);
           }
         })
         .catch((error) => {
           console.error(error.response);
         });
     };
+
     getPrices();
   }, []);
 
@@ -202,7 +225,7 @@ export default function Home() {
             </Typography>
           </Grid>
           <Grid item paddingLeft={0} md={7} xs={12}>
-            {chartData.length > 0 && (
+            {product && (
               <Paper
                 component={Box}
                 display="flex"
@@ -228,7 +251,9 @@ export default function Home() {
                 >
                   {product?.nomeMercado}
                 </Typography>
-                <PriceHistoryChart height={300} prices={chartData} />
+                {chartData.length > 0 && (
+                  <PriceHistoryChart height={300} prices={chartData} />
+                )}
               </Paper>
             )}
           </Grid>
@@ -284,5 +309,3 @@ export default function Home() {
     </Box>
   );
 }
-
-const names = ['Banana Prata', 'Laranja kg', 'Leite cond pir 39'];

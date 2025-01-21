@@ -21,7 +21,7 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import { BRCurrencyFormat } from '@/shared/util';
+import { BRCurrencyFormat, MappingTimestampToDate } from '@/shared/util';
 import { Price } from '@/server/entities/price';
 
 const monts = [
@@ -41,7 +41,7 @@ const monts = [
 
 interface CardItemsProps {
   items: Price[];
-  clickOnHistory: (query: string) => void;
+  clickOnHistory: (item: Price) => void;
 }
 
 export default function CardItems({ items, clickOnHistory }: CardItemsProps) {
@@ -113,9 +113,21 @@ export default function CardItems({ items, clickOnHistory }: CardItemsProps) {
                           textAlign="center"
                           variant="button"
                         >
-                          {/*item.data.slice(0, 2)*/}
+                          {MappingTimestampToDate(item.dataInclusao).slice(
+                            0,
+                            2
+                          )}
                           <br />
-                          {/*monts[parseInt(item.data.slice(3, 5)) - 1]*/}
+                          {
+                            monts[
+                              parseInt(
+                                MappingTimestampToDate(item.dataInclusao).slice(
+                                  3,
+                                  5
+                                )
+                              ) - 1
+                            ]
+                          }
                         </Typography>
                       </Box>
                     </Tooltip>
@@ -139,9 +151,9 @@ export default function CardItems({ items, clickOnHistory }: CardItemsProps) {
                     letterSpacing={1}
                     variant={mdDownScreen ? 'h6' : 'h5'}
                   >
-                    {BRCurrencyFormat(item.valor)}
+                    {BRCurrencyFormat(parseFloat(item.valor))}
                   </Typography>
-                  <IconButton onClick={() => clickOnHistory(item.id!)}>
+                  <IconButton onClick={() => clickOnHistory(item)}>
                     <History color="primary" fontSize="inherit" />
                   </IconButton>
                 </Stack>
