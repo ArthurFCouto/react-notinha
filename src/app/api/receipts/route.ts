@@ -26,7 +26,7 @@ export async function POST(request: Request) {
 export async function GET(request: Request) {
   try {
     const response = await ReceiptController.GetAllReceipts();
-    return NextResponse.json({ response });
+    return NextResponse.json(response);
   } catch (error) {
     return ErrorMapping(error);
   }
@@ -55,7 +55,6 @@ export async function DELETE(request: Request) {
 }
 
 const ErrorMapping = (error: any) => {
-  console.log('Erro', error);
   let status = 500;
   if (typeof error == 'string' || error instanceof String) {
     const regex = /^(\d{3}) - (.+)/;

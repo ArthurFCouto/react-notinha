@@ -213,7 +213,7 @@ class PriceRepositoryImplements {
           error.stack = error.stack ?? `GetListById (${this.path})`;
         }
         LogsService.Create(error);
-        throw `Erro ao buscar lista de produtos por ID. ${error.message ?? error}`;
+        throw `Ocorreu um erro enquanto buscávamos a lista de produtos por ID.`;
       });
 
     return prices;
@@ -276,7 +276,7 @@ class PriceRepositoryImplements {
         error.stack = error.stack ?? `GetTotalAmount (${this.path})`;
       }
       LogsService.Create(error);
-      throw `Erro ao buscar a quantidade total de produtos. ${error.message ?? error}`;
+      throw `Ocorreu um erro enquanto buscávamos a quantidade total de produtos.`;
     }
   }
 
@@ -311,7 +311,7 @@ class PriceRepositoryImplements {
           error.stack = error.stack ?? `${stack} (${this.path})`;
         }
         LogsService.Create(error);
-        throw `Erro ao buscar lista de produtos. ${error.message ?? error}`;
+        throw `Ocorreu um erro enquanto buscávamos a lista de produtos.`;
       });
   }
 }

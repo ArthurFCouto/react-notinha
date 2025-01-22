@@ -75,7 +75,7 @@ export default function CardItems({ items, clickOnHistory }: CardItemsProps) {
                           textTransform="capitalize"
                           variant={mdDownScreen ? 'h6' : 'h5'}
                         >
-                          {item.nomeProduto.toLowerCase()}
+                          {item.nomeProduto && item.nomeProduto.toLowerCase()}
                         </Typography>
                         <Typography
                           color="text.secondary"
@@ -92,7 +92,7 @@ export default function CardItems({ items, clickOnHistory }: CardItemsProps) {
                           gutterBottom
                           variant={mdDownScreen ? 'body2' : 'body1'}
                         >
-                          {item.nomeMercado}
+                          {item.nomeMercado && item.nomeMercado}
                         </Typography>
                       </Box>
                     </Tooltip>

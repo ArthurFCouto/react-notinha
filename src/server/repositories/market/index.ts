@@ -49,7 +49,7 @@ class MarketRepositoryImplements {
           error.stack = error.stack ?? 'GetAll (Market)';
         }
         LogsService.Create(error);
-        throw `Erro ao buscar a lista de mercados. ${error.message ?? error}`;
+        throw `Ocorreu um erro enquanto buscávamos a lista de mercados.`;
       });
   }
 
@@ -77,7 +77,7 @@ class MarketRepositoryImplements {
         error.stack = error.stack ?? 'CheckIfDoesExist (Market)';
       }
       LogsService.Create(error);
-      throw `Erro ao verificar se o mercado já está cadastrado(a). ${error.message ?? error}`;
+      throw `Ocorreu um erro enquanto vefiricávamos se o mercado já está cadastrado.`;
     }
   }
 }

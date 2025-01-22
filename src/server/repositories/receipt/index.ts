@@ -48,8 +48,6 @@ class ReceiptRepositoryImplements {
           )
         : query(collection(database, this.path), orderBy(this.fieldOrder));
 
-    query(collection(database, this.path), orderBy(this.fieldOrder));
-
     return await getDocs(reference)
       .then((response) => {
         return response.docs.map((doc) => {
@@ -65,7 +63,7 @@ class ReceiptRepositoryImplements {
           error.stack = error.stack ?? `GetAll (${this.path})`;
         }
         LogsService.Create(error);
-        throw `Erro ao buscar a lista de notas fiscais. ${error.message ?? error}`;
+        throw `Ocorreu um erro enquanto buscávamos a lista de notas fiscais cadastradas.`;
       });
   }
 
@@ -79,7 +77,7 @@ class ReceiptRepositoryImplements {
         error.stack = error.stack ?? `GetTotalAmount (${this.path})`;
       }
       LogsService.Create(error);
-      throw `Erro ao buscar a quantidade total de notas fiscais. ${error.message ?? error}`;
+      throw `Ocorreu um erro enquanto buscávamos a quantidade total de notas fiscais salvas.`;
     }
   }
 
@@ -111,7 +109,7 @@ class ReceiptRepositoryImplements {
         error.stack = error.stack ?? `CheckIfDoesExist (${this.path})`;
       }
       LogsService.Create(error);
-      throw `Erro ao verificar se a nota fiscal já está cadastrada. ${error.message ?? error}`;
+      throw `Ocorreu um erro enquanto conferíamos se esta nota fiscal já está cadastrada.`;
     }
   }
 
@@ -135,7 +133,7 @@ class ReceiptRepositoryImplements {
           error.stack = error.stack ?? `GetListById ${this.path}`;
         }
         LogsService.Create(error);
-        throw `Erro ao buscar lista de notas fiscais por lista de IDs. ${error.message ?? error}`;
+        throw `Ocorreu um erro enquanto buscávamos a lista de notas fiscais por lista de IDs.`;
       });
 
     return prices;
@@ -163,7 +161,7 @@ class ReceiptRepositoryImplements {
           error.stack = error.stack ?? `GetByKey (${this.path})`;
         }
         LogsService.Create(error);
-        throw `Erro ao buscar lista de notas fiscal por lista de chaves. ${error.message ?? error}`;
+        throw `Ocorreu um erro enquanto buscavamos a lista de notas fiscais por lista de chaves.`;
       });
   }
 

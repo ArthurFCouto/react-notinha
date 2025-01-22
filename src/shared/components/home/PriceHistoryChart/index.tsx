@@ -32,12 +32,12 @@ export default function PriceHistoryChart({
           dy={10}
           fill="#656565"
           fontSize={10}
-          //transform="rotate(-45)"
+          transform="rotate(-45)"
           textAnchor="end"
           x={5}
           y={5}
         >
-          {payload.value}
+          {payload.value.slice(0, 5)}
         </text>
       </g>
     );

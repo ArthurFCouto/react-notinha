@@ -37,17 +37,22 @@ export default function Home() {
 
   const ScriptDB = async () => {
     const urls = listaUrl;
-    urls.forEach(async (url, index) => {
-      if (index < 0 || index >= 10) return;
-      await axios
-        .post(`/api/receipts`, { url })
-        .then((response) => {
-          console.log('Response', response.data);
-        })
-        .catch((error) => {
-          console.error('Error', error.response);
-        });
+    await axios.get(`/api/receipts`).then((response) => {
+      console.log('Quantidade', response.data.resultados.length);
     });
+
+    return;
+    for (const url of urls) {
+      let error = false;
+      await axios.post(`/api/receipts`, { url }).catch((error) => {
+        console.error('Error', error.response);
+        console.log('Url com falha', url);
+        error = true;
+      });
+      if (error) {
+        break;
+      }
+    }
   };
 
   useEffect(() => {
@@ -64,10 +69,7 @@ export default function Home() {
             const valor = BRCurrencyFormat(parseFloat(price.valor))
               .replace(',', '.')
               .slice(3);
-            const dataInclusao = MappingTimestampToDate(
-              price.dataInclusao,
-              false
-            );
+            const dataInclusao = MappingTimestampToDate(price.dataInclusao);
 
             return {
               ...price,
@@ -92,8 +94,8 @@ export default function Home() {
         .then(async (response) => {
           const resultados = response.data.resultados;
           if (resultados.length > 0) {
-            setproduct(resultados[4]);
-            getPriceHistory(resultados[4].id);
+            setproduct(resultados[0]);
+            getPriceHistory(resultados[0].id);
           }
         })
         .catch((error) => {
@@ -161,6 +163,22 @@ export default function Home() {
               >
                 Conheça agora - É grátis
               </Button>
+              {process.env.NODE_ENV === 'development' && (
+                <Button
+                  onClick={ScriptDB}
+                  size="large"
+                  variant="contained"
+                  sx={{
+                    borderRadius: '50px',
+                    fontSize: 14,
+                    fontWeight: 600,
+                    paddingX: 3,
+                    paddingY: 2,
+                  }}
+                >
+                  Rodar Script
+                </Button>
+              )}
             </Stack>
           </Grid>
           <Grid

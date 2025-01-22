@@ -53,7 +53,7 @@ export default function Home() {
   });
 
   const prices = useMemo(() => {
-    if (searchInput.trim().length === 0) return originalPrices;
+    if (searchInput.trim().length == 0) return originalPrices;
     return originalPrices.filter(
       (price) =>
         price.nomeMercado.toLowerCase().includes(searchInput.toLowerCase()) ||

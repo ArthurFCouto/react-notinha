@@ -104,7 +104,7 @@ class PriceHistoryRespositoryImplements {
           error.stack = error.stack ?? `${stack} (${this.path})`;
         }
         LogsService.Create(error);
-        throw `Erro ao buscar o histórico de preços. ${error.message}`;
+        throw `Ocorreu um erro enquanto buscávamos o histórico de preços.`;
       });
   }
 }

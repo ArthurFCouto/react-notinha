@@ -19,9 +19,10 @@ export async function UpdateChart(
     .then((response: any) => {
       const { resultados } = response.data;
       const prices = resultados.map((price: PriceHistory) => {
-        const valor = BRCurrencyFormat(parseFloat(price.valor))
-          .replace(',', '.')
-          .slice(3);
+        const valor = BRCurrencyFormat(parseFloat(price.valor)).replace(
+          ',',
+          '.'
+        );
         const dataInclusao = MappingTimestampToDate(price.dataInclusao, false);
 
         return {
