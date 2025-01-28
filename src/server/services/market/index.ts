@@ -1,5 +1,11 @@
 import { FirebaseError } from 'firebase/app';
-import { addDoc, collection, doc, writeBatch } from 'firebase/firestore';
+import {
+  addDoc,
+  collection,
+  doc,
+  setDoc,
+  writeBatch,
+} from 'firebase/firestore';
 import { database } from '@/server/configs/firebase';
 import { LogsService } from '../logs';
 import { MarketRepository } from '@/server/repositories/market';
@@ -15,28 +21,24 @@ class MarketServiceImplements {
 
   async Create(market: Market): Promise<Market> {
     const exist = await MarketRepository.CheckIfDoesExist(market.cnpj);
-    if (exist.id) {
-      market.id = exist.id;
+    if (exist.cnpj.length != 0) {
+      market.dataInclusao = exist.dataInclusao;
+
       return market.dataAtualizacao > exist.dataAtualizacao
         ? this.Update(market)
         : exist;
     }
 
-    delete market.id;
-    return await addDoc(collection(database, this.path), market)
-      .then((response) => {
-        return {
-          id: response.id,
-          ...market,
-        };
-      })
-      .catch((error: FirebaseError) => {
-        if (typeof error != 'string') {
-          error.stack = error.stack ?? `Create (${this.path})`;
-        }
-        LogsService.Create(error);
-        throw `Não foi possível realizar o cadastro do mercado. ${error.message ?? error}`;
-      });
+    const reference = doc(database, this.path, market.cnpj);
+    await setDoc(reference, market).catch((error: FirebaseError) => {
+      if (typeof error != 'string') {
+        error.stack = error.stack ?? `Create (${this.path})`;
+      }
+      LogsService.Create(error);
+      throw `Não foi possível realizar o cadastro do mercado. [${market.cnpj}]`;
+    });
+
+    return market;
   }
 
   // TO DO - Adicionar limite de itens no commit, são permitidas 500 operações por vez
@@ -44,10 +46,10 @@ class MarketServiceImplements {
     if (markets.length == 0) return;
 
     const batch = writeBatch(database);
-    const ids = markets.map((market) => market.id);
+    const cnpjs = markets.map((market) => market.cnpj);
 
-    ids.forEach((id) => {
-      batch.delete(doc(collection(database, this.path), id));
+    cnpjs.forEach((cnpj) => {
+      batch.delete(doc(collection(database, this.path), cnpj));
     });
 
     try {
@@ -57,17 +59,16 @@ class MarketServiceImplements {
         error.stack = error.stack ?? `Delete (${this.path})`;
       }
       LogsService.Create(error);
-      throw `Não foi possível completar a exclusão de mercados por id. ${error.message ?? error}`;
+      throw `Não foi possível completar a exclusão de mercados por cnpj.`;
     }
   }
 
   async Update(market: Market): Promise<Market> {
     const batch = writeBatch(database);
-    const reference = doc(database, this.path, market.id!);
+    const reference = doc(database, this.path, market.cnpj);
     const newMarket = {
       nomeFantasia: market.nomeFantasia,
       razaoSocial: market.razaoSocial,
-      cnpj: market.cnpj,
       cep: market.cep,
       cidade: market.cidade,
       uf: market.uf,
@@ -85,11 +86,11 @@ class MarketServiceImplements {
         error.stack = error.stack ?? `Update (${this.path})`;
       }
       LogsService.Create(error);
-      throw `Não foi possível concluir a atualização do mercado. ${error.message ?? error}`;
+      throw `Não foi possível concluir a atualização do mercado [${market.cnpj}]`;
     }
 
     return {
-      id: market.id,
+      cnpj: market.cnpj,
       dataInclusao: market.dataInclusao,
       ...newMarket,
     };

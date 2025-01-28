@@ -9,7 +9,6 @@ import {
   orderBy,
   Query,
   query,
-  startAfter,
   startAt,
   where,
 } from 'firebase/firestore';

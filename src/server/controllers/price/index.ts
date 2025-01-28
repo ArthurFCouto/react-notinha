@@ -4,7 +4,7 @@ import RecordSet from '@/server/models/RecordSet';
 import { PriceRepository } from '@/server/repositories/price';
 import { PriceHistoryRepository } from '@/server/repositories/priceHistory';
 
-class PriceControllerImprements {
+class PriceControllerImplements {
   async GetAll(page: number, amountByPage: number): Promise<RecordSet<Price>> {
     const offset = (page - 1) * amountByPage;
     //const prices = await PriceRepository.GetAll(offset, amountByPage);
@@ -145,4 +145,4 @@ class PriceControllerImprements {
   }
 }
 
-export const PriceController = new PriceControllerImprements();
+export const PriceController = new PriceControllerImplements();

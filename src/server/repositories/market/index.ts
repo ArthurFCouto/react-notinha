@@ -1,5 +1,12 @@
 import { FirebaseError } from 'firebase/app';
-import { collection, getDocs, orderBy, query, where } from 'firebase/firestore';
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  orderBy,
+  query,
+} from 'firebase/firestore';
 import { database } from '@/server/configs/firebase';
 import { Market } from '@/server/entities/market';
 import { LogsService } from '@/server/services/logs';
@@ -34,16 +41,9 @@ class MarketRepositoryImplements {
     const reference = query(collection(database, this.path), orderBy(order));
 
     return await getDocs(reference)
-      .then((response) => {
-        return response.docs.map((doc) => {
-          const object = doc.data();
-
-          return {
-            id: doc.id,
-            ...object,
-          };
-        }) as Array<Market>;
-      })
+      .then(
+        (response) => response.docs.map((doc) => doc.data()) as Array<Market>
+      )
       .catch((error: FirebaseError) => {
         if (typeof error != 'string') {
           error.stack = error.stack ?? 'GetAll (Market)';
@@ -54,24 +54,13 @@ class MarketRepositoryImplements {
   }
 
   async CheckIfDoesExist(cnpj: string): Promise<Market> {
-    const reference = query(
-      collection(database, this.path),
-      where(this.fieldMarket, '==', cnpj)
-    );
+    const reference = doc(database, this.path, cnpj);
 
     try {
-      const snapshot = await getDocs(reference);
-      if (snapshot.empty) {
-        return this.emptyMarket;
-      }
+      const snapshot = await getDoc(reference);
+      const object = snapshot.data();
 
-      const object = snapshot.docs[0];
-      const market = object.data();
-
-      return {
-        id: object.id,
-        ...market,
-      } as Market;
+      return object ? (object as Market) : this.emptyMarket;
     } catch (error: any) {
       if (typeof error != 'string') {
         error.stack = error.stack ?? 'CheckIfDoesExist (Market)';

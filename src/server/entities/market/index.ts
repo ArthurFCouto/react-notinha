@@ -1,5 +1,4 @@
 export type Market = {
-  id?: string;
   nomeFantasia: string;
   razaoSocial: string;
   cnpj: string;

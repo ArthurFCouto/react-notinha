@@ -1,5 +1,4 @@
 export type Receipt = {
-  id?: string;
   cnpj: string;
   chave: string;
   url: string;
