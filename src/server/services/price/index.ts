@@ -1,10 +1,15 @@
-import { collection, doc, writeBatch } from 'firebase/firestore';
+import {
+  collection,
+  doc,
+  runTransaction,
+  writeBatch,
+} from 'firebase/firestore';
 import { database } from '@/server/configs/firebase';
 import { LogsService } from '../logs';
-import { Price } from '@/server/entities/price';
+import { PriceEntity } from '@/server/entities/price';
 import { PriceRepository } from '@/server/repositories/price';
-import { PriceHistory } from '@/server/entities/priceHistory';
-import { PriceHistoryService } from '../priceHistory';
+import { PriceHistoryEntity } from '@/server/entities/priceHistory';
+import { PriceHistoryRepository } from '@/server/repositories/priceHistory';
 
 class PriceServiceImplements {
   private path;
@@ -13,133 +18,152 @@ class PriceServiceImplements {
     this.path = process.env.NODE_ENV === 'development' ? 'precosDev' : 'precos';
   }
 
-  // TO DO - Adicionar limite de itens no commit, são permitidas 500 operações por vez
-  async CreateList(prices: Price[]): Promise<void> {
+  // TO DO - Reler e refatorar
+  async CreateList(prices: Array<PriceEntity>): Promise<void> {
     if (prices.length === 0) return;
 
-    const batch = writeBatch(database);
-    const savedPrices = await PriceRepository.GetAll();
+    const cnpj = prices[0].cnpjMercado;
+    const savedPrices = await PriceRepository.GetListByMarket(cnpj);
+    const historyMap: Record<string, Array<PriceHistoryEntity>> = {};
 
-    const pricesToBeUpdated: Price[] = [];
-    const pricesToGoToHistoric: PriceHistory[] = [];
-
-    const keysDataSavedPrices = savedPrices.map(
-      (price) => `${price.nomeProduto}_${price.idMercado}_${price.dataInclusao}`
-    );
-
-    for (const price of prices) {
-      const keyData = `${price.nomeProduto}_${price.idMercado}_${price.dataInclusao}`;
-      if (keysDataSavedPrices.includes(keyData)) continue;
-
-      const savedPrice = savedPrices.find(
-        (actualPrice) =>
-          actualPrice.nomeProduto == price.nomeProduto &&
-          actualPrice.idMercado == price.idMercado
-      );
-      if (savedPrice == undefined) {
-        delete price.id;
-        const reference = doc(collection(database, this.path));
-        batch.set(reference, price);
-        continue;
+    for (const savedPrice of savedPrices) {
+      if (
+        savedPrice.possuiHistorico &&
+        prices.some((p) => p.nomeProduto == savedPrice.nomeProduto)
+      ) {
+        const ref = doc(database, this.path, savedPrice.id!);
+        const historySnapshot =
+          await PriceHistoryRepository.GetListByReference(ref);
+        historyMap[savedPrice.id!] = historySnapshot;
       }
-
-      price.id = savedPrice.id;
-
-      if (savedPrice.dataInclusao < price.dataInclusao) {
-        pricesToGoToHistoric.push(this.MappingPriceToPriceHistory(savedPrice));
-        pricesToBeUpdated.push(this.MappingPriceToUpdate(price));
-        return;
-      }
-      savedPrice.possuiHistorico = true;
-      pricesToBeUpdated.push(this.MappingPriceToUpdate(savedPrice));
-      pricesToGoToHistoric.push(this.MappingPriceToPriceHistory(price));
     }
 
-    try {
-      await batch.commit();
-    } catch (error: any) {
-      if (typeof error != 'string') {
-        error.stack = error.stack ?? `CreateList (${this.path})`;
-      }
-      LogsService.Create(error);
-      throw `Não foi possível concluir o cadastro da lista de produtos. ${error.message ?? error}`;
-    }
+    const chunks = this.ChunkArray(prices, 200);
 
-    await this.UpdateList(pricesToBeUpdated);
-    await PriceHistoryService.CreateList(pricesToGoToHistoric);
+    for (const chunk of chunks) {
+      await runTransaction(database, async (transaction) => {
+        for (const price of chunk) {
+          const existingPrice = savedPrices.find(
+            (p) => p.nomeProduto == price.nomeProduto
+          );
+
+          if (existingPrice) {
+            price.id = existingPrice.id;
+
+            if (existingPrice.dataInclusao < price.dataInclusao) {
+              const history = historyMap[existingPrice.id!] || [];
+              const alreadyInHistory = history.some(
+                (h) => h.mapValorData == existingPrice.mapValorData
+              );
+
+              if (!alreadyInHistory) {
+                const historyRef = doc(
+                  collection(
+                    database,
+                    this.path,
+                    existingPrice.id!,
+                    PriceHistoryRepository.path
+                  )
+                );
+                transaction.set(
+                  historyRef,
+                  this.MappingPriceToPriceHistory(existingPrice)
+                );
+              }
+
+              const priceRef = doc(database, this.path, existingPrice.id!);
+              transaction.update(priceRef, this.MappingPriceToUpdate(price));
+            } else {
+              const history = historyMap[price.id!] || [];
+              const alreadyInHistory = history.some(
+                (h) => h.mapValorData == price.mapValorData
+              );
+
+              if (!alreadyInHistory) {
+                const historyRef = doc(
+                  collection(
+                    database,
+                    this.path,
+                    existingPrice.id!,
+                    PriceHistoryRepository.path
+                  )
+                );
+                transaction.set(
+                  historyRef,
+                  this.MappingPriceToPriceHistory(existingPrice)
+                );
+              }
+            }
+          } else {
+            const newPriceRef = doc(collection(database, this.path));
+            transaction.set(newPriceRef, price);
+          }
+        }
+      });
+    }
   }
 
-  // TO DO - Adicionar limite de itens no commit, são permitidas 500 operações por vez
-  async DeleteList(prices: Price[]): Promise<void> {
+  async DeleteList(prices: Array<PriceEntity>): Promise<void> {
     if (prices.length == 0) return;
 
     const pricesWhitoutId = prices.filter((price) => !price.id);
     if (pricesWhitoutId.length > 0) {
-      throw `400 - Não foi possível concluir a exclusão pois, todos os preços da lista devem possuir a propriedade ID, confira os itens ${pricesWhitoutId.map((prices) => prices.nomeProduto).join(' ')}.`;
+      throw `400 - Não foi possível concluir a exclusão pois, todos os preços da lista devem possuir a propriedade ID. Confira os itens ${pricesWhitoutId.map((prices) => prices.nomeProduto).join(' ')}.`;
     }
 
-    const batch = writeBatch(database);
-    prices.forEach((price) => {
-      batch.delete(doc(collection(database, this.path), price.id));
-    });
+    const chunks = this.ChunkArray(prices, 400);
 
-    try {
-      await batch.commit();
-    } catch (error: any) {
-      if (typeof error != 'string') {
-        error.stack = error.stack ?? `Delete ${this.path}`;
+    for (const chunk of chunks) {
+      const batch = writeBatch(database);
+      chunk.forEach((price) => {
+        batch.delete(doc(collection(database, this.path), price.id));
+      });
+
+      try {
+        await batch.commit();
+      } catch (error: any) {
+        if (typeof error != 'string') {
+          error.stack = error.stack ?? `Delete ${this.path}`;
+        }
+        LogsService.Create(error);
+        throw `Não foi possível concluir a exclusão da lista de produtos.`;
       }
-      LogsService.Create(error);
-      throw `Não foi possível concluir a exclusão da lista de produtos. ${error.message ?? error}`;
     }
   }
 
-  // TO DO - Adicionar limite de itens no commit, são permitidas 500 operações por vez
-  async UpdateList(prices: Price[]): Promise<void> {
-    if (prices.length == 0) return;
-
-    const pricesWhitoutId = prices.filter((price) => !price.id);
-    if (pricesWhitoutId.length > 0) {
-      throw `400 - Não foi possível concluir a atualização pois, todos os preços da lista devem possuir a propriedade ID, confira os itens ${pricesWhitoutId.map((prices) => prices.nomeProduto).join(' ')}.`;
+  private ChunkArray<T>(array: T[], size: number): T[][] {
+    const result: T[][] = [];
+    for (let i = 0; i < array.length; i += size) {
+      result.push(array.slice(i, i + size));
     }
-
-    const batch = writeBatch(database);
-    prices.forEach((price) => {
-      const reference = doc(collection(database, this.path), price.id);
-      delete price.id;
-      batch.update(reference, price);
-    });
-
-    try {
-      await batch.commit();
-    } catch (error: any) {
-      if (typeof error != 'string') {
-        error.stack = error.stack ?? `(Update ${this.path})`;
-      }
-      LogsService.Create(error);
-      throw `Não foi possível concluir a atualização da lista de produtos. ${error.message ?? error}`;
-    }
+    return result;
   }
 
-  private MappingPriceToPriceHistory = (price: Price): PriceHistory => {
+  private MappingPriceToPriceHistory = (
+    price: PriceEntity
+  ): PriceHistoryEntity => {
     return {
       idPreco: price.id!,
-      idMercado: price.idMercado,
-      idNotaFiscal: price.idNotaFiscal,
+      mapValorData: price.mapValorData,
       valor: price.valor,
+      cnpjMercado: price.cnpjMercado,
+      chaveNotaFiscal: price.chaveNotaFiscal,
       dataInclusao: price.dataInclusao,
     };
   };
 
-  private MappingPriceToUpdate = (price: Price): Price => {
+  private MappingPriceToUpdate = (price: PriceEntity): PriceEntity => {
     return {
       id: price.id,
-      nomeProduto: price.nomeProduto,
+      mapValorData: price.mapValorData,
+      mapProdutoMercado: price.mapProdutoMercado,
+      mapProdutoMercadoData: price.mapProdutoMercadoData,
       nomeMercado: price.nomeMercado,
+      nomeProduto: price.nomeProduto,
       unidadeMedida: price.unidadeMedida,
-      idMercado: price.idMercado,
-      idNotaFiscal: price.idNotaFiscal,
       valor: price.valor,
+      cnpjMercado: price.cnpjMercado,
+      chaveNotaFiscal: price.chaveNotaFiscal,
       possuiHistorico: true,
       dataInclusao: price.dataInclusao,
     };

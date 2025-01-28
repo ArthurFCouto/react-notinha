@@ -1,15 +1,9 @@
 import { FirebaseError } from 'firebase/app';
-import {
-  addDoc,
-  collection,
-  doc,
-  setDoc,
-  writeBatch,
-} from 'firebase/firestore';
+import { collection, doc, setDoc, writeBatch } from 'firebase/firestore';
 import { database } from '@/server/configs/firebase';
 import { LogsService } from '../logs';
 import { MarketRepository } from '@/server/repositories/market';
-import { Market } from '@/server/entities/market';
+import { MarketEntity } from '@/server/entities/market';
 
 class MarketServiceImplements {
   private path;
@@ -19,14 +13,14 @@ class MarketServiceImplements {
       process.env.NODE_ENV === 'development' ? 'mercadoDev' : 'mercado';
   }
 
-  async Create(market: Market): Promise<Market> {
-    const exist = await MarketRepository.CheckIfDoesExist(market.cnpj);
-    if (exist.cnpj.length != 0) {
-      market.dataInclusao = exist.dataInclusao;
+  async Create(market: MarketEntity): Promise<MarketEntity> {
+    const marketDb = await MarketRepository.CheckIfDoesExist(market.cnpj);
+    if (marketDb.cnpj.length != 0) {
+      market.dataInclusao = marketDb.dataInclusao;
 
-      return market.dataAtualizacao > exist.dataAtualizacao
+      return this.CheckNeedToUpdate(marketDb, market)
         ? this.Update(market)
-        : exist;
+        : marketDb;
     }
 
     const reference = doc(database, this.path, market.cnpj);
@@ -42,7 +36,7 @@ class MarketServiceImplements {
   }
 
   // TO DO - Adicionar limite de itens no commit, são permitidas 500 operações por vez
-  async DeleteList(markets: Market[]): Promise<void> {
+  async DeleteList(markets: Array<MarketEntity>): Promise<void> {
     if (markets.length == 0) return;
 
     const batch = writeBatch(database);
@@ -59,11 +53,11 @@ class MarketServiceImplements {
         error.stack = error.stack ?? `Delete (${this.path})`;
       }
       LogsService.Create(error);
-      throw `Não foi possível completar a exclusão de mercados por cnpj.`;
+      throw `Não foi possível concluir a exclusão de mercados por cnpj.`;
     }
   }
 
-  async Update(market: Market): Promise<Market> {
+  async Update(market: MarketEntity): Promise<MarketEntity> {
     const batch = writeBatch(database);
     const reference = doc(database, this.path, market.cnpj);
     const newMarket = {
@@ -94,6 +88,20 @@ class MarketServiceImplements {
       dataInclusao: market.dataInclusao,
       ...newMarket,
     };
+  }
+
+  private CheckNeedToUpdate(
+    marketDb: MarketEntity,
+    marketToAdd: MarketEntity
+  ): boolean {
+    return (
+      marketDb.cep != marketToAdd.cep ||
+      marketDb.cidade != marketToAdd.cidade ||
+      marketDb.uf != marketToAdd.uf ||
+      marketDb.endereco != marketToAdd.endereco ||
+      marketDb.nomeFantasia != marketToAdd.nomeFantasia ||
+      marketDb.razaoSocial != marketToAdd.razaoSocial
+    );
   }
 }
 

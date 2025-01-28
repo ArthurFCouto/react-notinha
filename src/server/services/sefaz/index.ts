@@ -1,12 +1,17 @@
 import axios, { AxiosError } from 'axios';
 import jsdom from 'jsdom';
 import { LogsService } from '../logs';
-import { Market } from '@/server/entities/market';
+import { MarketEntity } from '@/server/entities/market';
 import { SefazRepository } from '@/server/repositories/sefaz';
-import { Receipt } from '@/server/entities/receipt';
+import { ReceiptEntity } from '@/server/entities/receipt';
 import { ReceiptRepository } from '@/server/repositories/receipt';
 import { MarketService } from '../market';
-import { Price } from '@/server/entities/price';
+import {
+  GenerateDateMarketProductMap,
+  GenerateDateValueMap,
+  GenerateMarketProductMap,
+  PriceEntity,
+} from '@/server/entities/price';
 import { MarketRepository } from '@/server/repositories/market';
 import { ReceiptService } from '../receipt';
 
@@ -17,7 +22,7 @@ const mainActivity = {
 };
 
 interface PricesWork {
-  [index: string]: Price;
+  [index: string]: PriceEntity;
 }
 
 class SefazServiceImplements {
@@ -66,10 +71,10 @@ class SefazServiceImplements {
    * Cria o mercado no banco de dados e retorna o objeto com Id.
    * É necessário que já tenha sido criado o virtualDocument.
    */
-  async CreateMarket(doc: Document): Promise<Market> {
+  async CreateMarket(doc: Document): Promise<MarketEntity> {
     const cnpj = SefazRepository.GetReceiptCNPJ(doc);
     const exist = await MarketRepository.CheckIfDoesExist(cnpj);
-    if (exist.id) return exist;
+    if (exist.cnpj == cnpj) return exist;
 
     axios.defaults.timeout = 30000;
     axios.defaults.timeoutErrorMessage = `Não conseguimos validar o os dados do mercado (${cnpj}). Tente novamente em instantes ou entre em contato com o suporte.`;
@@ -93,14 +98,14 @@ class SefazServiceImplements {
           bairro: data.bairro,
           dataInclusao: this.GetIssueDate(doc),
           dataAtualizacao: this.GetIssueDate(doc),
-        } as Market;
+        } as MarketEntity;
       })
       .catch((error: AxiosError) => {
         if (typeof error != 'string') {
           error.stack = error.stack ?? 'CreateMarket (Sefaz)';
         }
         LogsService.Create(error);
-        throw `${error.message ?? error}`;
+        throw `Não conseguimos validar o os dados do mercado (${cnpj}). Tente novamente em instantes ou entre em contato com o suporte.`;
       });
 
     return MarketService.Create(market);
@@ -113,16 +118,16 @@ class SefazServiceImplements {
   async CreateReceipt(
     doc: Document,
     qrCode: string,
-    market: Market
-  ): Promise<Receipt> {
+    market: MarketEntity
+  ): Promise<ReceiptEntity> {
     if (!this.IsValidUrl(qrCode))
       throw `400 - Este QR Code não é válido para nosso sistema.`;
 
     const key = SefazRepository.GetReceiptKey(doc);
     const exist = await ReceiptRepository.CheckIfDoesExist(key);
-    if (exist.id) throw '400 - Este cupom já está cadastrado.';
+    if (exist.chave == key) throw '400 - Este cupom já está cadastrado.';
 
-    let receipt: Receipt;
+    let receipt: ReceiptEntity;
 
     try {
       const element = doc.getElementById('collapse4') as HTMLElement;
@@ -138,7 +143,6 @@ class SefazServiceImplements {
         url: this.url + qrCode,
         valorTotal: this.ConfigureNumber(totalPrice, 2),
         idUsuario: '',
-        idMercado: market.id!,
         dataEmissao: issueDate,
         dataInclusao: this.dateNow.getTime(),
       };
@@ -157,7 +161,11 @@ class SefazServiceImplements {
    * Retorna uma lista de objetos com os itens da Nota Fiscal (sem repetição).
    * É necessário que já tenham sido criados o virtualDocument, o mercado e a nota fiscal.
    */
-  CreateItemList(doc: Document, market: Market, receipt: Receipt): Price[] {
+  CreateItemList(
+    doc: Document,
+    market: MarketEntity,
+    receipt: ReceiptEntity
+  ): Array<PriceEntity> {
     try {
       const items: PricesWork = {};
       const element = doc.querySelector('.table.table-striped') as Element;
@@ -181,15 +189,26 @@ class SefazServiceImplements {
         const totalPrice = this.ConfigureNumber(columnData[3], 2);
         const key = columnData[0];
         const price = (parseFloat(totalPrice) / parseFloat(amount)).toString();
+        const value = this.ConfigureNumber(price, 4);
 
         if (!items[key]) {
           items[key] = {
+            mapValorData: GenerateDateValueMap(value, receipt.dataEmissao),
+            mapProdutoMercado: GenerateMarketProductMap(
+              columnData[0],
+              market.cnpj
+            ),
+            mapProdutoMercadoData: GenerateDateMarketProductMap(
+              columnData[0],
+              receipt.dataEmissao,
+              market.cnpj
+            ),
             nomeMercado: market.nomeFantasia,
             nomeProduto: columnData[0],
             unidadeMedida: columnData[2].slice(4),
-            valor: this.ConfigureNumber(price, 4),
-            idMercado: market.id!,
-            idNotaFiscal: receipt.id!,
+            valor: value,
+            cnpjMercado: market.cnpj,
+            chaveNotaFiscal: receipt.chave,
             possuiHistorico: false,
             dataInclusao: receipt.dataEmissao,
           };

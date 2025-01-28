@@ -1,22 +1,22 @@
 import {
   collection,
+  doc,
   getCountFromServer,
+  getDoc,
   getDocs,
   limit,
   orderBy,
   query,
   startAt,
-  where,
 } from 'firebase/firestore';
 import { database } from '@/server/configs/firebase';
 import { LogsService } from '@/server/services/logs';
-import { Receipt } from '@/server/entities/receipt';
+import { ReceiptEntity } from '@/server/entities/receipt';
 import { FirebaseError } from 'firebase/app';
 
 class ReceiptRepositoryImplements {
   private path;
   private fieldOrder;
-  private fieldKey;
   private emptyReceipt;
 
   constructor() {
@@ -24,20 +24,21 @@ class ReceiptRepositoryImplements {
       process.env.NODE_ENV === 'development' ? 'notaFiscalDev' : 'notaFiscal';
     this.fieldOrder =
       process.env.NODE_ENV === 'development' ? 'dataInclusao' : 'data';
-    this.fieldKey = 'chave';
     this.emptyReceipt = {
       cnpj: '',
       chave: '',
       url: '',
       valorTotal: '',
       idUsuario: '',
-      idMercado: '',
       dataEmissao: 0,
       dataInclusao: 0,
-    } as Receipt;
+    } as ReceiptEntity;
   }
 
-  async GetAll(offSet?: number, amount?: number): Promise<Array<Receipt>> {
+  async GetAll(
+    offSet?: string,
+    amount?: number
+  ): Promise<Array<ReceiptEntity>> {
     const reference =
       offSet && amount
         ? query(
@@ -49,15 +50,10 @@ class ReceiptRepositoryImplements {
         : query(collection(database, this.path), orderBy(this.fieldOrder));
 
     return await getDocs(reference)
-      .then((response) => {
-        return response.docs.map((doc) => {
-          const object = doc.data();
-          return {
-            id: doc.id,
-            ...object,
-          };
-        }) as Array<Receipt>;
-      })
+      .then(
+        (response) =>
+          response.docs.map((doc) => doc.data()) as Array<ReceiptEntity>
+      )
       .catch((error: FirebaseError) => {
         if (typeof error != 'string') {
           error.stack = error.stack ?? `GetAll (${this.path})`;
@@ -81,29 +77,18 @@ class ReceiptRepositoryImplements {
     }
   }
 
-  async CheckIfDoesExist(key: string): Promise<Receipt> {
+  async CheckIfDoesExist(key: string): Promise<ReceiptEntity> {
     if (!this.IsValidKey(key)) {
       throw `400 - Erro ao conferir se a NF já está cadastrada, a chave informada (${key}) é inválida para nosso sistema.`;
     }
 
-    const reference = query(
-      collection(database, this.path),
-      where(this.fieldKey, '==', key)
-    );
+    const reference = doc(database, this.path, key);
 
     try {
-      const snapshot = await getDocs(reference);
-      if (snapshot.empty) {
-        return this.emptyReceipt;
-      }
+      const snapshot = await getDoc(reference);
+      const object = snapshot.data();
 
-      const object = snapshot.docs[0];
-      const receipt = object.data();
-
-      return {
-        id: object.id,
-        ...receipt,
-      } as Receipt;
+      return object ? (object as ReceiptEntity) : this.emptyReceipt;
     } catch (error: any) {
       if (typeof error != 'string') {
         error.stack = error.stack ?? `CheckIfDoesExist (${this.path})`;
@@ -113,49 +98,14 @@ class ReceiptRepositoryImplements {
     }
   }
 
-  async GetListByIdList(ids: Array<string>): Promise<Array<Receipt>> {
-    const reference = query(collection(database, this.path));
-    const prices: Array<Receipt> = [];
-
-    await getDocs(reference)
-      .then((response) => {
-        return response.docs.map((doc) => {
-          const object = doc.data();
-          const price = {
-            id: doc.id,
-            ...object,
-          } as Receipt;
-          if (ids.includes(doc.id)) prices.push(price);
-        });
-      })
-      .catch((error: FirebaseError) => {
-        if (typeof error != 'string') {
-          error.stack = error.stack ?? `GetListById ${this.path}`;
-        }
-        LogsService.Create(error);
-        throw `Ocorreu um erro enquanto buscávamos a lista de notas fiscais por lista de IDs.`;
-      });
-
-    return prices;
-  }
-
-  // TO DO - Tratar o caso de quando keys for uma quantidade superior a 30
-  async GetListByKeyList(keys: Array<string>): Promise<Array<Receipt>> {
-    const reference = query(
-      collection(database, this.path),
-      where(this.fieldKey, 'in', keys)
-    );
+  async GetListByKeyList(keys: Array<string>): Promise<Array<ReceiptEntity>> {
+    const reference = query(collection(database, this.path, ...keys));
 
     return await getDocs(reference)
-      .then((response) => {
-        return response.docs.map((doc) => {
-          const object = doc.data();
-          return {
-            id: doc.id,
-            ...object,
-          };
-        }) as Array<Receipt>;
-      })
+      .then(
+        (response) =>
+          response.docs.map((doc) => doc.data()) as Array<ReceiptEntity>
+      )
       .catch((error: FirebaseError) => {
         if (typeof error != 'string') {
           error.stack = error.stack ?? `GetByKey (${this.path})`;

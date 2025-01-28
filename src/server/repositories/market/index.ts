@@ -8,18 +8,16 @@ import {
   query,
 } from 'firebase/firestore';
 import { database } from '@/server/configs/firebase';
-import { Market } from '@/server/entities/market';
+import { MarketEntity } from '@/server/entities/market';
 import { LogsService } from '@/server/services/logs';
 
 class MarketRepositoryImplements {
   private path;
-  private fieldMarket;
-  private emptyMarket: Market;
+  private emptyMarket: MarketEntity;
 
   constructor() {
     this.path =
       process.env.NODE_ENV === 'development' ? 'mercadoDev' : 'mercado';
-    this.fieldMarket = process.env.NODE_ENV === 'development' ? 'cnpj' : 'CNPJ'; // TO DO - Alterar após unificação
     this.emptyMarket = {
       nomeFantasia: '',
       razaoSocial: '',
@@ -35,14 +33,16 @@ class MarketRepositoryImplements {
     };
   }
 
+  //TO DO - Atualizar para trabalhar com limit
   async GetAll(
     order: 'nomeFantasia' | 'cnpj' = 'nomeFantasia'
-  ): Promise<Array<Market>> {
+  ): Promise<Array<MarketEntity>> {
     const reference = query(collection(database, this.path), orderBy(order));
 
     return await getDocs(reference)
       .then(
-        (response) => response.docs.map((doc) => doc.data()) as Array<Market>
+        (response) =>
+          response.docs.map((doc) => doc.data()) as Array<MarketEntity>
       )
       .catch((error: FirebaseError) => {
         if (typeof error != 'string') {
@@ -53,14 +53,14 @@ class MarketRepositoryImplements {
       });
   }
 
-  async CheckIfDoesExist(cnpj: string): Promise<Market> {
+  async CheckIfDoesExist(cnpj: string): Promise<MarketEntity> {
     const reference = doc(database, this.path, cnpj);
 
     try {
       const snapshot = await getDoc(reference);
       const object = snapshot.data();
 
-      return object ? (object as Market) : this.emptyMarket;
+      return object ? (object as MarketEntity) : this.emptyMarket;
     } catch (error: any) {
       if (typeof error != 'string') {
         error.stack = error.stack ?? 'CheckIfDoesExist (Market)';

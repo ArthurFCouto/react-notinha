@@ -1,4 +1,4 @@
-export type Market = {
+export type MarketEntity = {
   nomeFantasia: string;
   razaoSocial: string;
   cnpj: string;

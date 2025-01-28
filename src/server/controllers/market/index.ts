@@ -1,4 +1,4 @@
-import { Market } from '@/server/entities/market';
+import { MarketEntity } from '@/server/entities/market';
 import RecordSet from '@/server/models/RecordSet';
 import { MarketRepository } from '@/server/repositories/market';
 import { MarketService } from '@/server/services/market';
@@ -15,10 +15,10 @@ class MarketControllerImplements {
       resultados: exist ? [market] : [],
     };
 
-    return RecordSet.Mapping<Market>(response);
+    return RecordSet.Mapping<MarketEntity>(response);
   }
 
-  async CreateMarket(market: Market) {
+  async CreateMarket(market: MarketEntity) {
     return await MarketService.Create(market);
   }
 }

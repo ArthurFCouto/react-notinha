@@ -1,5 +1,5 @@
 import { MarketController } from '@/server/controllers/market';
-import { Market } from '@/server/entities/market';
+import { MarketEntity } from '@/server/entities/market';
 import { NextResponse } from 'next/server';
 
 /*
@@ -22,7 +22,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json().catch(() => undefined);
-    const market = body ? body.market : (body as Market);
+    const market = body ? body.market : (body as MarketEntity);
     if (!market)
       return NextResponse.json(
         { error: 'Favor enviar o parametro [market]' },

@@ -9,16 +9,16 @@ import {
   orderBy,
   Query,
   query,
-  startAt,
+  startAfter,
   where,
 } from 'firebase/firestore';
 import { database } from '@/server/configs/firebase';
 import { LogsService } from '@/server/services/logs';
-import { Price } from '@/server/entities/price';
+import { PriceEntity } from '@/server/entities/price';
 
 interface GetTotalAmountProps {
   product?: string;
-  marketId?: string;
+  cnpjMarket?: string;
   startDate?: number;
   endDate?: number;
   onlyWithHistoric?: boolean;
@@ -27,29 +27,31 @@ interface GetTotalAmountProps {
 class PriceRepositoryImplements {
   private path;
   private fieldProduct;
-  private fieldIdMarket;
+  private fieldCnpjMarket;
+  private fieldKeyMarketProduct;
   private fieldDate;
-  private fieldIdReceipt;
+  private fieldKeyReceipt;
   private fieldHasHistoric;
 
   constructor() {
     this.path = process.env.NODE_ENV === 'development' ? 'precosDev' : 'precos';
     this.fieldProduct =
       process.env.NODE_ENV === 'development' ? 'nomeProduto' : 'produto'; // TO DO - Alterar após unificação
-    this.fieldIdMarket = 'idMercado';
+    this.fieldCnpjMarket = 'cnpjMercado';
+    this.fieldKeyMarketProduct = 'chaveProdutoMercado';
     this.fieldDate =
       process.env.NODE_ENV === 'development' ? 'dataInclusao' : 'data'; // TO DO - Alterar após unificação
-    this.fieldIdReceipt = 'idNotaFiscal';
+    this.fieldKeyReceipt = 'chaveNotaFiscal';
     this.fieldHasHistoric = 'possuiHistorico';
   }
 
-  async GetAll(offSet?: number, amount?: number): Promise<Array<Price>> {
+  async GetAll(offSet?: string, amount?: number): Promise<Array<PriceEntity>> {
     const reference =
       offSet && amount
         ? query(
             collection(database, this.path),
             orderBy(this.fieldProduct),
-            startAt(offSet),
+            startAfter(offSet),
             limit(amount)
           )
         : query(collection(database, this.path), orderBy(this.fieldProduct));
@@ -59,16 +61,16 @@ class PriceRepositoryImplements {
 
   async GetListByName(
     product: string,
-    offSet?: number,
+    offSet?: string,
     amount?: number
-  ): Promise<Array<Price>> {
+  ): Promise<Array<PriceEntity>> {
     const reference =
       offSet && amount
         ? query(
             collection(database, this.path),
             where(this.fieldProduct, '==', product),
             orderBy(this.fieldProduct),
-            startAt(offSet),
+            startAfter(offSet),
             limit(amount)
           )
         : query(
@@ -81,24 +83,24 @@ class PriceRepositoryImplements {
   }
 
   async GetListByMarket(
-    marketId: string,
-    offSet?: number,
+    cnpj: string,
+    offSet?: string,
     amount?: number
-  ): Promise<Array<Price>> {
+  ): Promise<Array<PriceEntity>> {
     const reference =
       offSet && amount
         ? query(
             collection(database, this.path),
-            where(this.fieldIdMarket, '==', marketId),
-            orderBy(this.fieldIdMarket),
+            where(this.fieldCnpjMarket, '==', cnpj),
+            orderBy(this.fieldCnpjMarket),
             orderBy(this.fieldProduct),
-            startAt(offSet),
+            startAfter(offSet),
             limit(amount)
           )
         : query(
             collection(database, this.path),
-            where(this.fieldIdMarket, '==', marketId),
-            orderBy(this.fieldIdMarket),
+            where(this.fieldCnpjMarket, '==', cnpj),
+            orderBy(this.fieldCnpjMarket),
             orderBy(this.fieldProduct)
           );
 
@@ -106,43 +108,37 @@ class PriceRepositoryImplements {
   }
 
   async GetListByNameAndMarket(
-    product: string,
-    marketId: string,
-    offSet?: number,
+    keyMarketProduct: string,
+    offSet?: string,
     amount?: number
-  ): Promise<Array<Price>> {
+  ): Promise<Array<PriceEntity>> {
     const reference =
       offSet && amount
         ? query(
             collection(database, this.path),
-            and(
-              where(this.fieldProduct, '==', product),
-              where(this.fieldIdMarket, '==', marketId)
-            ),
+            where(this.fieldKeyMarketProduct, '==', keyMarketProduct),
+            orderBy(this.fieldKeyMarketProduct),
             orderBy(this.fieldProduct),
-            orderBy(this.fieldIdMarket),
-            startAt(offSet),
+            startAfter(offSet),
             limit(amount)
           )
         : query(
             collection(database, this.path),
-            and(
-              where(this.fieldProduct, '==', product),
-              where(this.fieldIdMarket, '==', marketId)
-            ),
-            orderBy(this.fieldProduct),
-            orderBy(this.fieldIdMarket)
+            where(this.fieldKeyMarketProduct, '==', keyMarketProduct),
+            orderBy(this.fieldKeyMarketProduct),
+            orderBy(this.fieldProduct)
           );
 
     return this.GetDocsReturnPrices(reference, 'GetListByNameAndMarket');
   }
 
+  // TO DO - Validar lógica deste método
   async GetListByDate(
     startDate: number,
     endDate: number,
-    offSet?: number,
+    offSet?: string,
     amount?: number
-  ): Promise<Array<Price>> {
+  ): Promise<Array<PriceEntity>> {
     const dateIsValid = this.DatesAreValid(startDate, endDate);
     if (!dateIsValid) {
       throw `400 - Favor checar os valores informados para as datas. Data inicial informada ${startDate} - Data final informada ${endDate}.`;
@@ -158,7 +154,7 @@ class PriceRepositoryImplements {
             ),
             orderBy(this.fieldDate),
             orderBy(this.fieldProduct),
-            startAt(offSet),
+            startAfter(offSet),
             limit(amount)
           )
         : query(
@@ -175,26 +171,27 @@ class PriceRepositoryImplements {
   }
 
   // TO DO - Tratar o caso de quando receiptIds for uma quantidade superior a 30
-  async GetListByReceiptIdList(
-    receiptIds: Array<string>
-  ): Promise<Array<Price>> {
-    if (receiptIds.length == 0) {
+  async GetListByReceiptList(
+    receiptKeys: Array<string>
+  ): Promise<Array<PriceEntity>> {
+    if (receiptKeys.length == 0) {
       return [];
     }
 
     const reference = query(
       collection(database, this.path),
-      where(this.fieldIdReceipt, 'in', receiptIds),
-      orderBy(this.fieldIdReceipt),
+      where(this.fieldKeyReceipt, 'in', receiptKeys),
+      orderBy(this.fieldKeyReceipt),
       orderBy(this.fieldProduct)
     );
 
-    return this.GetDocsReturnPrices(reference, 'GetListByReceipt');
+    return this.GetDocsReturnPrices(reference, 'GetListByReceiptList');
   }
 
-  async GetListByIdList(ids: Array<string>): Promise<Array<Price>> {
+  // TO DO - Validar mapeamento do Id
+  async GetListByIdList(ids: Array<string>): Promise<Array<PriceEntity>> {
     const reference = query(collection(database, this.path));
-    const prices: Array<Price> = [];
+    const prices: Array<PriceEntity> = [];
 
     await getDocs(reference)
       .then((response) => {
@@ -203,7 +200,7 @@ class PriceRepositoryImplements {
           const price = {
             id: doc.id,
             ...object,
-          } as Price;
+          } as PriceEntity;
           if (ids.includes(doc.id)) prices.push(price);
         });
       })
@@ -219,9 +216,9 @@ class PriceRepositoryImplements {
   }
 
   async GetOnlyWithHistoric(
-    offSet?: number,
+    offSet?: string,
     amount?: number
-  ): Promise<Array<Price>> {
+  ): Promise<Array<PriceEntity>> {
     const reference =
       offSet && amount
         ? query(
@@ -232,7 +229,7 @@ class PriceRepositoryImplements {
             ),
             orderBy(this.fieldHasHistoric),
             orderBy(this.fieldProduct),
-            startAt(offSet),
+            startAfter(offSet),
             limit(amount)
           )
         : query(
@@ -249,12 +246,12 @@ class PriceRepositoryImplements {
   }
 
   async GetTotalAmount(props: GetTotalAmountProps): Promise<number> {
-    const { product, marketId, startDate, endDate, onlyWithHistoric } = props;
+    const { product, cnpjMarket, startDate, endDate, onlyWithHistoric } = props;
     const queryConstraints = [];
 
     product && queryConstraints.push(where(this.fieldProduct, '==', product));
-    marketId &&
-      queryConstraints.push(where(this.fieldIdMarket, '==', marketId));
+    cnpjMarket &&
+      queryConstraints.push(where(this.fieldCnpjMarket, '==', cnpjMarket));
     startDate && queryConstraints.push(where(this.fieldDate, '>=', startDate));
     endDate && queryConstraints.push(where(this.fieldDate, '<=', endDate));
     onlyWithHistoric &&
@@ -294,7 +291,7 @@ class PriceRepositoryImplements {
   private async GetDocsReturnPrices(
     reference: Query,
     stack: string
-  ): Promise<Array<Price>> {
+  ): Promise<Array<PriceEntity>> {
     return await getDocs(reference)
       .then((response) => {
         return response.docs.map((doc) => {
@@ -303,7 +300,7 @@ class PriceRepositoryImplements {
             id: doc.id,
             ...object,
           };
-        }) as Array<Price>;
+        }) as Array<PriceEntity>;
       })
       .catch((error: FirebaseError) => {
         if (typeof error != 'string') {

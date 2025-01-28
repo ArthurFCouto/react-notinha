@@ -1,7 +1,7 @@
-export type PriceHistory = {
+export type PriceHistoryEntity = {
   id?: string;
   idPreco: string;
-  chaveValorData: string;
+  mapValorData: string;
   valor: string;
   cnpjMercado: string;
   chaveNotaFiscal: string;
