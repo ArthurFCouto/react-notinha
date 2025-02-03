@@ -3,6 +3,7 @@ export type PriceEntity = {
   mapValorData: string;
   mapProdutoMercado: string;
   mapProdutoMercadoData: string;
+  indexNomeProduto: Array<string>;
   nomeMercado: string;
   nomeProduto: string;
   unidadeMedida: string;
@@ -33,4 +34,13 @@ export function GenerateDateMarketProductMap(
   cnpj: string
 ): string {
   return `${product.replaceAll(' ', '')}_${cnpj}_${date}`;
+}
+
+export function GenereteIndexName(product: string): Array<string> {
+  const ignore = ['DE', 'KG', 'UN'];
+
+  return product
+    .split(/\s+/)
+    .filter((str) => str.length > 1 && !ignore.includes(str.toUpperCase()))
+    .map((str) => str.replaceAll(/[^a-zA-Z0-9]/g, ''));
 }

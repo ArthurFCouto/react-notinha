@@ -6,20 +6,15 @@ import { SefazRepository } from '@/server/repositories/sefaz';
 import { ReceiptEntity } from '@/server/entities/receipt';
 import { ReceiptRepository } from '@/server/repositories/receipt';
 import { MarketService } from '../market';
+import { MarketRepository } from '@/server/repositories/market';
+import { ReceiptService } from '../receipt';
 import {
   GenerateDateMarketProductMap,
   GenerateDateValueMap,
   GenerateMarketProductMap,
   PriceEntity,
 } from '@/server/entities/price';
-import { MarketRepository } from '@/server/repositories/market';
-import { ReceiptService } from '../receipt';
-
-// TO DO Configurar para que sejam aceitos apenas cupons de mercado, ou começar a trabalhar com categorias
-const mainActivity = {
-  code: '47.11-3-02',
-  text: 'Comércio varejista de mercadorias em geral, com predominância de produtos alimentícios - supermercados',
-};
+import { PriceService } from '../price';
 
 interface PricesWork {
   [index: string]: PriceEntity;
@@ -34,6 +29,7 @@ class SefazServiceImplements {
     this.url =
       'https://portalsped.fazenda.mg.gov.br/portalnfce/sistema/qrcode.xhtml?p=';
   }
+
   /**
    * Verifica se a url informada é referente a uma chave de NF
    */
@@ -44,11 +40,11 @@ class SefazServiceImplements {
 
   /**
    * Cria um documento virtual (virtualDocument) para tratar os dados da página html da SEFAZ.
-   * @param qrCode A parte da string que vem na url após o sinal de igualdade (...qrcode.xhtml?p=)
+   * @param qrCode A parte da string que vem na url após o sinal de igualdade (https://...qrcode.xhtml?p=)
    */
   async CreateVirtualDocument(qrCode: string): Promise<Document> {
     if (!this.IsValidUrl(qrCode))
-      throw `400 - Este QR Code não é válido para nosso sistema.`;
+      throw '400 - Este QR Code não é válido para nosso sistema.';
 
     const { JSDOM } = jsdom;
     return await axios
@@ -60,31 +56,31 @@ class SefazServiceImplements {
       })
       .catch((error: AxiosError) => {
         if (typeof error != 'string') {
-          error.stack = error.stack ?? 'CreateVirtualDocument (Sefaz)';
+          error.message = `${error.message} - CreateVirtualDocument (Sefaz)`;
         }
         LogsService.Create(error);
-        throw `${error.message ?? error}`;
+        throw 'Houve um erro enquanto buscávamos os dados do cupom fiscal. Tente novamente em instantes ou entre em contato com o suporte.';
       });
   }
 
   /**
-   * Cria o mercado no banco de dados e retorna o objeto com Id.
+   * Cria o mercado no banco de dados e o retorna.
    * É necessário que já tenha sido criado o virtualDocument.
    */
   async CreateMarket(doc: Document): Promise<MarketEntity> {
     const cnpj = SefazRepository.GetReceiptCNPJ(doc);
     const exist = await MarketRepository.CheckIfDoesExist(cnpj);
-    if (exist.cnpj == cnpj) return exist;
+    if (exist.cnpj === cnpj) return exist;
 
     axios.defaults.timeout = 30000;
     axios.defaults.timeoutErrorMessage = `Não conseguimos validar o os dados do mercado (${cnpj}). Tente novamente em instantes ou entre em contato com o suporte.`;
+
+    // TO DO Configurar para que sejam aceitos apenas cupons de mercado, ou começar a trabalhar com categorias
 
     const market = await axios
       .get(`https://receitaws.com.br/v1/cnpj/${cnpj}`)
       .then((response) => {
         const { data } = response;
-        // if (!data.atividade_principal.includes(mainActivity))
-        // throw 'Este CUPOM FISCAL provavelmente não é de mercado.';
 
         return {
           nomeFantasia: data.fantasia,
@@ -102,7 +98,7 @@ class SefazServiceImplements {
       })
       .catch((error: AxiosError) => {
         if (typeof error != 'string') {
-          error.stack = error.stack ?? 'CreateMarket (Sefaz)';
+          error.message = `${error.message} - CreateMarket (Sefaz)`;
         }
         LogsService.Create(error);
         throw `Não conseguimos validar o os dados do mercado (${cnpj}). Tente novamente em instantes ou entre em contato com o suporte.`;
@@ -121,17 +117,17 @@ class SefazServiceImplements {
     market: MarketEntity
   ): Promise<ReceiptEntity> {
     if (!this.IsValidUrl(qrCode))
-      throw `400 - Este QR Code não é válido para nosso sistema.`;
+      throw '400 - Este QR Code não é válido para nosso sistema.';
 
     const key = SefazRepository.GetReceiptKey(doc);
     const exist = await ReceiptRepository.CheckIfDoesExist(key);
-    if (exist.chave == key) throw '400 - Este cupom já está cadastrado.';
+    if (exist.chave === key)
+      throw `400 - Não foi possível concluir o cadastro da nota fiscal (${key}). Este cupom já está cadastrado.`;
 
     let receipt: ReceiptEntity;
 
     try {
       const element = doc.getElementById('collapse4') as HTMLElement;
-      const issueDate = this.GetIssueDate(doc);
       const tableTwo = element.querySelector('table:nth-child(10)') as Element;
       const lineTwo = tableTwo.querySelector('tbody tr') as Element;
       const column = lineTwo.querySelector('td');
@@ -142,32 +138,33 @@ class SefazServiceImplements {
         chave: key,
         url: this.url + qrCode,
         valorTotal: this.ConfigureNumber(totalPrice, 2),
-        idUsuario: '',
-        dataEmissao: issueDate,
+        idUsuario: String(process.env.NEXT_PUBLIC_USER_ID_DEFAULT),
+        dataEmissao: this.GetIssueDate(doc),
         dataInclusao: this.dateNow.getTime(),
       };
     } catch (error: any) {
       if (typeof error != 'string') {
-        error.stack = error.stack ?? 'CreateReceiptObject (Sefaz)';
+        error.message = `${error.message} - CreateReceiptObject (Sefaz)`;
       }
       LogsService.Create(error);
-      throw `${error.message ?? error}`;
+      throw 'Houve um erro enquanto salvávamos os dados do cupom fiscal. Tente novamente em instantes ou entre em contato com o suporte.';
     }
 
     return ReceiptService.Create(receipt);
   }
 
   /**
-   * Retorna uma lista de objetos com os itens da Nota Fiscal (sem repetição).
+   * Salva os itens da Nota Fiscal no banco de dados (sem repetição) e retorna a lista.
    * É necessário que já tenham sido criados o virtualDocument, o mercado e a nota fiscal.
    */
-  CreateItemList(
+  async CreateItemList(
     doc: Document,
     market: MarketEntity,
     receipt: ReceiptEntity
-  ): Array<PriceEntity> {
+  ): Promise<Array<PriceEntity>> {
+    const items: PricesWork = {};
+
     try {
-      const items: PricesWork = {};
       const element = doc.querySelector('.table.table-striped') as Element;
       const lines = element.querySelectorAll('tbody tr');
 
@@ -176,7 +173,7 @@ class SefazServiceImplements {
         const columns = line.querySelectorAll('td');
 
         columns.forEach((column, index) => {
-          if (index == 0) {
+          if (index === 0) {
             columnData[index] = String(
               column.querySelector('h7')?.textContent?.trim()
             );
@@ -185,13 +182,16 @@ class SefazServiceImplements {
           columnData[index] = String(column.textContent?.trim());
         });
 
-        const amount = this.ConfigureNumber(columnData[1], 3);
-        const totalPrice = this.ConfigureNumber(columnData[3], 2);
         const key = columnData[0];
-        const price = (parseFloat(totalPrice) / parseFloat(amount)).toString();
-        const value = this.ConfigureNumber(price, 4);
 
         if (!items[key]) {
+          const amount = this.ConfigureNumber(columnData[1], 4);
+          const totalPrice = this.ConfigureNumber(columnData[3], 4);
+          const price = (
+            parseFloat(totalPrice) / parseFloat(amount)
+          ).toString();
+          const value = this.ConfigureNumber(price, 4);
+
           items[key] = {
             mapValorData: GenerateDateValueMap(value, receipt.dataEmissao),
             mapProdutoMercado: GenerateMarketProductMap(
@@ -214,20 +214,23 @@ class SefazServiceImplements {
           };
         }
       });
-
-      return Object.values(items);
     } catch (error: any) {
       if (typeof error != 'string') {
-        error.stack = error.stack ?? 'CreateItemList (Sefaz)';
+        error.message = `${error.message} - CreateItemList (Sefaz)`;
       }
       LogsService.Create(error);
-      throw `${error.message ?? error}`;
+      throw 'Houve um erro enquanto salvávamos os dados do cupom fiscal. Tente novamente em instantes ou entre em contato com o suporte.';
     }
+
+    const listItems = Object.values(items);
+    await PriceService.CreateList(listItems);
+
+    return listItems;
   }
 
   /**
-   * Retorna a data de emissão do cumpom fiscal
-   * @returns Uma string no formato DD/MM/AAAA hh:mm:ss
+   * Retorna o timestemp da data de emissão do cumpom fiscal
+   * @returns O timestamp da data no horário 00:00:00
    */
   private GetIssueDate(doc: Document): number {
     const element = doc.getElementById('collapse4') as HTMLElement;
@@ -255,7 +258,7 @@ class SefazServiceImplements {
   }
 
   /**
-   * Gera um número com casas decimais pré-definidas
+   * Gera um número com a quantidade de casas decimais informadas
    * @returns Uma string com o número com a quantidade de casas decimais informada
    */
   private ConfigureNumber(value: string, toFixed: number): string {

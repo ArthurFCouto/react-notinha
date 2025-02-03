@@ -63,7 +63,7 @@ class MarketRepositoryImplements {
       return object ? (object as MarketEntity) : this.emptyMarket;
     } catch (error: any) {
       if (typeof error != 'string') {
-        error.stack = error.stack ?? 'CheckIfDoesExist (Market)';
+        error.message = `${error.message} - CheckIfDoesExist (Market)`;
       }
       LogsService.Create(error);
       throw `Ocorreu um erro enquanto vefiricávamos se o mercado já está cadastrado.`;

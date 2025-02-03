@@ -12,13 +12,13 @@ class SefazRepositoryImplements {
         'table tbody tr:first-of-type td'
       )?.textContent;
 
-      return String(key).replace(/[^\d]/g, '').trim();
+      return String(key).trim().replace(/[^\d]/g, '');
     } catch (error: any) {
       if (typeof error != 'string') {
-        error.stack = error.stack ?? 'GetReceiptKey (Sefaz)';
+        error.message = `${error.message} - GetReceiptKey (Sefaz)`;
       }
       LogsService.Create(error);
-      throw `${error.message}`;
+      throw 'Houve um erro enquanto analisávamos os dados do cupom fiscal. Tente novamente em instantes ou entre em contato com o suporte.';
     }
   }
 
@@ -29,16 +29,16 @@ class SefazRepositoryImplements {
   GetReceiptCNPJ(doc: Document) {
     try {
       const element = doc.querySelector('tbody tr:first-of-type td') as Element;
-      const allText = String(element.textContent);
-      const limiter = allText.indexOf(',');
+      const text = element.textContent!;
+      const limiter = text.indexOf(',');
 
-      return allText.slice(0, limiter).replace(/[^\d]/g, '').trim();
+      return text.slice(0, limiter).trim().replace(/[^\d]/g, '');
     } catch (error: any) {
       if (typeof error != 'string') {
-        error.stack = error.stack ?? 'GetReceiptCNPJ (Sefaz)';
+        error.message = `${error.message} - GetReceiptCNPJ (Sefaz)`;
       }
       LogsService.Create(error);
-      throw `${error.message}`;
+      throw 'Houve um erro enquanto analisávamos os dados do cupom fiscal. Tente novamente em instantes ou entre em contato com o suporte.';
     }
   }
 }

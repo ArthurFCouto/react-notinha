@@ -2,10 +2,12 @@ import { FirebaseError } from 'firebase/app';
 import {
   and,
   collection,
+  doc,
+  DocumentSnapshot,
   getCountFromServer,
+  getDoc,
   getDocs,
   limit,
-  or,
   orderBy,
   Query,
   query,
@@ -25,127 +27,134 @@ interface GetTotalAmountProps {
 }
 
 class PriceRepositoryImplements {
-  private path;
+  path;
   private fieldProduct;
+  private fieldIndexProduct;
   private fieldCnpjMarket;
-  private fieldKeyMarketProduct;
   private fieldDate;
   private fieldKeyReceipt;
   private fieldHasHistoric;
 
   constructor() {
     this.path = process.env.NODE_ENV === 'development' ? 'precosDev' : 'precos';
-    this.fieldProduct =
-      process.env.NODE_ENV === 'development' ? 'nomeProduto' : 'produto'; // TO DO - Alterar após unificação
+    this.fieldProduct = 'nomeProduto';
+    this.fieldIndexProduct = 'indexNomeProduto';
     this.fieldCnpjMarket = 'cnpjMercado';
-    this.fieldKeyMarketProduct = 'chaveProdutoMercado';
-    this.fieldDate =
-      process.env.NODE_ENV === 'development' ? 'dataInclusao' : 'data'; // TO DO - Alterar após unificação
+    this.fieldDate = 'dataInclusao';
     this.fieldKeyReceipt = 'chaveNotaFiscal';
     this.fieldHasHistoric = 'possuiHistorico';
   }
 
-  async GetAll(offSet?: string, amount?: number): Promise<Array<PriceEntity>> {
-    const reference =
-      offSet && amount
-        ? query(
-            collection(database, this.path),
-            orderBy(this.fieldProduct),
-            startAfter(offSet),
-            limit(amount)
-          )
-        : query(collection(database, this.path), orderBy(this.fieldProduct));
+  async GetAll(offSet: string, amount: number): Promise<Array<PriceEntity>> {
+    if (offSet.length > 0) {
+      const snapshot = await this.GetSnapshot(offSet);
+      const reference = query(
+        collection(database, this.path),
+        orderBy(this.fieldProduct),
+        startAfter(snapshot),
+        limit(amount)
+      );
+
+      return this.GetDocsReturnPrices(reference, 'GetAll');
+    }
+
+    const reference = query(
+      collection(database, this.path),
+      orderBy(this.fieldProduct),
+      limit(amount)
+    );
 
     return this.GetDocsReturnPrices(reference, 'GetAll');
   }
 
   async GetListByName(
     product: string,
-    offSet?: string,
-    amount?: number
+    offSet: string,
+    amount: number
   ): Promise<Array<PriceEntity>> {
-    const reference =
-      offSet && amount
-        ? query(
-            collection(database, this.path),
-            where(this.fieldProduct, '==', product),
-            orderBy(this.fieldProduct),
-            startAfter(offSet),
-            limit(amount)
-          )
-        : query(
-            collection(database, this.path),
-            where(this.fieldProduct, '==', product),
-            orderBy(this.fieldProduct)
-          );
+    if (offSet.length > 0) {
+      const snapshot = await this.GetSnapshot(offSet);
+      const reference = query(
+        collection(database, this.path),
+        where(this.fieldIndexProduct, 'array-contains', product),
+        orderBy(this.fieldProduct),
+        startAfter(snapshot),
+        limit(amount)
+      );
+
+      return this.GetDocsReturnPrices(reference, 'GetListByName');
+    }
+
+    const reference = query(
+      collection(database, this.path),
+      where(this.fieldIndexProduct, 'array-contains', product),
+      orderBy(this.fieldProduct),
+      limit(amount)
+    );
 
     return this.GetDocsReturnPrices(reference, 'GetListByName');
   }
 
-  async GetListByMarket(
-    cnpj: string,
-    offSet?: string,
-    amount?: number
-  ): Promise<Array<PriceEntity>> {
-    const reference =
-      offSet && amount
-        ? query(
-            collection(database, this.path),
-            where(this.fieldCnpjMarket, '==', cnpj),
-            orderBy(this.fieldCnpjMarket),
-            orderBy(this.fieldProduct),
-            startAfter(offSet),
-            limit(amount)
-          )
-        : query(
-            collection(database, this.path),
-            where(this.fieldCnpjMarket, '==', cnpj),
-            orderBy(this.fieldCnpjMarket),
-            orderBy(this.fieldProduct)
-          );
+  async GetListByMarketModel(cnpj: string): Promise<Array<PriceEntity>> {
+    const reference = query(
+      collection(database, this.path),
+      where(this.fieldCnpjMarket, '==', cnpj)
+    );
 
-    return this.GetDocsReturnPrices(reference, 'GetListByMarket');
+    return this.GetDocsReturnPrices(reference, 'GetListByMarketModel');
   }
 
-  async GetListByNameAndMarket(
-    keyMarketProduct: string,
-    offSet?: string,
-    amount?: number
+  async GetListByMarket(
+    cnpj: string,
+    offSet: string,
+    amount: number
   ): Promise<Array<PriceEntity>> {
-    const reference =
-      offSet && amount
-        ? query(
-            collection(database, this.path),
-            where(this.fieldKeyMarketProduct, '==', keyMarketProduct),
-            orderBy(this.fieldKeyMarketProduct),
-            orderBy(this.fieldProduct),
-            startAfter(offSet),
-            limit(amount)
-          )
-        : query(
-            collection(database, this.path),
-            where(this.fieldKeyMarketProduct, '==', keyMarketProduct),
-            orderBy(this.fieldKeyMarketProduct),
-            orderBy(this.fieldProduct)
-          );
+    if (offSet.length > 0) {
+      const snapshot = await this.GetSnapshot(offSet);
+      const reference = query(
+        collection(database, this.path),
+        where(this.fieldCnpjMarket, '==', cnpj),
+        orderBy(this.fieldCnpjMarket),
+        orderBy(this.fieldProduct),
+        startAfter(snapshot),
+        limit(amount)
+      );
 
-    return this.GetDocsReturnPrices(reference, 'GetListByNameAndMarket');
+      return this.GetDocsReturnPrices(reference, 'GetListByMarket');
+    }
+
+    const reference = query(
+      collection(database, this.path),
+      where(this.fieldCnpjMarket, '==', cnpj),
+      orderBy(this.fieldCnpjMarket),
+      orderBy(this.fieldProduct),
+      limit(amount)
+    );
+
+    return this.GetDocsReturnPrices(reference, 'GetListByMarket');
   }
 
   // TO DO - Validar lógica deste método
   async GetListByDate(
     startDate: number,
     endDate: number,
-    offSet?: string,
-    amount?: number
+    offSet: string,
+    amount: number
   ): Promise<Array<PriceEntity>> {
     const dateIsValid = this.DatesAreValid(startDate, endDate);
     if (!dateIsValid) {
       throw `400 - Favor checar os valores informados para as datas. Data inicial informada ${startDate} - Data final informada ${endDate}.`;
     }
 
+    let first = null;
+    let snapshot = null;
+    if (offSet.length > 0) {
+      first = doc(database, this.path, offSet);
+      snapshot = await getDoc(first);
+    }
+
     const reference =
-      offSet && amount
+      offSet.length > 0
         ? query(
             collection(database, this.path),
             and(
@@ -154,7 +163,7 @@ class PriceRepositoryImplements {
             ),
             orderBy(this.fieldDate),
             orderBy(this.fieldProduct),
-            startAfter(offSet),
+            startAfter(snapshot),
             limit(amount)
           )
         : query(
@@ -164,18 +173,20 @@ class PriceRepositoryImplements {
               where(this.fieldDate, '<=', endDate)
             ),
             orderBy(this.fieldDate),
-            orderBy(this.fieldProduct)
+            orderBy(this.fieldProduct),
+            limit(amount)
           );
 
     return this.GetDocsReturnPrices(reference, 'GetListByDate');
   }
 
-  // TO DO - Tratar o caso de quando receiptIds for uma quantidade superior a 30
-  async GetListByReceiptList(
+  async GetListByReceiptKeys(
     receiptKeys: Array<string>
   ): Promise<Array<PriceEntity>> {
-    if (receiptKeys.length == 0) {
+    if (receiptKeys.length === 0) {
       return [];
+    } else if (receiptKeys.length > 30) {
+      throw `400 - Não é possível buscar mais de 30 objetos por vez, reduza a quantidade de objetos pesquisados (${receiptKeys.length}).`;
     }
 
     const reference = query(
@@ -188,7 +199,6 @@ class PriceRepositoryImplements {
     return this.GetDocsReturnPrices(reference, 'GetListByReceiptList');
   }
 
-  // TO DO - Validar mapeamento do Id
   async GetListByIdList(ids: Array<string>): Promise<Array<PriceEntity>> {
     const reference = query(collection(database, this.path));
     const prices: Array<PriceEntity> = [];
@@ -206,7 +216,7 @@ class PriceRepositoryImplements {
       })
       .catch((error: FirebaseError) => {
         if (typeof error != 'string') {
-          error.stack = error.stack ?? `GetListById (${this.path})`;
+          error.message = `${error.message} - GetListById (${this.path})`;
         }
         LogsService.Create(error);
         throw `Ocorreu um erro enquanto buscávamos a lista de produtos por ID.`;
@@ -216,31 +226,30 @@ class PriceRepositoryImplements {
   }
 
   async GetOnlyWithHistoric(
-    offSet?: string,
-    amount?: number
+    offSet: string,
+    amount: number
   ): Promise<Array<PriceEntity>> {
-    const reference =
-      offSet && amount
-        ? query(
-            collection(database, this.path),
-            or(
-              where(this.fieldHasHistoric, '==', true),
-              where(this.fieldHasHistoric, '==', 'true')
-            ),
-            orderBy(this.fieldHasHistoric),
-            orderBy(this.fieldProduct),
-            startAfter(offSet),
-            limit(amount)
-          )
-        : query(
-            collection(database, this.path),
-            or(
-              where(this.fieldHasHistoric, '==', true),
-              where(this.fieldHasHistoric, '==', 'true')
-            ),
-            orderBy(this.fieldHasHistoric),
-            orderBy(this.fieldProduct)
-          );
+    if (offSet.length > 0) {
+      const snapshot = await this.GetSnapshot(offSet);
+      const reference = query(
+        collection(database, this.path),
+        where(this.fieldHasHistoric, '==', true),
+        orderBy(this.fieldHasHistoric),
+        orderBy(this.fieldProduct),
+        startAfter(snapshot),
+        limit(amount)
+      );
+
+      return this.GetDocsReturnPrices(reference, 'GetOnlyWithHistoric');
+    }
+
+    const reference = query(
+      collection(database, this.path),
+      where(this.fieldHasHistoric, '==', true),
+      orderBy(this.fieldHasHistoric),
+      orderBy(this.fieldProduct),
+      limit(amount)
+    );
 
     return this.GetDocsReturnPrices(reference, 'GetOnlyWithHistoric');
   }
@@ -249,27 +258,30 @@ class PriceRepositoryImplements {
     const { product, cnpjMarket, startDate, endDate, onlyWithHistoric } = props;
     const queryConstraints = [];
 
-    product && queryConstraints.push(where(this.fieldProduct, '==', product));
+    product &&
+      queryConstraints.push(
+        where(this.fieldIndexProduct, 'array-contains', product)
+      );
     cnpjMarket &&
       queryConstraints.push(where(this.fieldCnpjMarket, '==', cnpjMarket));
-    startDate && queryConstraints.push(where(this.fieldDate, '>=', startDate));
-    endDate && queryConstraints.push(where(this.fieldDate, '<=', endDate));
     onlyWithHistoric &&
-      queryConstraints.push(
-        where(this.fieldHasHistoric, '==', true),
-        where(this.fieldHasHistoric, '==', 'true')
-      );
+      queryConstraints.push(where(this.fieldHasHistoric, '==', true));
+    if (startDate && endDate) {
+      queryConstraints.push(where(this.fieldDate, '>=', startDate));
+      queryConstraints.push(where(this.fieldDate, '<=', endDate));
+    }
 
-    const reference = query(
-      collection(database, this.path),
-      and(...queryConstraints)
-    );
+    const reference =
+      queryConstraints.length > 0
+        ? query(collection(database, this.path), and(...queryConstraints))
+        : query(collection(database, this.path));
+
     try {
       const snapshot = await getCountFromServer(reference);
       return snapshot.data().count;
     } catch (error: any) {
       if (typeof error != 'string') {
-        error.stack = error.stack ?? `GetTotalAmount (${this.path})`;
+        error.message = `${error.message} - GetTotalAmount (${this.path})`;
       }
       LogsService.Create(error);
       throw `Ocorreu um erro enquanto buscávamos a quantidade total de produtos.`;
@@ -288,6 +300,11 @@ class PriceRepositoryImplements {
     return diffInDays <= 30;
   }
 
+  private async GetSnapshot(offSet: string): Promise<DocumentSnapshot> {
+    const first = doc(database, this.path, offSet);
+    return await getDoc(first);
+  }
+
   private async GetDocsReturnPrices(
     reference: Query,
     stack: string
@@ -304,7 +321,7 @@ class PriceRepositoryImplements {
       })
       .catch((error: FirebaseError) => {
         if (typeof error != 'string') {
-          error.stack = error.stack ?? `${stack} (${this.path})`;
+          error.message = `${error.message} - ${stack} (${this.path})`;
         }
         LogsService.Create(error);
         throw `Ocorreu um erro enquanto buscávamos a lista de produtos.`;

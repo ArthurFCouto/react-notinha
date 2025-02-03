@@ -15,14 +15,14 @@ class ReceiptServiceImplements {
 
   async Create(receipt: ReceiptEntity): Promise<ReceiptEntity> {
     const exist = await ReceiptRepository.CheckIfDoesExist(receipt.chave);
-    if (exist.chave == receipt.chave) {
+    if (exist.chave === receipt.chave) {
       throw `400 - Não foi possível concluir o cadastro da nota fiscal (${receipt.chave}). Este cupom já está cadastrado.`;
     }
 
     const reference = doc(database, this.path, receipt.chave);
     await setDoc(reference, receipt).catch((error: FirebaseError) => {
       if (typeof error != 'string') {
-        error.stack = error.stack ?? `Create ${this.path}`;
+        error.message = `${error.message} - Create (${this.path})`;
       }
       LogsService.Create(error);
       throw `Não foi possível concluir o cadastro da nota fiscal (${receipt.chave}).`;
@@ -32,9 +32,9 @@ class ReceiptServiceImplements {
   }
 
   async DeleteList(receipts: Array<ReceiptEntity>): Promise<void> {
-    if (receipts.length == 0) return;
+    if (receipts.length === 0) return;
 
-    const chunks = this.ChunkArray(receipts, 400);
+    const chunks = this.ChunkArray(receipts, 250);
 
     for (const chunk of chunks) {
       const batch = writeBatch(database);
@@ -44,7 +44,7 @@ class ReceiptServiceImplements {
 
       await batch.commit().catch((error: FirebaseError) => {
         if (typeof error != 'string') {
-          error.stack = error.stack ?? `Delete ${this.path}`;
+          error.message = `${error.message} - Delete (${this.path})`;
         }
         LogsService.Create(error);
         throw `Não foi possível concluir a exclusão da lista de notas fiscais.`;
@@ -52,6 +52,7 @@ class ReceiptServiceImplements {
     }
   }
 
+  // TO DO - Reler e refatorar
   private ChunkArray<T>(array: T[], size: number): T[][] {
     const result: T[][] = [];
     for (let i = 0; i < array.length; i += size) {

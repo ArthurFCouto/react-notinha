@@ -1,6 +1,7 @@
 import { FirebaseError } from 'firebase/app';
 import {
   collection,
+  doc,
   DocumentData,
   DocumentReference,
   getDocs,
@@ -8,6 +9,8 @@ import {
 } from 'firebase/firestore';
 import { LogsService } from '@/server/services/logs';
 import { PriceHistoryEntity } from '@/server/entities/priceHistory';
+import { database } from '@/server/configs/firebase';
+import { PriceRepository } from '../price';
 
 class PriceHistoryRespositoryImplements {
   path;
@@ -27,6 +30,26 @@ class PriceHistoryRespositoryImplements {
     return this.GetDocsReturnPricesHistory(reference, 'GetListByReference');
   }
 
+  async GetListByPriceIdList(
+    priceIds: Array<string>
+  ): Promise<Array<PriceHistoryEntity>> {
+    if (priceIds.length === 0) return [];
+
+    const response: Array<PriceHistoryEntity> = [];
+    priceIds.forEach(async (id) => {
+      const ref = doc(database, PriceRepository.path, id);
+      const reference = collection(ref, this.path);
+
+      const prices = await this.GetDocsReturnPricesHistory(
+        reference,
+        'GetListByPriceIdList'
+      );
+      response.push(...prices);
+    });
+
+    return response;
+  }
+
   private async GetDocsReturnPricesHistory(
     reference: Query,
     stack: String
@@ -43,7 +66,7 @@ class PriceHistoryRespositoryImplements {
       })
       .catch((error: FirebaseError) => {
         if (typeof error != 'string') {
-          error.stack = error.stack ?? `${stack} (${this.path})`;
+          error.message = `${error.message} - ${stack} (${this.path})`;
         }
         LogsService.Create(error);
         throw `Ocorreu um erro enquanto buscávamos o histórico de preços.`;

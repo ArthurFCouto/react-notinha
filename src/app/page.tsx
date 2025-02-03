@@ -20,9 +20,9 @@ import Footer from '@/shared/components/root/footer';
 import NavBar from '@/shared/components/root/NavBar';
 import lottieNotinha from '@/shared/assets/notinha.json';
 import PriceHistoryChart from '@/shared/components/home/PriceHistoryChart';
-import { Price } from '@/server/entities/price';
+import { PriceEntity } from '@/server/entities/price';
 import axios from 'axios';
-import { PriceHistory } from '@/server/entities/priceHistory';
+import { PriceHistoryEntity } from '@/server/entities/priceHistory';
 import { listaUrl } from './api/script';
 import { BRCurrencyFormat, MappingTimestampToDate } from '@/shared/util';
 
@@ -31,27 +31,21 @@ export default function Home() {
   const mdDownScreen = useMediaQuery(theme.breakpoints.down('md'));
   const sizeImage = mdDownScreen ? 250 : 375;
   const route = useRouter();
-  const [chartData, setChartData] = useState<PriceHistory[]>([]);
-  const [product, setproduct] = useState<Price>();
+  const [chartData, setChartData] = useState<PriceHistoryEntity[]>([]);
+  const [product, setproduct] = useState<PriceEntity>();
   const goToHome = () => route.push('home');
 
   const ScriptDB = async () => {
     const urls = listaUrl;
-    await axios.get(`/api/receipts`).then((response) => {
-      console.log('Quantidade', response.data.resultados.length);
-    });
+    //await axios.get(`/api/receipts`).then((response) => {
+    //  console.log('Quantidade', response.data.resultados.length);
+    //});
 
-    return;
+    //return;
     for (const url of urls) {
-      let error = false;
       await axios.post(`/api/receipts`, { url }).catch((error) => {
-        console.error('Error', error.response);
-        console.log('Url com falha', url);
-        error = true;
+        console.error('Error', { error: error.response, url });
       });
-      if (error) {
-        break;
-      }
     }
   };
 
@@ -65,7 +59,7 @@ export default function Home() {
         })
         .then((response) => {
           const { resultados } = response.data;
-          const prices = resultados.map((price: PriceHistory) => {
+          const prices = resultados.map((price: PriceHistoryEntity) => {
             const valor = BRCurrencyFormat(parseFloat(price.valor))
               .replace(',', '.')
               .slice(3);

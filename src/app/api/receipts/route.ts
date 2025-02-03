@@ -10,7 +10,7 @@ export async function POST(request: Request) {
     const url = body ? body.url : body;
     if (!url)
       return NextResponse.json(
-        { error: 'Favor enviar o parametro [url]' },
+        { error: 'Favor enviar no corpo da requisição [url]' },
         { status: 400 }
       );
     const response = await ReceiptController.CreateReceipt(url);
@@ -21,11 +21,15 @@ export async function POST(request: Request) {
 }
 
 /*
- * api/receipts
+ * api/receipts?offset=string&quantidadePorPagina=number
  */
 export async function GET(request: Request) {
   try {
-    const response = await ReceiptController.GetAllReceipts();
+    const { searchParams } = new URL(request.url);
+    const offset = searchParams.get('offset') ?? '';
+    const amount = parseInt(String(searchParams.get('quantidadePorPagina')));
+    const perPage = isNaN(amount) ? 50 : amount;
+    const response = await ReceiptController.GetAllReceipts(offset, perPage);
     return NextResponse.json(response);
   } catch (error) {
     return ErrorMapping(error);

@@ -23,13 +23,13 @@ class PriceServiceImplements {
     if (prices.length === 0) return;
 
     const cnpj = prices[0].cnpjMercado;
-    const savedPrices = await PriceRepository.GetListByMarket(cnpj);
+    const savedPrices = await PriceRepository.GetListByMarketModel(cnpj);
     const historyMap: Record<string, Array<PriceHistoryEntity>> = {};
 
     for (const savedPrice of savedPrices) {
       if (
         savedPrice.possuiHistorico &&
-        prices.some((p) => p.nomeProduto == savedPrice.nomeProduto)
+        prices.some((p) => p.nomeProduto === savedPrice.nomeProduto)
       ) {
         const ref = doc(database, this.path, savedPrice.id!);
         const historySnapshot =
@@ -38,7 +38,7 @@ class PriceServiceImplements {
       }
     }
 
-    const chunks = this.ChunkArray(prices, 200);
+    const chunks = this.ChunkArray(prices, 250);
 
     for (const chunk of chunks) {
       await runTransaction(database, async (transaction) => {
@@ -48,12 +48,10 @@ class PriceServiceImplements {
           );
 
           if (existingPrice) {
-            price.id = existingPrice.id;
-
             if (existingPrice.dataInclusao < price.dataInclusao) {
               const history = historyMap[existingPrice.id!] || [];
               const alreadyInHistory = history.some(
-                (h) => h.mapValorData == existingPrice.mapValorData
+                (h) => h.mapValorData === existingPrice.mapValorData
               );
 
               if (!alreadyInHistory) {
@@ -90,7 +88,7 @@ class PriceServiceImplements {
                 );
                 transaction.set(
                   historyRef,
-                  this.MappingPriceToPriceHistory(existingPrice)
+                  this.MappingPriceToPriceHistory(price)
                 );
               }
             }
@@ -99,6 +97,12 @@ class PriceServiceImplements {
             transaction.set(newPriceRef, price);
           }
         }
+      }).catch((error: any) => {
+        if (typeof error != 'string') {
+          error.message = `${error.message} - CreateList (${this.path})`;
+        }
+        LogsService.Create(error);
+        throw 'Não foi possível concluir o cadastro da lista de produtos.';
       });
     }
   }
@@ -111,7 +115,7 @@ class PriceServiceImplements {
       throw `400 - Não foi possível concluir a exclusão pois, todos os preços da lista devem possuir a propriedade ID. Confira os itens ${pricesWhitoutId.map((prices) => prices.nomeProduto).join(' ')}.`;
     }
 
-    const chunks = this.ChunkArray(prices, 400);
+    const chunks = this.ChunkArray(prices, 250);
 
     for (const chunk of chunks) {
       const batch = writeBatch(database);
@@ -119,18 +123,17 @@ class PriceServiceImplements {
         batch.delete(doc(collection(database, this.path), price.id));
       });
 
-      try {
-        await batch.commit();
-      } catch (error: any) {
+      await batch.commit().catch((error: any) => {
         if (typeof error != 'string') {
-          error.stack = error.stack ?? `Delete ${this.path}`;
+          error.message = `${error.message} - Delete (${this.path})`;
         }
         LogsService.Create(error);
         throw `Não foi possível concluir a exclusão da lista de produtos.`;
-      }
+      });
     }
   }
 
+  // TO DO - Reler e refatorar
   private ChunkArray<T>(array: T[], size: number): T[][] {
     const result: T[][] = [];
     for (let i = 0; i < array.length; i += size) {
@@ -154,7 +157,6 @@ class PriceServiceImplements {
 
   private MappingPriceToUpdate = (price: PriceEntity): PriceEntity => {
     return {
-      id: price.id,
       mapValorData: price.mapValorData,
       mapProdutoMercado: price.mapProdutoMercado,
       mapProdutoMercadoData: price.mapProdutoMercadoData,

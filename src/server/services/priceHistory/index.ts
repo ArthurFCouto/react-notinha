@@ -21,23 +21,21 @@ class PriceHistoryImplements {
       throw `400 - Não foi possível concluir a exclusão pois, todos os preços da lista de histórico devem possuir a propriedade ID, confira novamente a lista enviada.`;
     }
 
-    const chunks = this.ChunkArray(prices, 400);
+    const chunks = this.ChunkArray(prices, 250);
 
     for (const chunk of chunks) {
       const batch = writeBatch(database);
       chunk.forEach((price) => {
-        batch.delete(doc(collection(database, this.path), price.id));
+        batch.delete(doc(collection(database, this.path), price.id!));
       });
 
-      try {
-        await batch.commit();
-      } catch (error: any) {
+      await batch.commit().catch((error: any) => {
         if (typeof error != 'string') {
-          error.stack = error.stack ?? `Delete ${this.path}`;
+          error.message = `${error.message} - Delete (${this.path})`;
         }
         LogsService.Create(error);
         throw `Não foi possível concluir a exclusão da lista de histórico de preços dos produtos.`;
-      }
+      });
     }
   }
 
