@@ -45,6 +45,15 @@ class PriceRepositoryImplements {
     this.fieldHasHistoric = 'possuiHistorico';
   }
 
+  async GetAllModel(): Promise<Array<PriceEntity>> {
+    const reference = query(
+      collection(database, this.path),
+      orderBy(this.fieldProduct)
+    );
+
+    return this.GetDocsReturnPrices(reference, 'GetAllModel');
+  }
+
   async GetAll(offSet: string, amount: number): Promise<Array<PriceEntity>> {
     if (offSet.length > 0) {
       const snapshot = await this.GetSnapshot(offSet);

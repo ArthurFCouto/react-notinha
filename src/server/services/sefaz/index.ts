@@ -12,6 +12,7 @@ import {
   GenerateDateMarketProductMap,
   GenerateDateValueMap,
   GenerateMarketProductMap,
+  GenereteIndexName,
   PriceEntity,
 } from '@/server/entities/price';
 import { PriceService } from '../price';
@@ -205,6 +206,7 @@ class SefazServiceImplements {
             ),
             nomeMercado: market.nomeFantasia,
             nomeProduto: columnData[0],
+            indexNomeProduto: GenereteIndexName(columnData[0]),
             unidadeMedida: columnData[2].slice(4),
             valor: value,
             cnpjMercado: market.cnpj,

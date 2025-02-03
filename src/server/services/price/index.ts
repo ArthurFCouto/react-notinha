@@ -6,7 +6,7 @@ import {
 } from 'firebase/firestore';
 import { database } from '@/server/configs/firebase';
 import { LogsService } from '../logs';
-import { PriceEntity } from '@/server/entities/price';
+import { GenereteIndexName, PriceEntity } from '@/server/entities/price';
 import { PriceRepository } from '@/server/repositories/price';
 import { PriceHistoryEntity } from '@/server/entities/priceHistory';
 import { PriceHistoryRepository } from '@/server/repositories/priceHistory';
@@ -162,6 +162,7 @@ class PriceServiceImplements {
       mapProdutoMercadoData: price.mapProdutoMercadoData,
       nomeMercado: price.nomeMercado,
       nomeProduto: price.nomeProduto,
+      indexNomeProduto: price.indexNomeProduto,
       unidadeMedida: price.unidadeMedida,
       valor: price.valor,
       cnpjMercado: price.cnpjMercado,

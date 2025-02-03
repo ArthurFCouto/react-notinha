@@ -46,7 +46,7 @@ class MarketRepositoryImplements {
       )
       .catch((error: FirebaseError) => {
         if (typeof error != 'string') {
-          error.stack = error.stack ?? 'GetAll (Market)';
+          error.message = `${error.message} - GetAll (${this.path})`;
         }
         LogsService.Create(error);
         throw `Ocorreu um erro enquanto buscávamos a lista de mercados.`;
@@ -63,7 +63,7 @@ class MarketRepositoryImplements {
       return object ? (object as MarketEntity) : this.emptyMarket;
     } catch (error: any) {
       if (typeof error != 'string') {
-        error.message = `${error.message} - CheckIfDoesExist (Market)`;
+        error.message = `${error.message} - CheckIfDoesExist (${this.path})`;
       }
       LogsService.Create(error);
       throw `Ocorreu um erro enquanto vefiricávamos se o mercado já está cadastrado.`;

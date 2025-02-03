@@ -15,7 +15,7 @@ class MarketServiceImplements {
 
   async Create(market: MarketEntity): Promise<MarketEntity> {
     const marketDb = await MarketRepository.CheckIfDoesExist(market.cnpj);
-    if (marketDb.cnpj.length != 0) {
+    if (marketDb.cnpj === market.cnpj) {
       market.dataInclusao = marketDb.dataInclusao;
 
       return this.CheckNeedToUpdate(marketDb, market)
@@ -26,7 +26,7 @@ class MarketServiceImplements {
     const reference = doc(database, this.path, market.cnpj);
     await setDoc(reference, market).catch((error: FirebaseError) => {
       if (typeof error != 'string') {
-        error.stack = error.stack ?? `Create (${this.path})`;
+        error.stack = `${error.message} - Create (${this.path})`;
       }
       LogsService.Create(error);
       throw `Não foi possível realizar o cadastro do mercado. [${market.cnpj}]`;
@@ -40,17 +40,16 @@ class MarketServiceImplements {
     if (markets.length == 0) return;
 
     const batch = writeBatch(database);
-    const cnpjs = markets.map((market) => market.cnpj);
 
-    cnpjs.forEach((cnpj) => {
-      batch.delete(doc(collection(database, this.path), cnpj));
+    markets.forEach((market) => {
+      batch.delete(doc(collection(database, this.path), market.cnpj));
     });
 
     try {
       await batch.commit();
     } catch (error: any) {
       if (typeof error != 'string') {
-        error.stack = error.stack ?? `Delete (${this.path})`;
+        error.stack = `${error.message} - Delete (${this.path})`;
       }
       LogsService.Create(error);
       throw `Não foi possível concluir a exclusão de mercados por cnpj.`;
@@ -77,7 +76,7 @@ class MarketServiceImplements {
       await batch.commit();
     } catch (error: any) {
       if (typeof error != 'string') {
-        error.stack = error.stack ?? `Update (${this.path})`;
+        error.message = `${error.message} - Update (${this.path})`;
       }
       LogsService.Create(error);
       throw `Não foi possível concluir a atualização do mercado [${market.cnpj}]`;

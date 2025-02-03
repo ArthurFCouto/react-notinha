@@ -3,19 +3,20 @@ import { PriceHistoryEntity } from '@/server/entities/priceHistory';
 import RecordSet from '@/server/models/RecordSet';
 import { PriceRepository } from '@/server/repositories/price';
 import { PriceHistoryRepository } from '@/server/repositories/priceHistory';
+import { PriceService } from '@/server/services/price';
 
 class PriceControllerImplements {
   async GetAll(
-    offset: string,
-    amountByPage: number
+    offSet: string,
+    perPage: number
   ): Promise<RecordSet<PriceEntity>> {
-    const prices = await PriceRepository.GetAll(offset, amountByPage);
+    const prices = await PriceRepository.GetAll(offSet, perPage);
     const amount = await PriceRepository.GetTotalAmount({});
 
     const response = {
       totalDeRegistros: amount,
       pagina: 1,
-      quantidadePorPagina: amountByPage,
+      quantidadePorPagina: perPage,
       resultados: prices,
     };
 
@@ -24,20 +25,20 @@ class PriceControllerImplements {
 
   async GetByName(
     product: string,
-    offset: string,
-    amountByPage: number
+    offSet: string,
+    perPage: number
   ): Promise<RecordSet<PriceEntity>> {
     const prices = await PriceRepository.GetListByName(
       product,
-      offset,
-      amountByPage
+      offSet,
+      perPage
     );
     const amount = await PriceRepository.GetTotalAmount({ product });
 
     const response = {
       totalDeRegistros: amount,
       pagina: 1,
-      quantidadePorPagina: amountByPage,
+      quantidadePorPagina: perPage,
       resultados: prices,
     };
 
@@ -46,20 +47,16 @@ class PriceControllerImplements {
 
   async GetByMarket(
     cnpj: string,
-    offset: string,
-    amountByPage: number
+    offSet: string,
+    perPage: number
   ): Promise<RecordSet<PriceEntity>> {
-    const prices = await PriceRepository.GetListByMarket(
-      cnpj,
-      offset,
-      amountByPage
-    );
+    const prices = await PriceRepository.GetListByMarket(cnpj, offSet, perPage);
     const amount = await PriceRepository.GetTotalAmount({ cnpjMarket: cnpj });
 
     const response = {
       totalDeRegistros: amount,
       pagina: 1,
-      quantidadePorPagina: amountByPage,
+      quantidadePorPagina: perPage,
       resultados: prices,
     };
 
@@ -67,13 +64,10 @@ class PriceControllerImplements {
   }
 
   async GetOnlyWithHistory(
-    offset: string,
-    amountByPage: number
+    offSet: string,
+    perPage: number
   ): Promise<RecordSet<PriceEntity>> {
-    const prices = await PriceRepository.GetOnlyWithHistoric(
-      offset,
-      amountByPage
-    );
+    const prices = await PriceRepository.GetOnlyWithHistoric(offSet, perPage);
     const amount = await PriceRepository.GetTotalAmount({
       onlyWithHistoric: true,
     });
@@ -81,7 +75,7 @@ class PriceControllerImplements {
     const response = {
       totalDeRegistros: amount,
       pagina: 1,
-      quantidadePorPagina: amountByPage,
+      quantidadePorPagina: perPage,
       resultados: prices,
     };
 
