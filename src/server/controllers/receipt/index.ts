@@ -1,4 +1,5 @@
 import { ReceiptEntity } from '@/server/entities/receipt';
+import { ReceiptDto, ReceiptDtoMapping } from '@/server/models/dtos/receipt';
 import RecordSet from '@/server/models/RecordSet';
 import { PriceRepository } from '@/server/repositories/price';
 import { PriceHistoryRepository } from '@/server/repositories/priceHistory';
@@ -9,38 +10,41 @@ import { ReceiptService } from '@/server/services/receipt';
 import { SefazService } from '@/server/services/sefaz';
 
 class ReceiptImplements {
-  async CreateReceipt(url: string): Promise<RecordSet<ReceiptEntity>> {
+  async CreateReceipt(url: string): Promise<RecordSet<ReceiptDto>> {
     const qrCode = url.split('?p=')[1];
     const document = await SefazService.CreateVirtualDocument(qrCode);
     const market = await SefazService.CreateMarket(document);
     const receipt = await SefazService.CreateReceipt(document, qrCode, market);
     const items = await SefazService.CreateItemList(document, market, receipt);
+
+    const receiptDto = ReceiptDtoMapping(receipt);
     const response = {
       totalDeRegistros: items.length,
       pagina: 1,
       quantidadePorPagina: items.length,
-      resultados: [receipt],
+      resultados: [receiptDto],
       mensagemDeSucesso: 'Nota fiscal cadastrada com sucesso.',
     };
 
-    return RecordSet.Mapping<ReceiptEntity>(response);
+    return RecordSet.Mapping<ReceiptDto>(response);
   }
 
   async GetAllReceipts(
     offSet: string,
     perPage: number
-  ): Promise<RecordSet<ReceiptEntity>> {
+  ): Promise<RecordSet<ReceiptDto>> {
     const receipts = await ReceiptRepository.GetAll(offSet, perPage);
     const amount = await ReceiptRepository.GetTotalAmount();
 
+    const receiptsDto = receipts.map((receipt) => ReceiptDtoMapping(receipt));
     const response = {
       totalDeRegistros: amount,
       pagina: 1,
       quantidadePorPagina: perPage,
-      resultados: receipts,
+      resultados: receiptsDto,
     };
 
-    return RecordSet.Mapping<ReceiptEntity>(response);
+    return RecordSet.Mapping<ReceiptDto>(response);
   }
 
   async DeleteListByKeyList(keys: Array<string>): Promise<RecordSet<string>> {
