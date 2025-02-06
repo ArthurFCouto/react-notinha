@@ -8,7 +8,7 @@ import {
   limit,
   orderBy,
   query,
-  startAt,
+  startAfter,
   where,
 } from 'firebase/firestore';
 import { database } from '@/server/configs/firebase';
@@ -46,7 +46,7 @@ class ReceiptRepositoryImplements {
         ? query(
             collection(database, this.path),
             orderBy(this.fieldOrder),
-            startAt(snapshot),
+            startAfter(snapshot),
             limit(amount)
           )
         : query(

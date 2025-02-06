@@ -1,4 +1,4 @@
-import { PriceHistory } from '@/server/entities/priceHistory';
+import { PriceHistoryDto } from '@/server/models/dtos/priceHistory';
 import { Stack } from '@mui/material';
 import {
   Area,
@@ -12,7 +12,7 @@ import {
 
 interface PriceHistoryChartProps {
   height: number;
-  prices: PriceHistory[];
+  prices: PriceHistoryDto[];
 }
 
 interface CustomizedProps {

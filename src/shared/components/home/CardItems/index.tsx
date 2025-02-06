@@ -22,7 +22,7 @@ import {
   useTheme,
 } from '@mui/material';
 import { BRCurrencyFormat, MappingTimestampToDate } from '@/shared/util';
-import { Price } from '@/server/entities/price';
+import { PriceDto } from '@/server/models/dtos/price';
 
 const monts = [
   'JAN',
@@ -40,8 +40,8 @@ const monts = [
 ];
 
 interface CardItemsProps {
-  items: Price[];
-  clickOnHistory: (item: Price) => void;
+  items: PriceDto[];
+  clickOnHistory: (item: PriceDto) => void;
 }
 
 export default function CardItems({ items, clickOnHistory }: CardItemsProps) {
@@ -52,7 +52,7 @@ export default function CardItems({ items, clickOnHistory }: CardItemsProps) {
 
   return (
     <Grid container>
-      {items.map((item: Price, index: number) => (
+      {items.map((item: PriceDto, index: number) => (
         <Grid item key={item.id} md={4} padding={0.5} sm={6} xs={12}>
           <Fade in style={{ transitionDelay: transitionValue(index) }}>
             <Card>
@@ -113,21 +113,9 @@ export default function CardItems({ items, clickOnHistory }: CardItemsProps) {
                           textAlign="center"
                           variant="button"
                         >
-                          {MappingTimestampToDate(item.dataInclusao).slice(
-                            0,
-                            2
-                          )}
+                          {item.dataInclusao.slice(0, 2)}
                           <br />
-                          {
-                            monts[
-                              parseInt(
-                                MappingTimestampToDate(item.dataInclusao).slice(
-                                  3,
-                                  5
-                                )
-                              ) - 1
-                            ]
-                          }
+                          {monts[parseInt(item.dataInclusao.slice(3, 5)) - 1]}
                         </Typography>
                       </Box>
                     </Tooltip>

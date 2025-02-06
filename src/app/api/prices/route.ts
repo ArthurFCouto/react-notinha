@@ -1,4 +1,6 @@
 import { PriceController } from '@/server/controllers/price';
+import { PriceDto } from '@/server/models/dtos/price';
+import RecordSet from '@/server/models/RecordSet';
 import { NextResponse } from 'next/server';
 
 /*
@@ -15,6 +17,9 @@ export async function GET(request: Request) {
     const amount = parseInt(String(searchParams.get('quantidadePorPagina')));
     const perPage = isNaN(amount) ? 20 : amount;
     if (productName) {
+      if (productName == 'valorMock') {
+        return NextResponse.json(teste);
+      }
       const response = await PriceController.GetByName(
         productName,
         offset,
@@ -52,3 +57,22 @@ const ErrorMapping = (error: any) => {
   }
   return NextResponse.json({ error }, { status: status });
 };
+
+const teste = {
+  totalDeRegistros: 50,
+  quantidadePorPagina: 50,
+  pagina: 1,
+  resultados: [
+    {
+      id: 'FEItuOE1s85xCnbEWjPA',
+      nomeMercado: 'SUPERMERCADO JACI',
+      nomeProduto: 'BANANA PRATA',
+      unidadeMedida: 'KG',
+      valor: '6.24',
+      cnpjMercado: '02274225000161',
+      chaveNotaFiscal: '31250102274225000161650060003208519266339193',
+      possuiHistorico: true,
+      dataInclusao: '18/01/2025',
+    },
+  ],
+} as RecordSet<PriceDto>;

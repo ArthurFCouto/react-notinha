@@ -1,4 +1,3 @@
-import { ReceiptEntity } from '@/server/entities/receipt';
 import { ReceiptDto, ReceiptDtoMapping } from '@/server/models/dtos/receipt';
 import RecordSet from '@/server/models/RecordSet';
 import { PriceRepository } from '@/server/repositories/price';
@@ -32,8 +31,10 @@ class ReceiptImplements {
   async GetAllReceipts(
     offSet: string,
     perPage: number
-  ): Promise<RecordSet<ReceiptDto>> {
-    const receipts = await ReceiptRepository.GetAll(offSet, perPage);
+  ): Promise<RecordSet<string>> {
+    const key =
+      offSet.length > 0 ? offSet.split('?p=')[1].slice(0, 44) : offSet;
+    const receipts = await ReceiptRepository.GetAll(key, perPage);
     const amount = await ReceiptRepository.GetTotalAmount();
 
     const receiptsDto = receipts.map((receipt) => ReceiptDtoMapping(receipt));
@@ -41,10 +42,10 @@ class ReceiptImplements {
       totalDeRegistros: amount,
       pagina: 1,
       quantidadePorPagina: perPage,
-      resultados: receiptsDto,
+      resultados: receiptsDto.map((receipts) => receipts.url),
     };
 
-    return RecordSet.Mapping<ReceiptDto>(response);
+    return RecordSet.Mapping<string>(response);
   }
 
   async DeleteListByKeyList(keys: Array<string>): Promise<RecordSet<string>> {
@@ -62,7 +63,7 @@ class ReceiptImplements {
     await PriceService.DeleteList(prices);
     await PriceHistoryService.DeleteList(pricesHistory);
 
-    const amount = receipts.length + prices.length + pricesHistory.length;
+    const amount = prices.length + pricesHistory.length;
     const keysNotFound = keys.filter((key) => !receiptsKeys.includes(key));
 
     const response = {

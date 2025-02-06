@@ -1,4 +1,4 @@
-import { Price } from '@/server/entities/price';
+import { PriceDto } from '@/server/models/dtos/price';
 import axios from 'axios';
 import { Dispatch, SetStateAction } from 'react';
 
@@ -73,7 +73,7 @@ export async function SendUrl(
 export async function UpdateListPrices(
   loading: boolean,
   setLoading: Dispatch<SetStateAction<boolean>>,
-  setOriginalPrices: Dispatch<SetStateAction<Price[]>>,
+  setOriginalPrices: Dispatch<SetStateAction<PriceDto[]>>,
   dispatchAlert: Dispatch<AlertActions>
 ) {
   if (loading) return;

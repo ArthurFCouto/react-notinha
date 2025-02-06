@@ -1,17 +1,21 @@
 import { PriceHistoryEntity } from '@/server/entities/priceHistory';
+import { MappingTimestampToDate } from '@/shared/util';
 
 export type PriceHistoryDto = Omit<
   PriceHistoryEntity,
-  'idPreco' | 'mapValorData' | 'cnpjMercado'
->;
+  'id' | 'idPreco' | 'mapValorData' | 'cnpjMercado' | 'dataInclusao'
+> & {
+  id: string;
+  dataInclusao: string;
+};
 
 export function PriceHistoryDtoMapping(
   priceHistory: PriceHistoryEntity
 ): PriceHistoryDto {
   return {
-    id: priceHistory.id,
-    valor: priceHistory.valor,
+    id: priceHistory.id!,
+    valor: parseFloat(priceHistory.valor).toFixed(2),
     chaveNotaFiscal: priceHistory.chaveNotaFiscal,
-    dataInclusao: priceHistory.dataInclusao,
+    dataInclusao: MappingTimestampToDate(priceHistory.dataInclusao),
   };
 }

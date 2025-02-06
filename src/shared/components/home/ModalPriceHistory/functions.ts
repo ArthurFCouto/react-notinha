@@ -1,13 +1,12 @@
 import { Dispatch, SetStateAction } from 'react';
 import axios from 'axios';
-import { BRCurrencyFormat, MappingTimestampToDate } from '@/shared/util';
-import { PriceHistory } from '@/server/entities/priceHistory';
+import { PriceHistoryDto } from '@/server/models/dtos/priceHistory';
 
 export async function UpdateChart(
   onError: Function,
   query: string,
   setLoading: Dispatch<SetStateAction<boolean>>,
-  setPrices: Dispatch<SetStateAction<PriceHistory[]>>,
+  setPrices: Dispatch<SetStateAction<PriceHistoryDto[]>>,
   setVariation: Dispatch<SetStateAction<number>>
 ) {
   await axios
@@ -18,21 +17,8 @@ export async function UpdateChart(
     })
     .then((response: any) => {
       const { resultados } = response.data;
-      const prices = resultados.map((price: PriceHistory) => {
-        const valor = BRCurrencyFormat(parseFloat(price.valor)).replace(
-          ',',
-          '.'
-        );
-        const dataInclusao = MappingTimestampToDate(price.dataInclusao, false);
-
-        return {
-          ...price,
-          valor,
-          dataInclusao,
-        };
-      });
-      setPrices(prices);
-      setVariation(CalculateVariance(prices));
+      setPrices(resultados);
+      setVariation(CalculateVariance(resultados));
     })
     .catch((error: any) => {
       onError(error.response.error);
@@ -41,7 +27,7 @@ export async function UpdateChart(
     .finally(() => setLoading(false));
 }
 
-function CalculateVariance(list: Array<PriceHistory>) {
+function CalculateVariance(list: Array<PriceHistoryDto>) {
   if (list.length == 0 || list.length == 1) return 0;
   const length = list.length;
   const prev = list[0].valor;

@@ -17,14 +17,14 @@ import { Close, History } from '@mui/icons-material';
 import lottieLoading from '@/shared/assets/loading-2.json';
 import PriceHistoryChart from '../PriceHistoryChart';
 import { UpdateChart } from './functions';
-import { PriceHistory } from '@/server/entities/priceHistory';
-import { Price } from '@/server/entities/price';
+import { PriceDto } from '@/server/models/dtos/price';
+import { PriceHistoryDto } from '@/server/models/dtos/priceHistory';
 
 interface ModalPriceHistoryProps {
   close: () => void;
   onError: (message: string) => void;
   open: boolean;
-  price?: Price;
+  price?: PriceDto;
   query: string;
 }
 
@@ -35,7 +35,7 @@ export default function ModalPriceHistory({
   price,
   query,
 }: ModalPriceHistoryProps) {
-  const [prices, setPrices] = useState<PriceHistory[]>([]);
+  const [prices, setPrices] = useState<PriceHistoryDto[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [variation, setVariation] = useState(0);
 

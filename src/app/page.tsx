@@ -20,36 +20,22 @@ import Footer from '@/shared/components/root/footer';
 import NavBar from '@/shared/components/root/NavBar';
 import lottieNotinha from '@/shared/assets/notinha.json';
 import PriceHistoryChart from '@/shared/components/home/PriceHistoryChart';
-import { PriceEntity } from '@/server/entities/price';
 import axios from 'axios';
-import { PriceHistoryEntity } from '@/server/entities/priceHistory';
-import { listaUrl } from './api/script';
-import { BRCurrencyFormat, MappingTimestampToDate } from '@/shared/util';
+import RecordSet from '@/server/models/RecordSet';
+import { PriceDto } from '@/server/models/dtos/price';
+import { PriceHistoryDto } from '@/server/models/dtos/priceHistory';
 
 export default function Home() {
   const theme = useTheme();
   const mdDownScreen = useMediaQuery(theme.breakpoints.down('md'));
   const sizeImage = mdDownScreen ? 250 : 375;
   const route = useRouter();
-  const [chartData, setChartData] = useState<PriceHistoryEntity[]>([]);
-  const [product, setproduct] = useState<PriceEntity>();
+  const [chartData, setChartData] = useState<PriceHistoryDto[]>([]);
+  const [product, setproduct] = useState<PriceDto>();
   const goToHome = () => route.push('home');
 
-  const ScriptDB = async () => {
-    const urls = listaUrl;
-    //await axios.get(`/api/receipts`).then((response) => {
-    //  console.log('Quantidade', response.data.resultados.length);
-    //});
-
-    //return;
-    for (const url of urls) {
-      await axios.post(`/api/receipts`, { url }).catch((error) => {
-        console.error('Error', { error: error.response, url });
-      });
-    }
-  };
-
   useEffect(() => {
+    const valorMock = 'valorMock';
     const getPriceHistory = async (id: string) => {
       await axios
         .get(`api/prices/history`, {
@@ -58,23 +44,12 @@ export default function Home() {
           },
         })
         .then((response) => {
-          const { resultados } = response.data;
-          const prices = resultados.map((price: PriceHistoryEntity) => {
-            const valor = BRCurrencyFormat(parseFloat(price.valor))
-              .replace(',', '.')
-              .slice(3);
-            const dataInclusao = MappingTimestampToDate(price.dataInclusao);
-
-            return {
-              ...price,
-              valor,
-              dataInclusao,
-            };
-          });
+          const data: RecordSet<PriceHistoryDto> = response.data;
+          const prices = data.resultados;
           setChartData(prices);
         })
         .catch((error) => {
-          console.error(error.response);
+          console.error(error);
         });
     };
 
@@ -82,18 +57,16 @@ export default function Home() {
       await axios
         .get(`/api/prices`, {
           params: {
-            comHistorico: true,
+            nomeProduto: valorMock,
           },
         })
         .then(async (response) => {
-          const resultados = response.data.resultados;
-          if (resultados.length > 0) {
-            setproduct(resultados[0]);
-            getPriceHistory(resultados[0].id);
-          }
+          const data: RecordSet<PriceDto> = response.data;
+          setproduct(data.resultados[0]);
+          await getPriceHistory(valorMock);
         })
         .catch((error) => {
-          console.error(error.response);
+          console.error(error);
         });
     };
 
@@ -157,22 +130,6 @@ export default function Home() {
               >
                 Conheça agora - É grátis
               </Button>
-              {process.env.NODE_ENV === 'development' && (
-                <Button
-                  onClick={ScriptDB}
-                  size="large"
-                  variant="contained"
-                  sx={{
-                    borderRadius: '50px',
-                    fontSize: 14,
-                    fontWeight: 600,
-                    paddingX: 3,
-                    paddingY: 2,
-                  }}
-                >
-                  Rodar Script
-                </Button>
-              )}
             </Stack>
           </Grid>
           <Grid
@@ -253,7 +210,7 @@ export default function Home() {
                   width="100%"
                   variant="h6"
                 >
-                  Evolução do preço da <strong>{product?.nomeProduto}</strong>
+                  Evolução do preço da <strong>{product?.nomeProduto}</strong> ¹
                 </Typography>
                 <Typography
                   color="primary.dark"
@@ -266,6 +223,14 @@ export default function Home() {
                 {chartData.length > 0 && (
                   <PriceHistoryChart height={300} prices={chartData} />
                 )}
+                <Typography
+                  gutterBottom
+                  textAlign="right"
+                  width="100%"
+                  variant="caption"
+                >
+                  <strong>¹</strong> Valores simulados
+                </Typography>
               </Paper>
             )}
           </Grid>

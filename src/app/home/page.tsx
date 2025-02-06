@@ -30,16 +30,16 @@ import CardItems, {
 } from '@/shared/components/home/CardItems';
 import NavBar from '@/shared/components/root/NavBar';
 import ButtonGoToTop from '@/shared/components/root/ButtonGoToTop';
-import { Price } from '@/server/entities/price';
+import { PriceDto } from '@/server/models/dtos/price';
 
 export default function Home() {
   const [loading, setLoading] = useState(false);
   const [sendingUrl, setSendingUrl] = useState(false);
   const [openQR, setOpenQR] = useState(false);
-  const [originalPrices, setOriginalPrices] = useState<Price[]>([]);
+  const [originalPrices, setOriginalPrices] = useState<PriceDto[]>([]);
   const [showPriceHistory, setShowPriceHistory] = useState(false);
   const [queryPriceHistory, setQueryPriceHistory] = useState('');
-  const [price, setPrice] = useState<Price>();
+  const [price, setPrice] = useState<PriceDto>();
   const [searchInput, setSearchInput] = useState('');
   const [isPending, startTransition] = useTransition();
   const filterRef = useRef<HTMLInputElement>(null);
@@ -86,7 +86,7 @@ export default function Home() {
     </Snackbar>
   );
 
-  const handleHistory = (item: Price) => {
+  const handleHistory = (item: PriceDto) => {
     setQueryPriceHistory(item.id!);
     setPrice(item);
     setShowPriceHistory(true);

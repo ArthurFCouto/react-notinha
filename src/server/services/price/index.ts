@@ -6,7 +6,7 @@ import {
 } from 'firebase/firestore';
 import { database } from '@/server/configs/firebase';
 import { LogsService } from '../logs';
-import { GenereteIndexName, PriceEntity } from '@/server/entities/price';
+import { PriceEntity } from '@/server/entities/price';
 import { PriceRepository } from '@/server/repositories/price';
 import { PriceHistoryEntity } from '@/server/entities/priceHistory';
 import { PriceHistoryRepository } from '@/server/repositories/priceHistory';
@@ -18,7 +18,6 @@ class PriceServiceImplements {
     this.path = process.env.NODE_ENV === 'development' ? 'precosDev' : 'precos';
   }
 
-  // TO DO - Reler e refatorar
   async CreateList(prices: Array<PriceEntity>): Promise<void> {
     if (prices.length === 0) return;
 
@@ -26,18 +25,19 @@ class PriceServiceImplements {
     const savedPrices = await PriceRepository.GetListByMarketModel(cnpj);
     const historyMap: Record<string, Array<PriceHistoryEntity>> = {};
 
-    for (const savedPrice of savedPrices) {
+    for (const saved of savedPrices) {
       if (
-        savedPrice.possuiHistorico &&
-        prices.some((p) => p.nomeProduto === savedPrice.nomeProduto)
+        saved.possuiHistorico &&
+        prices.some((p) => p.nomeProduto === saved.nomeProduto)
       ) {
-        const ref = doc(database, this.path, savedPrice.id!);
-        const historySnapshot =
-          await PriceHistoryRepository.GetListByReference(ref);
-        historyMap[savedPrice.id!] = historySnapshot;
+        const priceRef = doc(database, this.path, saved.id!);
+        const pricesHistory =
+          await PriceHistoryRepository.GetListByReference(priceRef);
+        historyMap[saved.id!] = pricesHistory;
       }
     }
 
+    // TO DO - Reler e refatorar
     const chunks = this.ChunkArray(prices, 250);
 
     for (const chunk of chunks) {
@@ -47,59 +47,61 @@ class PriceServiceImplements {
             (p) => p.nomeProduto == price.nomeProduto
           );
 
-          if (existingPrice) {
-            if (existingPrice.dataInclusao < price.dataInclusao) {
-              const history = historyMap[existingPrice.id!] || [];
-              const alreadyInHistory = history.some(
-                (h) => h.mapValorData === existingPrice.mapValorData
-              );
-
-              if (!alreadyInHistory) {
-                const historyRef = doc(
-                  collection(
-                    database,
-                    this.path,
-                    existingPrice.id!,
-                    PriceHistoryRepository.path
-                  )
-                );
-                transaction.set(
-                  historyRef,
-                  this.MappingPriceToPriceHistory(existingPrice)
-                );
-              }
-
-              const priceRef = doc(database, this.path, existingPrice.id!);
-              transaction.update(priceRef, this.MappingPriceToUpdate(price));
-            } else {
-              const history = historyMap[price.id!] || [];
-              const alreadyInHistory = history.some(
-                (h) => h.mapValorData == price.mapValorData
-              );
-
-              if (!alreadyInHistory) {
-                const historyRef = doc(
-                  collection(
-                    database,
-                    this.path,
-                    existingPrice.id!,
-                    PriceHistoryRepository.path
-                  )
-                );
-                transaction.set(
-                  historyRef,
-                  this.MappingPriceToPriceHistory(price)
-                );
-              }
-            }
-          } else {
+          if (!existingPrice) {
             const newPriceRef = doc(collection(database, this.path));
             transaction.set(newPriceRef, price);
+            return;
+          }
+
+          if (price.dataInclusao > existingPrice.dataInclusao) {
+            const history = historyMap[existingPrice.id!] || [];
+            const alreadyInHistory = history.some(
+              (h) => h.mapValorData == existingPrice.mapValorData
+            );
+
+            if (!alreadyInHistory) {
+              const historyRef = doc(
+                collection(
+                  database,
+                  this.path,
+                  existingPrice.id!,
+                  PriceHistoryRepository.path
+                )
+              );
+              transaction.set(
+                historyRef,
+                this.MappingPriceToPriceHistory(existingPrice)
+              );
+            }
+
+            const priceRef = doc(database, this.path, existingPrice.id!);
+            transaction.update(priceRef, this.MappingPriceToUpdate(price));
+          } else {
+            const history = historyMap[existingPrice.id!] || [];
+            const alreadyInHistory = history.some(
+              (h) => h.mapValorData == price.mapValorData
+            );
+
+            if (!alreadyInHistory) {
+              price.id = existingPrice.id;
+              const historyRef = doc(
+                collection(
+                  database,
+                  this.path,
+                  price.id!,
+                  PriceHistoryRepository.path
+                )
+              );
+              transaction.set(
+                historyRef,
+                this.MappingPriceToPriceHistory(price)
+              );
+            }
           }
         }
       }).catch((error: any) => {
         if (typeof error != 'string') {
-          error.message = `${error.message} - CreateList (${this.path})`;
+          error.message = `${error.message} - CreateList (${this.path} - ${prices[0].chaveNotaFiscal}) `;
         }
         LogsService.Create(error);
         throw 'Não foi possível concluir o cadastro da lista de produtos.';

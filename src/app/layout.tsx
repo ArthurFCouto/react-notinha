@@ -11,7 +11,7 @@ export const metadata: Metadata = {
   description: 'Seu aplicativo de consulta de preços reais',
   icons: '/icon.png',
   title: 'Notinha',
-  keywords: ['Precos', 'Mercado', 'Consulta'],
+  keywords: ['Precos', 'Mercado', 'Consulta', 'Nota Fiscal', 'Barato'],
   authors: [
     { name: 'Arthur F Couto', url: 'https://instagram.com/arthur_fcouto' },
   ],
