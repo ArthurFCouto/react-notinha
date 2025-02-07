@@ -9,6 +9,8 @@ export async function UpdateChart(
   setPrices: Dispatch<SetStateAction<PriceHistoryDto[]>>,
   setVariation: Dispatch<SetStateAction<number>>
 ) {
+  if (query.length == 0) return;
+
   await axios
     .get(`api/prices/history`, {
       params: {
@@ -21,7 +23,7 @@ export async function UpdateChart(
       setVariation(CalculateVariance(resultados));
     })
     .catch((error: any) => {
-      onError(error.response.error);
+      onError(error);
       close();
     })
     .finally(() => setLoading(false));

@@ -104,6 +104,7 @@ class ReceiptRepositoryImplements {
     }
   }
 
+  // TO DO - Modificar método
   async GetListByKeyList(keys: Array<string>): Promise<Array<ReceiptEntity>> {
     if (keys.length > 30) {
       throw `400 - Não é possível buscar mais de 30 objetos por vez, reduza a quantidade de objetos pesquisados (${keys.length}).`;

@@ -208,30 +208,25 @@ class PriceRepositoryImplements {
     return this.GetDocsReturnPrices(reference, 'GetListByReceiptList');
   }
 
-  async GetListByIdList(ids: Array<string>): Promise<Array<PriceEntity>> {
-    const reference = query(collection(database, this.path));
-    const prices: Array<PriceEntity> = [];
+  async GetById(id: string): Promise<PriceEntity> {
+    const reference = doc(database, this.path, id);
 
-    await getDocs(reference)
-      .then((response) => {
-        response.docs.map((doc) => {
-          const object = doc.data();
-          const price = {
-            id: doc.id,
-            ...object,
-          } as PriceEntity;
-          if (ids.includes(doc.id)) prices.push(price);
-        });
-      })
-      .catch((error: FirebaseError) => {
-        if (typeof error != 'string') {
-          error.message = `${error.message} - GetListById (${this.path})`;
-        }
-        LogsService.Create(error);
-        throw `Ocorreu um erro enquanto buscávamos a lista de produtos por ID.`;
-      });
+    try {
+      const snapshot = await getDoc(reference);
+      const object = snapshot.data();
 
-    return prices;
+      if (!object) {
+        throw `Não encontramos nenhum preço com o Id informado (${id}).`;
+      }
+
+      return object as PriceEntity;
+    } catch (error: any) {
+      if (typeof error != 'string') {
+        error.message = `${error.message} - CheckIfDoesExist (${this.path})`;
+      }
+      LogsService.Create(error);
+      throw 'Ocorreu um erro enquanto buscávamos um preço por Id.';
+    }
   }
 
   async GetOnlyWithHistoric(

@@ -36,7 +36,7 @@ class PriceHistoryRespositoryImplements {
     if (priceIds.length === 0) return [];
 
     const response: Array<PriceHistoryEntity> = [];
-    priceIds.forEach(async (id) => {
+    for (const id of priceIds) {
       const ref = doc(database, PriceRepository.path, id);
       const reference = collection(ref, this.path);
 
@@ -45,7 +45,7 @@ class PriceHistoryRespositoryImplements {
         'GetListByPriceIdList'
       );
       response.push(...prices);
-    });
+    }
 
     return response;
   }

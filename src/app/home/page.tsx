@@ -11,6 +11,7 @@ import {
 import {
   Alert,
   Box,
+  Button,
   CircularProgress,
   Divider,
   IconButton,
@@ -162,6 +163,23 @@ export default function Home() {
           <CardItems items={prices} clickOnHistory={handleHistory} />
         )}
       </Box>
+      {prices.length > 0 && !loading && (
+        <Button
+          onClick={() =>
+            UpdateListPrices(
+              loading,
+              setLoading,
+              setOriginalPrices,
+              dispatchAlert,
+              prices[prices.length - 1].id,
+              prices
+            )
+          }
+        >
+          Carregar Mais
+        </Button>
+      )}
+
       <ModalQrReader
         close={() => setOpenQR(false)}
         getCode={(code) =>

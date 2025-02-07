@@ -91,29 +91,27 @@ class PriceControllerImplements {
     const pricesHistory = await PriceHistoryRepository.GetListByPriceIdList([
       priceId,
     ]);
-    const price = await PriceRepository.GetListByIdList([priceId]);
+    const price = await PriceRepository.GetById(priceId);
 
     const lastPrice = {
-      idPreco: price[0].id!,
-      mapValorData: price[0].mapValorData,
-      valor: price[0].valor,
-      cnpjMercado: price[0].cnpjMercado,
-      chaveNotaFiscal: price[0].chaveNotaFiscal,
-      dataInclusao: price[0].dataInclusao,
+      idPreco: priceId,
+      mapValorData: price.mapValorData,
+      valor: price.valor,
+      cnpjMercado: price.cnpjMercado,
+      chaveNotaFiscal: price.chaveNotaFiscal,
+      dataInclusao: price.dataInclusao,
     };
 
     pricesHistory.push(lastPrice);
 
-    const pricesDto = pricesHistory.map((price) =>
-      PriceHistoryDtoMapping(price)
-    );
+    const pricesDto = pricesHistory
+      .sort((prev, next) => prev.dataInclusao - next.dataInclusao)
+      .map((price) => PriceHistoryDtoMapping(price));
     const response = {
       totalDeRegistros: pricesHistory.length,
       pagina: 1,
       quantidadePorPagina: pricesHistory.length,
-      resultados: pricesDto.sort(
-        (prev, next) => prev.dataInclusao - next.dataInclusao
-      ),
+      resultados: pricesDto,
     };
 
     return RecordSet.Mapping<PriceHistoryDto>(response);

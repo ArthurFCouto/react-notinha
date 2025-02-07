@@ -63,7 +63,7 @@ export async function SendUrl(
     .catch((response) => {
       dispatchAlert({
         type: 'open',
-        message: response.error,
+        message: response,
         severity: 'error',
       });
     })
@@ -74,13 +74,20 @@ export async function UpdateListPrices(
   loading: boolean,
   setLoading: Dispatch<SetStateAction<boolean>>,
   setOriginalPrices: Dispatch<SetStateAction<PriceDto[]>>,
-  dispatchAlert: Dispatch<AlertActions>
+  dispatchAlert: Dispatch<AlertActions>,
+  offSet?: string,
+  originalPrices?: PriceDto[]
 ) {
   if (loading) return;
   setLoading(true);
   setOriginalPrices([]);
   await axios
-    .get(`/api/prices`)
+    .get(`/api/prices`, {
+      params: {
+        offset: offSet,
+        quantidadePorPagina: 50,
+      },
+    })
     .then((response) => {
       const { resultados } = response.data;
       if (resultados.length === 0)
@@ -89,12 +96,15 @@ export async function UpdateListPrices(
           message: 'Não há preços cadastrados no momento.',
           severity: 'error',
         });
-      else setOriginalPrices(resultados);
+      else
+        offSet && originalPrices
+          ? setOriginalPrices([...originalPrices, ...resultados])
+          : setOriginalPrices(resultados);
     })
     .catch((response) => {
       dispatchAlert({
         type: 'open',
-        message: response.data,
+        message: response,
         severity: 'error',
       });
     })
