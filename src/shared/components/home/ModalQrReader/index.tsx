@@ -10,6 +10,7 @@ import {
 } from '@mui/material';
 import { Close, QrCodeScanner } from '@mui/icons-material';
 import QrReader from '../QrReader';
+import { useEffect, useState } from 'react';
 
 interface ModalQrReaderProps {
   close: () => void;
@@ -24,15 +25,45 @@ export default function ModalQrReader({
   onError,
   open,
 }: ModalQrReaderProps) {
+  const waitingTime = 10;
+  const [counter, setCounter] = useState<number>(waitingTime);
+
   const handleGetCode = (code: string) => {
     getCode(code);
-    close();
+    handleClose();
   };
 
   const handleError = (message: string) => {
     onError(message);
+    handleClose();
+  };
+
+  const handleClose = () => {
+    setCounter(waitingTime);
     close();
   };
+
+  useEffect(() => {
+    if (counter == waitingTime) return;
+
+    if (counter == 0) handleClose();
+  }, [counter]);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const interval = setInterval(() => {
+      setCounter((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [open]);
 
   return (
     <Dialog fullWidth onClose={close} open={open}>

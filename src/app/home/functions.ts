@@ -1,6 +1,6 @@
-import { PriceDto } from '@/server/models/dtos/price';
-import axios from 'axios';
 import { Dispatch, SetStateAction } from 'react';
+import axios from 'axios';
+import { PriceDto } from '@/server/models/dtos/price';
 
 type AlertClose = {
   type: 'close';
@@ -45,7 +45,7 @@ export async function SendUrl(
   if (sendingUrl) {
     dispatchAlert({
       type: 'open',
-      message: 'Aguarde e tente mais tarde.',
+      message: 'Aguarde a finalização do envio.',
       severity: 'error',
     });
     return;
@@ -56,7 +56,8 @@ export async function SendUrl(
     .then(() => {
       dispatchAlert({
         type: 'open',
-        message: 'Obrigado pelo seu envio. Atualize a lista de preços.',
+        message:
+          'Obrigado pelo seu envio. Atualize a página para atualizar os preços.',
         severity: 'success',
       });
     })

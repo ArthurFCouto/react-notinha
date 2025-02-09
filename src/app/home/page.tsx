@@ -39,7 +39,6 @@ export default function Home() {
   const [openQR, setOpenQR] = useState(false);
   const [originalPrices, setOriginalPrices] = useState<PriceDto[]>([]);
   const [showPriceHistory, setShowPriceHistory] = useState(false);
-  const [queryPriceHistory, setQueryPriceHistory] = useState('');
   const [price, setPrice] = useState<PriceDto>();
   const [searchInput, setSearchInput] = useState('');
   const [isPending, startTransition] = useTransition();
@@ -88,7 +87,6 @@ export default function Home() {
   );
 
   const handleHistory = (item: PriceDto) => {
-    setQueryPriceHistory(item.id!);
     setPrice(item);
     setShowPriceHistory(true);
   };
@@ -126,12 +124,13 @@ export default function Home() {
           </IconButton>
           <InputBase
             autoComplete={'off'}
+            aria-disabled
             inputRef={filterRef}
-            onChange={(e) => {
+            /*onChange={(e) => {
               startTransition(() => {
                 setSearchInput(e.target.value);
               });
-            }}
+            }}*/
             placeholder="Produto, data ou mercado..."
             sx={{ flex: 1 }}
             disabled={originalPrices.length === 0 ? true : false}
@@ -179,7 +178,6 @@ export default function Home() {
           Carregar Mais
         </Button>
       )}
-
       <ModalQrReader
         close={() => setOpenQR(false)}
         getCode={(code) =>
@@ -192,16 +190,13 @@ export default function Home() {
       />
       <ModalPriceHistory
         close={() => {
-          setPrice(undefined);
-          setQueryPriceHistory('');
           setShowPriceHistory(false);
         }}
+        open={showPriceHistory}
         onError={(message) => {
           dispatchAlert({ type: 'open', message: message, severity: 'error' });
         }}
         price={price}
-        open={showPriceHistory}
-        query={queryPriceHistory}
       />
       <ButtonGoToTop />
       <CustomAlert />

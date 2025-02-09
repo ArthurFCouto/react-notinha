@@ -1,36 +1,40 @@
-import { Dispatch, SetStateAction } from 'react';
 import axios from 'axios';
+import { Dispatch, SetStateAction } from 'react';
 import { PriceHistoryDto } from '@/server/models/dtos/priceHistory';
+import { PriceDto } from '@/server/models/dtos/price';
+import RecordSet from '@/server/models/RecordSet';
 
 export async function UpdateChart(
   onError: Function,
-  query: string,
   setLoading: Dispatch<SetStateAction<boolean>>,
-  setPrices: Dispatch<SetStateAction<PriceHistoryDto[]>>,
-  setVariation: Dispatch<SetStateAction<number>>
+  setPrices: Dispatch<SetStateAction<Array<PriceHistoryDto>>>,
+  setVariation: Dispatch<SetStateAction<number>>,
+  price?: PriceDto
 ) {
-  if (query.length == 0) return;
+  if (!price) return;
 
   await axios
     .get(`api/prices/history`, {
       params: {
-        idPreco: query,
+        idPreco: price.id,
       },
     })
-    .then((response: any) => {
-      const { resultados } = response.data;
+    .then((response) => {
+      const data: RecordSet<PriceHistoryDto> = response.data;
+      const { resultados } = data;
       setPrices(resultados);
       setVariation(CalculateVariance(resultados));
     })
-    .catch((error: any) => {
+    .catch((error) => {
       onError(error);
       close();
     })
     .finally(() => setLoading(false));
 }
 
-function CalculateVariance(list: Array<PriceHistoryDto>) {
-  if (list.length == 0 || list.length == 1) return 0;
+function CalculateVariance(list: Array<PriceHistoryDto>): number {
+  if (list.length <= 1) return 0;
+
   const length = list.length;
   const prev = list[0].valor;
   const last = list[length - 1].valor;
