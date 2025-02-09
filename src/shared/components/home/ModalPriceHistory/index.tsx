@@ -61,7 +61,7 @@ export default function ModalPriceHistory({
         <Typography>
           Preços registrados para <strong>{price && price.nomeProduto}</strong>{' '}
           no periodo de {prices[0].dataInclusao} a{' '}
-          {prices[prices.length].dataInclusao}.
+          {prices[prices.length - 1].dataInclusao}.
         </Typography>
         <Box display="flex" justifyContent="center" paddingY={2}>
           {loading ? (
