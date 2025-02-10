@@ -40,7 +40,7 @@ const monts = [
 ];
 
 interface CardItemsProps {
-  items: PriceDto[];
+  items: Array<PriceDto>;
   clickOnHistory: (item: PriceDto) => void;
 }
 
@@ -113,9 +113,17 @@ export default function CardItems({ items, clickOnHistory }: CardItemsProps) {
                           textAlign="center"
                           variant="button"
                         >
-                          {item.dataInclusao.slice(0, 2)}
-                          <br />
-                          {monts[parseInt(item.dataInclusao.slice(3, 5)) - 1]}
+                          {item.dataInclusao && (
+                            <>
+                              {item.dataInclusao.slice(0, 2)}
+                              <br />
+                              {
+                                monts[
+                                  parseInt(item.dataInclusao.slice(3, 5)) - 1
+                                ]
+                              }
+                            </>
+                          )}
                         </Typography>
                       </Box>
                     </Tooltip>

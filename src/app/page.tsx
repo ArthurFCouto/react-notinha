@@ -30,7 +30,7 @@ export default function Home() {
   const mdDownScreen = useMediaQuery(theme.breakpoints.down('md'));
   const sizeImage = mdDownScreen ? 250 : 375;
   const route = useRouter();
-  const [chartData, setChartData] = useState<PriceHistoryDto[]>([]);
+  const [chartData, setChartData] = useState<Array<PriceHistoryDto>>([]);
   const [product, setproduct] = useState<PriceDto>();
   const goToHome = () => route.push('home');
 

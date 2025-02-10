@@ -37,7 +37,7 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [sendingUrl, setSendingUrl] = useState(false);
   const [openQR, setOpenQR] = useState(false);
-  const [originalPrices, setOriginalPrices] = useState<PriceDto[]>([]);
+  const [originalPrices, setOriginalPrices] = useState<Array<PriceDto>>([]);
   const [showPriceHistory, setShowPriceHistory] = useState(false);
   const [price, setPrice] = useState<PriceDto>();
   const [searchInput, setSearchInput] = useState('');
@@ -126,14 +126,14 @@ export default function Home() {
             autoComplete={'off'}
             aria-disabled
             inputRef={filterRef}
-            /*onChange={(e) => {
+            onChange={(e) => {
               startTransition(() => {
-                setSearchInput(e.target.value);
+                //setSearchInput(e.target.value);
               });
-            }}*/
+            }}
             placeholder="Produto, data ou mercado..."
             sx={{ flex: 1 }}
-            disabled={originalPrices.length === 0 ? true : false}
+            disabled={originalPrices.length == 0}
           />
           <Divider sx={{ height: '30px' }} orientation="vertical" />
           <IconButton color="primary" onClick={clearFilter}>
